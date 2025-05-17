@@ -1,0 +1,43 @@
+
+syntax = "proto3";
+
+
+package example.v1;
+    option java_package = "com.example.user.v1";
+
+  /* Request message to get a user by ID */
+message UserRequest {
+  // ID of the user
+int32 user_id = 1;
+}
+  /* Status of a record */
+enum Status {
+  UNKNOWN = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+}
+  /* User entity */
+message User {
+  // Unique ID
+int32 id = 1 [deprecated = false];
+  // Full name
+string name = 2;
+  /* Contact info, mutually exclusive */
+oneof contact {
+  // User email
+string email = 3;
+  // User phone
+string phone = 4;
+}
+}
+  /* Provides user operations */
+service UserService {
+  option deprecated = false;
+  // Retrieves a user by ID
+rpc GetUser(UserRequest) returns (User) {
+  option idempotency_level = IDEMPOTENT;
+}
+
+}
+
+

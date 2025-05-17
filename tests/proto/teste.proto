@@ -1,0 +1,51 @@
+syntax= "proto3";
+enum ProductArea {
+  Area1 = 0;
+  Area2 = 1;
+  Area3 = 2;
+}
+enum Enum2 {
+  e1 = 0;
+  e2 = 1;
+}
+message ID {
+  int64 id = 1;
+}
+message Code {
+  int64 code = 1;
+  ProductArea pa = 2;
+  repeated string s = 3;
+  repeated ProductArea le = 4;
+  map<string, Enum2> me = 5;
+}
+message User {
+  ID id = 1;
+  string name = 2;
+  string lastname = 3;
+  // email comment
+string email = 4 [json_name = "email_field"];
+  int64 age = 5;
+  repeated string tags = 6;
+  Code code2 = 7;
+  ProductArea pa = 8;
+  oneof oo1 {
+  bool o1 = 9;
+  string o2 = 10;
+  int64 o3 = 11;
+  string o4 = 12;
+}
+}
+message Product {
+  string name = 1;
+  map<string, float> unit_price = 2;
+  Code code = 3;
+  ProductArea area = 4;
+  Enum2 enum2 = 5;
+}
+message Requisition {
+  User user = 1;
+  Code code = 2;
+  Product product = 3;
+  int32 quantity = 4;
+  Enum2 enum2 = 5;
+}

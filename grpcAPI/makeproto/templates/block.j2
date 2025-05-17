@@ -1,0 +1,19 @@
+{% extends "comment.j2" %}
+{% block content %}
+{{ template.block }} {{ template.name }} {
+  {% for key, val in (options or {}).items() %}
+  option {{ (key, val) | format_option }};
+  {% endfor %}
+
+  {% if reserved_index %}
+reserved {{ reserved_index }};
+  {% endif %}
+  {% if reserved_keys %}
+reserved {{ reserved_keys }};
+  {% endif %}
+  
+{% block fields %}
+{% for field in fields %}
+  {{ field }}
+{% endfor %}
+{% endblock %}}{% endblock %}

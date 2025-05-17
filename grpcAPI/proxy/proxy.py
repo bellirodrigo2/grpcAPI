@@ -55,6 +55,15 @@ class ProxyMessage:
         )
         return f"{self.__class__.__name__}({fields})"
 
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._wrapped, name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in self.__slots__ or name == "_wrapped":
+            super().__setattr__(name, value)
+        else:
+            setattr(self._wrapped, name, value)
+
 
 class ListProxy(MutableSequence[Any]):
     def __init__(

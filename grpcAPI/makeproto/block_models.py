@@ -1,4 +1,3 @@
-
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 
@@ -14,6 +13,7 @@ class Node:
     def accept(self, visitor: Visitor) -> None:
         raise NotImplementedError()
 
+
 @dataclass
 class Meta:
 
@@ -28,7 +28,8 @@ class Meta:
         _dict = asdict(self)
         del _dict["block"]
         return asdict(self)
-    
+
+
 @dataclass
 class BaseField(Node):
     ftype: Optional[type[Any]]
@@ -38,9 +39,11 @@ class BaseField(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_field(self)
 
+
 @dataclass
-class Field(Meta,BaseField):
+class Field(Meta, BaseField):
     pass
+
 
 @dataclass
 class BaseMethod(Node):
@@ -53,9 +56,11 @@ class BaseMethod(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_method(self)
 
+
 @dataclass
-class Method(Meta,BaseMethod):
+class Method(Meta, BaseMethod):
     pass
+
 
 @dataclass
 class BaseBlock(Node):
@@ -75,11 +80,13 @@ class BaseBlock(Node):
             return min([f.number for f in self.fields])
         return 0
 
+
 @dataclass
-class Block(Meta,BaseBlock):
-    reserveds: List[Union[int, range,str]] = field(
-        default_factory=list[Union[int, range,str]]
+class Block(Meta, BaseBlock):
+    reserveds: List[Union[int, range, str]] = field(
+        default_factory=list[Union[int, range, str]]
     )
+
 
 @dataclass
 class ProtoBlocks:

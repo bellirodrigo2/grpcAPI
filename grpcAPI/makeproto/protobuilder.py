@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Union
 
-from makeproto.map_to_block2 import cls_to_blocks
-from makeproto.template_models import NO_PACKAGE, Block, ProtoBlocks
+from makeproto.block_models import NO_PACKAGE, Block, ProtoBlocks
 from makeproto.template_render import render_protofile
+
+from grpcAPI.makeproto.maptoblock import cls_to_blocks
 
 
 @dataclass

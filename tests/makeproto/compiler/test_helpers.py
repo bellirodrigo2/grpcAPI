@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Union
+from typing import Any, List, Optional, Set, Union
 
 from grpcAPI.makeproto.block_models import Block, Field, Method
 
@@ -7,25 +7,28 @@ def make_field(
     name: str,
     block: Optional[Block] = None,
     *,
-    ftype=None,
+    ftype: Optional[type[Any]] = None,
     number: int = 1,
 ) -> Field:
-    return Field(
+    field = Field(
         name=name,
         ftype=ftype,
         number=number,
         block=block,
     )
+    if block is not None:
+        block.fields.append(field)
+    return field
 
 
 def make_method(
     name: str,
     block: Optional[Block] = None,
     *,
-    request_type=None,
-    response_type=None,
-    request_stream=False,
-    response_stream=False,
+    request_type: Optional[type[Any]] = None,
+    response_type: Optional[type[Any]] = None,
+    request_stream: bool = False,
+    response_stream: bool = False,
 ) -> Method:
     return Method(
         name=name,

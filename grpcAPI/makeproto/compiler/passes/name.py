@@ -4,6 +4,7 @@ from typing import Callable, Dict, Set, Union
 
 from grpcAPI.makeproto.block_models import Block, Field, Method
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
+from grpcAPI.makeproto.compiler.report import CompileErrorCode
 
 VALID_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
@@ -31,10 +32,11 @@ PROTOBUF_RESERVED_WORDS = {
     "false",
 }
 
+# --------- Name Validation Pass ------------
+
 
 class NameValidator(CompilerPass):
-    def _visit(self, item: Union[Block, Field, Method], name: str) -> None:
-
+    def _visit(self, item: Union["Block", "Field", "Method"], name: str) -> None:
         if isinstance(item, Field):
             what = "field"
             block_name = item.block.name
@@ -48,48 +50,51 @@ class NameValidator(CompilerPass):
         report = self.ctx.get_report(block_name)
 
         if not VALID_NAME_RE.match(name):
-            report.add_error(name, f"Invalid {what} name: '{name}'", code="E101")
+            report.report_error(
+                code=CompileErrorCode.INVALID_NAME,
+                location=name,
+                override_msg=f"Invalid {what} name: '{name}'",
+            )
         if name in PROTOBUF_RESERVED_WORDS:
-            report.add_error(
-                name, f"Protobuf reserved {what} name: '{name}'", code="E102"
+            report.report_error(
+                code=CompileErrorCode.RESERVED_NAME,
+                location=name,
+                override_msg=f"Protobuf reserved {what} name: '{name}'",
             )
 
-    def visit_block(self, block: Block) -> None:
+    def visit_block(self, block: "Block") -> None:
         block_name = block.name
         self._visit(block, block_name)
 
         report = self.ctx.get_report(block.name)
-
         used_names: Set[str] = set()
 
         for field in block.fields:
             name = field.name
             if name in block.reserveds:
-                report.add_error(
-                    name,
-                    f"Name '{name}' is reserved in block '{block.name}'",
-                    code="E103",
+                report.report_error(
+                    code=CompileErrorCode.NAME_RESERVED_IN_BLOCK,
+                    location=name,
+                    override_msg=f"Name '{name}' is reserved in block '{block.name}'",
                 )
             elif name in used_names:
-                report.add_error(
-                    name,
-                    f"Duplicated name '{name}' in the block '{block.name}'",
-                    code="E104",
+                report.report_error(
+                    code=CompileErrorCode.DUPLICATED_NAME,
+                    location=name,
+                    override_msg=f"Duplicated name '{name}' in the block '{block.name}'",
                 )
             else:
                 used_names.add(name)
             field.accept(self)
 
-    def visit_field(self, field: Field) -> None:
-        name = field.name
-        self._visit(field, name)
+    def visit_field(self, field: "Field") -> None:
+        self._visit(field, field.name)
 
-    def visit_method(self, method: Method) -> None:
-        name = method.name
-        self._visit(method, name)
+    def visit_method(self, method: "Method") -> None:
+        self._visit(method, method.name)
 
 
-# -------------- Name Transform ----------------
+# --------- Name Normalizer ------------------
 
 
 class NameTransformStrategy(Enum):
@@ -107,8 +112,16 @@ def to_snake_case(name: str) -> str:
 
 
 def to_camel_case(name: str) -> str:
+    # quebra por underscore, hífen ou espaço
     parts = re.split(r"[_\-\s]+", name)
-    return parts[0].lower() + "".join(word.capitalize() for word in parts[1:])
+    if not parts:
+        return ""
+    # força só a primeira letra da primeira parte a minúscula
+    first = parts[0]
+    first = first[0].lower() + first[1:] if first else ""
+    # capitaliza cada parte subsequente
+    rest = "".join(word.capitalize() for word in parts[1:])
+    return first + rest
 
 
 def to_pascal_case(name: str) -> str:
@@ -134,13 +147,13 @@ class NameNormalizer(CompilerPass):
     ):
         self.strategy = strategy
 
-    def visit_block(self, block: Block) -> None:
+    def visit_block(self, block: "Block") -> None:
         block.name = normalize_name(block.name, self.strategy)
         for field in block.fields:
             field.accept(self)
 
-    def visit_field(self, field: Field) -> None:
+    def visit_field(self, field: "Field") -> None:
         field.name = normalize_name(field.name, self.strategy)
 
-    def visit_method(self, method: Method) -> None:
+    def visit_method(self, method: "Method") -> None:
         method.name = normalize_name(method.name, self.strategy)

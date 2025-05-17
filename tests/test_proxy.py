@@ -6,7 +6,7 @@ from typing import List, Mapping, Sequence
 from typing_extensions import Annotated
 
 from grpcAPI.makeproto.protoobj.base import FieldSpec, OneOf
-from grpcAPI.makeproto.protoobj.types import Float, String
+from grpcAPI.makeproto.protoobj.types import Float, Int32, String
 from grpcAPI.proxy.importer import import_py_files_from_folder
 from grpcAPI.proxy.proto_proxy import bind_proto_proxy
 from grpcAPI.proxy.proxy import ProxyMessage
@@ -67,6 +67,14 @@ class Product(ProtoMessage):
     enum2: Enum2
 
 
+class Requisition(ProtoMessage):
+    user: User
+    code: Code
+    product: Product
+    quantity: Int32
+    enum2: Enum2
+
+
 class ProxyTest(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -77,6 +85,7 @@ class ProxyTest(unittest.TestCase):
         bind_proto_proxy(User, self.modules)
         bind_proto_proxy(Code, self.modules)
         bind_proto_proxy(Product, self.modules)
+        bind_proto_proxy(Requisition, self.modules)
 
         self.id_value = 15
         self.proxy_id = ID(id=self.id_value)
@@ -102,6 +111,32 @@ class ProxyTest(unittest.TestCase):
             unit_price=self.unit_price,
             code=self.proxy_code,
             area=self.obj_prodarea,
+            enum2=self.obj_enum2,
+        )
+
+        self.name_user = "Maria"
+        self.lastname = "Silva"
+        self.email = "foo.bar@gmail.com"
+        self.age = 49
+        self.tags = ["foo", "bar"]
+        self.oobool = True
+        self.proxy_user = User(
+            id=self.proxy_id,
+            name=self.name_user,
+            lastname=self.lastname,
+            email=self.email,
+            age=self.age,
+            tags=self.tags,
+            code2=self.proxy_code,
+            pa=self.obj_prodarea,
+            o1=self.oobool,
+        )
+        quantity = 32
+        self.proxy_req = Requisition(
+            user=self.proxy_user,
+            code=self.proxy_code,
+            product=self.proxy_product,
+            quantity=quantity,
             enum2=self.obj_enum2,
         )
 
@@ -153,48 +188,51 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(proto_code.pa, ProductArea.Area2.value)
         self.assertEqual(code2.pa, ProductArea.Area2)
 
-    def test_code_list(self) -> None:
+    def test_code_list_append(self) -> None:
         code = self.proxy_code
-        proto_code = code.unwrap
-        code2 = Code(_wrapped=proto_code)
-
         code.s.append("hello")
         self.assertEqual(len(code.s), 3)
         self.assertEqual(code.s[-1], "hello")
 
+    def test_code_list_assignment_and_modification(self) -> None:
+        code = self.proxy_code
         code.s = ["new"]
         self.assertEqual(code.s, ["new"])
-
         code.s[0] = "modified"
         self.assertEqual(code.s[0], "modified")
 
+    def test_code_list_extend_insert_remove(self) -> None:
+        code = self.proxy_code
+        code.s = ["a"]
         code.s.extend(["more", "values"])
         self.assertEqual(code.s[-2:], ["more", "values"])
-
         code.s.insert(1, "middle")
         code.s.remove("middle")
+        self.assertNotIn("middle", code.s)
 
+    def test_code_list_pop_clear_reverse(self) -> None:
+        code = self.proxy_code
+        code.s = ["a", "b", "c"]
         item = code.s.pop()
-        self.assertEqual(item, "values")
-
+        self.assertEqual(item, "c")
         code.s.clear()
         self.assertEqual(code.s, [])
-
         code.s = ["a", "b", "c"]
         code.s.reverse()
         self.assertEqual(code.s, ["c", "b", "a"])
 
+    def test_code_list_copy_sort_slice_assignment(self) -> None:
+        code = self.proxy_code
+        code.s = ["c", "a", "b"]
         copy_list2 = code.s.copy()
         copy_list2.pop()
         self.assertEqual(len(code.s), 3)
-
         code.s.sort()
         self.assertEqual(code.s, ["a", "b", "c"])
-
         code.s[:2] = ["x", "y"]
         self.assertEqual(code.s[:2], ["x", "y"])
 
-    def test_code_dict(self) -> None:
+    def test_code_dict_get_and_del(self) -> None:
         code = self.proxy_code
         proto = code.unwrap
 
@@ -203,6 +241,10 @@ class ProxyTest(unittest.TestCase):
         del code.me["foo"]
         self.assertEqual(code.me, {})
 
+    def test_code_dict_set_and_keys(self) -> None:
+        code = self.proxy_code
+        code.me.clear()
+
         code.me["abc"] = Enum2.e2
         self.assertEqual(code.me["abc"], Enum2.e2)
 
@@ -210,11 +252,18 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(set(code.me.keys()), {"abc", "123"})
         self.assertIn(Enum2.e2, code.me.values())
 
+    def test_code_dict_get_and_pop(self) -> None:
+        code = self.proxy_code
+
+        code.me["abc"] = Enum2.e2
         self.assertEqual(code.me.get("abc"), Enum2.e2)
         self.assertIsNone(code.me.get("nonexistent_key"))
 
         self.assertEqual(code.me.pop("abc"), Enum2.e2)
         self.assertNotIn("abc", code.me)
+
+    def test_code_dict_clear_and_update(self) -> None:
+        code = self.proxy_code
 
         code.me.clear()
         self.assertEqual(code.me, {})
@@ -222,13 +271,22 @@ class ProxyTest(unittest.TestCase):
         code.me.update({"new_key": Enum2.e1})
         self.assertEqual(code.me["new_key"], Enum2.e1)
 
+    def test_code_dict_setdefault_and_get_default(self) -> None:
+        code = self.proxy_code
+
+        code.me["new_key"] = Enum2.e1
         self.assertEqual(code.me.setdefault("new_key", Enum2.e2), Enum2.e1)
-
         self.assertEqual(code.me.get("no_existant", 45), 45)
-        self.assertEqual(len(code.me), 1)
 
+    def test_code_dict_len_and_set_method(self) -> None:
+        code = self.proxy_code
+
+        self.assertEqual(len(code.me), 1)
         code.me.set("new_key2", Enum2.e1)
         self.assertEqual(len(code.me), 2)
+
+    def test_code_dict_type_errors(self) -> None:
+        code = self.proxy_code
 
         with self.assertRaises(TypeError):
             code.me.set("new_key2", 0)
@@ -242,6 +300,8 @@ class ProxyTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             code.me["new_key2"] = None
 
+    def test_code_dict_is_mapping(self) -> None:
+        code = self.proxy_code
         self.assertIsInstance(code.me, Mapping)
 
     def test_code_unwrap(self) -> None:
@@ -250,170 +310,118 @@ class ProxyTest(unittest.TestCase):
         code2 = Code(_wrapped=proto)
         self.assertIs(code.unwrap, code2.unwrap)
 
-    def test_code_wrong(self) -> None:
+    def test_sequence_accepts_only_strings(self) -> None:
         code = self.proxy_code
-        proto = code.unwrap
-        code2 = Code(_wrapped=proto)
-
         code.s = []
         code.s.append("foo")
 
         with self.assertRaises(TypeError):
             code.s[0] = 4
+
         with self.assertRaises(TypeError):
             code.s.append(4)
+
         with self.assertRaises(TypeError):
             code.s.extend(4)
 
         self.assertIsInstance(code.s, Sequence)
 
+    def test_constructor_rejects_invalid_field_type(self) -> None:
         with self.assertRaises(TypeError):
             Code(code="not an int")
+
+    def test_enum_field_rejects_invalid_type(self) -> None:
+        code = self.proxy_code
 
         with self.assertRaises(TypeError):
             code.pa = "not an enum"
 
+    def test_int_field_rejects_invalid_type(self) -> None:
+        code = self.proxy_code
+
         with self.assertRaises(TypeError):
             code.code = "not an int"
+
+    def test_sequence_field_rejects_non_list_assignment(self) -> None:
+        code = self.proxy_code
 
         with self.assertRaises(TypeError):
             code.s = 3
 
+    def test_dict_field_rejects_non_dict_assignment(self) -> None:
+        code = self.proxy_code
+
         with self.assertRaises(TypeError):
             code.me = 3
+
+    def test_serialize_to_string(self) -> None:
+        serialized = self.proxy_code.SerializeToString()
+        self.assertIsInstance(serialized, bytes)
+        self.assertGreater(len(serialized), 0)
+
+    def test_parse_from_string(self) -> None:
+        serialized = self.proxy_code.SerializeToString()
+
+        new_proxy = Code()
+        new_proxy.ParseFromString(serialized)
+
+        self.assertEqual(new_proxy.code, self.proxy_code.code)
+        self.assertEqual(new_proxy.pa, self.proxy_code.pa)
 
     def test_product(self) -> None:
         product = self.proxy_product
         self.assertEqual(product.code, self.proxy_code)
         self.assertEqual(product.code.code, self.proxy_code.code)
 
+    def test_user(self) -> None:
+        user = self.proxy_user
+        self.assertEqual(user.id.id, self.proxy_id.id)
+        self.assertEqual(user.code2.pa, self.proxy_code.pa)
+
+        self.assertEqual(user.o1, self.oobool)
+        self.assertEqual(user.o2, "")
+        self.assertEqual(user.o3, 0)
+        self.assertEqual(user.o4, "")
+
+    def test_user_oneof(self) -> None:
+        user = self.proxy_user
+        self.assertEqual(user.WhichOneof("oo1"), "o1")
+        self.proxy_user.o3 = 123
+        self.assertEqual(user.WhichOneof("oo1"), "o3")
+
+        self.assertEqual(user.o1, False)
+        self.assertEqual(user.o2, "")
+        self.assertEqual(user.o3, 123)
+        self.assertEqual(user.o4, "")
+
+    def test_req(self) -> None:
+        req = self.proxy_req
+        self.assertEqual(req.user.tags, self.proxy_user.tags)
+        self.assertEqual(req.code, self.proxy_code)
+        self.assertEqual(req.code.code, self.proxy_code.code)
+        self.assertEqual(req.user.id.id, self.proxy_user.id.id)
+        self.assertEqual(req.user.tags, self.proxy_user.tags)
+        self.assertEqual(req.user.code2.code, self.proxy_code.code)
+        self.assertEqual(req.user.code2.pa, self.proxy_code.pa)
+        self.assertEqual(req.user.code2.le, self.proxy_code.le)
+        self.assertEqual(req.user.code2.me, self.proxy_code.me)
+
+        self.assertEqual(req.user.o1, self.oobool)
+        self.assertEqual(req.user.o2, "")
+        self.assertEqual(req.user.o3, 0)
+        self.assertEqual(req.user.o4, "")
+
+    def test_req_oneof(self) -> None:
+        req = self.proxy_req
+
+        self.assertEqual(req.user.WhichOneof("oo1"), "o1")
+        req.user.o3 = 123
+        self.assertEqual(req.user.WhichOneof("oo1"), "o3")
+        self.assertEqual(req.user.o1, False)
+        self.assertEqual(req.user.o2, "")
+        self.assertEqual(req.user.o3, 123)
+        self.assertEqual(req.user.o4, "")
+
 
 if __name__ == "__main__":
     unittest.main()
-
-#     assert proto_product.code.code == obj_prod.code.code
-#     for item in proto_product.code.s:
-#         assert item in obj_prod.code.s
-#     assert proto_product.code.le == [l.value for l in obj_prod.code.le]
-#     assert proto_product.code.me == {k: v.value for k, v in obj_prod.code.me.items()}
-
-#     cls_product = converter.from_proto(proto_product, Product)
-#     assert cls_product.name == name
-
-#     for k, v in cls_product.unit_price.items():
-#         assert f"{v:.2f}" == f"{unit_price[k]:.2f}"
-
-#     assert cls_product.code.code == obj_prod.code.code
-#     assert cls_product.code.code == obj_prod.code.code
-#     assert cls_product.code.s == obj_prod.code.s
-#     assert cls_product.code.le == obj_prod.code.le
-#     assert cls_product.code.me == obj_prod.code.me
-
-#     # User TEst
-
-#     name_user = "Maria"
-#     lastname = "Silva"
-#     email = "foo.bar@gmail.com"
-#     age = 49
-#     tags = ["foo", "bar"]
-#     oobool = True
-#     obj_user = user(
-#         id=obj_id,
-#         name=name_user,
-#         lastname=lastname,
-#         email=email,
-#         age=age,
-#         tags=tags,
-#         code2=obj_code,
-#         pa=obj_prodarea,
-#         o1=oobool,
-#         o2=None,
-#         o3=None,
-#         o4=None,
-#     )
-#     proto_user = converter.to_proto(obj_user)
-#     assert proto_user.id.id == obj_id.id
-#     assert proto_user.name == name_user
-#     assert proto_user.lastname == lastname
-#     assert proto_user.email == email
-#     assert proto_user.age == age
-#     assert proto_user.tags == tags
-#     assert proto_user.code2.pa == obj_code.pa.value
-
-#     assert proto_user.o1 == oobool
-#     assert proto_user.o2 == ""
-#     assert proto_user.o3 == 0
-#     assert proto_user.o4 == ""
-
-#     cls_user = converter.from_proto(proto_user, user)
-#     assert cls_user.id.id == obj_id.id
-#     assert cls_user.name == name_user
-#     assert cls_user.lastname == lastname
-#     assert cls_user.email == email
-#     assert cls_user.age == age
-#     assert cls_user.tags == tags
-#     assert cls_user.code2.pa == obj_code.pa
-
-#     assert cls_user.o1 == oobool
-#     assert cls_user.o2 == ""
-#     assert cls_user.o3 == 0
-#     assert cls_user.o4 == ""
-
-#     # Requisition Test
-
-#     quantity = 32
-#     obj_req = requisition(
-#         user=obj_user,
-#         code=obj_code,
-#         product=obj_prod,
-#         quantity=quantity,
-#         enum2=obj_enum2,
-#     )
-
-#     proto_req = converter.to_proto(obj_req)
-#     assert proto_req.user.id.id == obj_user.id.id
-#     assert proto_req.user.name == obj_user.name
-#     assert proto_req.user.lastname == obj_user.lastname
-#     assert proto_req.user.email == obj_user.email
-#     assert proto_req.user.tags == obj_user.tags
-#     assert proto_req.user.code2.code == obj_user.code2.code
-#     assert proto_req.user.code2.pa == obj_user.code2.pa.value
-#     for item in proto_req.user.code2.s:
-#         assert item in obj_user.code2.s
-
-#     assert proto_req.user.code2.le == [l.value for l in obj_user.code2.le]
-#     assert proto_req.user.code2.me == {k: v.value for k, v in obj_user.code2.me.items()}
-
-#     assert proto_req.user.pa == obj_user.pa.value
-#     assert proto_req.user.o1 == obj_user.o1
-
-#     assert not proto_req.user.o2 and not obj_user.o2
-#     assert not proto_req.user.o3 and not obj_user.o3
-#     assert not proto_req.user.o4 and not obj_user.o4
-
-#     assert proto_req.enum2 == obj_Enum2.value
-#     assert proto_req.quantity == quantity
-
-#     cls_req = converter.from_proto(proto_req, requisition)
-#     assert cls_req.user.id.id == obj_user.id.id
-#     assert cls_req.user.name == obj_user.name
-#     assert cls_req.user.lastname == obj_user.lastname
-#     assert cls_req.user.email == obj_user.email
-#     assert cls_req.user.tags == obj_user.tags
-#     assert cls_req.user.code2.code == obj_user.code2.code
-#     assert cls_req.user.code2.pa == obj_user.code2.pa
-#     for item in cls_req.user.code2.s:
-#         assert item in obj_user.code2.s
-
-#     assert cls_req.user.code2.le == obj_user.code2.le
-#     assert cls_req.user.code2.me == obj_user.code2.me
-
-#     assert cls_req.user.pa == obj_user.pa
-#     assert cls_req.user.o1 == obj_user.o1
-
-#     assert not cls_req.user.o2 and not obj_user.o2
-#     assert not cls_req.user.o3 and not obj_user.o3
-#     assert not cls_req.user.o4 and not obj_user.o4
-
-#     assert cls_req.enum2 == obj_enum2
-#     assert cls_req.quantity == quantity

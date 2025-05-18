@@ -6,24 +6,23 @@ from typing import Annotated, Any, Callable, List, Optional, get_args, get_origi
 from grpcAPI.makeproto.block_models import Block, Method
 from grpcAPI.makeproto.compiler.compiler import CompilerPass, Field
 from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
-from grpcAPI.proto_model import ProtoModel
-from grpcAPI.types import Context
+from grpcAPI.types import BaseMessage, Context
 from grpcAPI.types.base import BaseProto
 from grpcAPI.types.types import DEFAULT_PRIMITIVES, allowed_map_key
 
 DEFAULT_EXTRA_ARGS = [Context]
 
 
-def is_protomodel(tgt: type[Any]) -> bool:
+def is_BaseMessage(tgt: type[Any]) -> bool:
     origin = get_origin(tgt)
     if origin is Annotated:
-        return is_protomodel(get_args(tgt)[0])
+        return is_BaseMessage(get_args(tgt)[0])
     bt = tgt
     if origin is ABCAsyncGenerator:
         bt = get_args(tgt)[0]
     if not isinstance(bt, type):
         return False
-    return issubclass(bt, ProtoModel)
+    return issubclass(bt, BaseMessage)
 
 
 def is_async_func(func: Callable[..., Any]) -> bool:
@@ -114,7 +113,7 @@ class TypeValidator(CompilerPass):
             error_code = CompileErrorCode.METHOD_NO_REQUEST
         elif len(requests) > 1:
             error_code = CompileErrorCode.METHOD_TOO_MANY_REQUEST
-        elif not is_protomodel(requests.pop()):
+        elif not is_BaseMessage(requests.pop()):
             error_code = CompileErrorCode.METHOD_INVALID_REQUEST_TYPE
         if error_code is not None:
             report.report_error(
@@ -133,7 +132,7 @@ class TypeValidator(CompilerPass):
             requests = list(set(method.request_type) - set(self.extra_args))
             self._check_requests(method.name, report, requests)
 
-        if not is_protomodel(method.response_type):
+        if not is_BaseMessage(method.response_type):
             report.report_error(
                 CompileErrorCode.METHOD_INVALID_RESPONSE_TYPE, location=method.name
             )

@@ -15,10 +15,16 @@ def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
     pack = getattr(bt, "package", None)
     if pack is not None:
         # covers basemessage and enum
-        if pack() == block_package:
+        package = str(pack()).strip()
+        block_package = str(block_package).strip()
+        if package == block_package:
             return bt.prototype()
         else:
             return bt.qualified_prototype()
+    if hasattr(bt, "prototype"):
+        # covers basefield
+        return bt.prototype()
+    # covers allowed python types
     return DEFAULT_PRIMITIVES.get(bt).prototype()  # type: ignore
     # should be safe due to early validator pass
 
@@ -50,7 +56,7 @@ def get_func_arg_info(tgt: type[Any]) -> Tuple[str, bool]:
         return get_func_arg_info(args[0])
     if origin is ABCAsyncGenerator:
         return args[0].__name__, True
-    return tgt.__name__, True
+    return tgt.__name__, False
 
 
 class TypeSetter(CompilerPass):
@@ -63,7 +69,7 @@ class TypeSetter(CompilerPass):
         report: CompileReport = self.ctx.get_report(field.block.name)
         block = field.block
         try:
-            render_dict = block.render_dict
+            render_dict = field.render_dict
             type_str = get_type_str(field.ftype, block.package)
             render_dict["ftype"] = type_str
         except Exception as e:
@@ -71,9 +77,8 @@ class TypeSetter(CompilerPass):
 
     def visit_method(self, method: Method) -> None:
         report: CompileReport = self.ctx.get_report(method.block.name)
-        block = method.block
         try:
-            render_dict = block.render_dict
+            render_dict = method.render_dict
             request_type, request_stream = get_func_arg_info(method.request_type[0])
             render_dict["request_type"] = request_type
             render_dict["request_stream"] = request_stream

@@ -30,13 +30,17 @@ def make_method(
     response_type: Optional[type[Any]] = None,
     method_func: Optional[Callable[..., Any]] = None,
 ) -> Method:
-    return Method(
+    method = Method(
         name=name,
         request_type=request_type,
         response_type=response_type,
         block=block,
         method_func=method_func,
     )
+
+    if block is not None:
+        block.fields.append(method)
+    return method
 
 
 def make_block(
@@ -46,13 +50,15 @@ def make_block(
     *,
     reserveds: Optional[Set[Union[str, int]]] = None,
     block_type: str = "message",
+    protofile: str = "test.proto",
+    package: str = "test.package",
 ) -> Block:
     return Block(
         name=name,
         fields=fields or [],
         reserveds=reserveds or set(),
         block_type=block_type,
-        protofile="test.proto",
-        package="test.package",
+        protofile=protofile,
+        package=package,
         block=block,
     )

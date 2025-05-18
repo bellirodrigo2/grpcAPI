@@ -2,7 +2,16 @@ from typing import List, Optional, Tuple, Union
 
 from grpcAPI.types.base import BaseProto, ProtoOption
 
-NO_PACKAGE = object()
+
+class _NoPackage:
+    def __repr__(self) -> str:
+        return "NO_PACkAGE"
+
+    def __str__(self) -> str:
+        return "NO_PACKAGE"
+
+
+NO_PACKAGE = _NoPackage()
 
 
 class Module:
@@ -40,7 +49,10 @@ class BaseMessage(BaseProto, Module, Meta):
 
     @classmethod
     def qualified_prototype(cls) -> str:
-        return f"{cls.package()}.{cls.__name__}"
+        pack = cls.package()
+        if isinstance(pack, _NoPackage):
+            return cls.prototype()
+        return f"{str(cls.package())}.{cls.prototype()}"
 
 
 # ---------------- Extract Class Info ---------------------------------------

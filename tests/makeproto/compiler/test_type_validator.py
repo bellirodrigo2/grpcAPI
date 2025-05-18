@@ -4,8 +4,7 @@ from pathlib import Path
 
 from grpcAPI.makeproto.compiler import TypeValidator
 from grpcAPI.makeproto.compiler.compiler import CompilerContext
-from grpcAPI.proto_model import ProtoModel
-from grpcAPI.types import DEFAULT_PRIMITIVES, BaseProto
+from grpcAPI.types import DEFAULT_PRIMITIVES, BaseMessage, BaseProto
 from grpcAPI.types.method import Stream
 from tests.makeproto.compiler.test_helpers import make_block, make_field, make_method
 
@@ -74,11 +73,11 @@ class TestTypeValidator(unittest.TestCase):
     def test_field_labeled_enum_type(self) -> None:
         class MyEnum(Enum):
             @classmethod
-            def protofile(cls):
+            def protofile(cls) -> str:
                 return "foo"
 
             @classmethod
-            def package(cls):
+            def package(cls) -> str:
                 return "bar"
 
         block = make_block("MyMessage")
@@ -203,11 +202,10 @@ class TestTypeValidator(unittest.TestCase):
         block = make_block("Service'", block_type="service")
         method = make_method(
             "Method1",
-            request_type=[ProtoModel],
+            request_type=[BaseMessage],
             block=block,
-            response_type=ProtoModel,
+            response_type=BaseMessage,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -219,12 +217,11 @@ class TestTypeValidator(unittest.TestCase):
         block = make_block("Service'", block_type="service")
         method = make_method(
             "Method1",
-            request_type=[Stream[ProtoModel]],
+            request_type=[Stream[BaseMessage]],
             block=block,
-            response_type=Stream[ProtoModel],
+            response_type=Stream[BaseMessage],
             method_func=agen,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -234,9 +231,8 @@ class TestTypeValidator(unittest.TestCase):
     def test_method_empty_req(self) -> None:
         block = make_block("Service'", block_type="service")
         method = make_method(
-            "Method1", request_type=[], block=block, response_type=ProtoModel
+            "Method1", request_type=[], block=block, response_type=BaseMessage
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -250,9 +246,8 @@ class TestTypeValidator(unittest.TestCase):
             "Method1",
             request_type=[str],
             block=block,
-            response_type=ProtoModel,
+            response_type=BaseMessage,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -268,7 +263,6 @@ class TestTypeValidator(unittest.TestCase):
             block=block,
             response_type=int,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -278,16 +272,15 @@ class TestTypeValidator(unittest.TestCase):
         self.assertEqual(len(report.errors), 2)
 
     def test_method_many_req(self) -> None:
-        class Proto2(ProtoModel): ...
+        class Proto2(BaseMessage): ...
 
         block = make_block("Service'", block_type="service")
         method = make_method(
             "Method1",
-            request_type=[ProtoModel, Proto2],
+            request_type=[BaseMessage, Proto2],
             block=block,
             response_type=Proto2,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -299,12 +292,11 @@ class TestTypeValidator(unittest.TestCase):
         block = make_block("Service'", block_type="service")
         method = make_method(
             "Method1",
-            request_type=[ProtoModel, Path, bool],
+            request_type=[BaseMessage, Path, bool],
             block=block,
-            response_type=Stream[ProtoModel],
+            response_type=Stream[BaseMessage],
             method_func=agen,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator([Path, bool])
         validator.execute([block], context)
@@ -314,9 +306,8 @@ class TestTypeValidator(unittest.TestCase):
     def test_method_empty_res(self) -> None:
         block = make_block("Service'", block_type="service")
         method = make_method(
-            "Method1", request_type=[ProtoModel], block=block, response_type=None
+            "Method1", request_type=[BaseMessage], block=block, response_type=None
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -327,9 +318,8 @@ class TestTypeValidator(unittest.TestCase):
     def test_method_none_res(self) -> None:
         block = make_block("Service'", block_type="service")
         method = make_method(
-            "Method1", request_type=None, block=block, response_type=ProtoModel
+            "Method1", request_type=None, block=block, response_type=BaseMessage
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -340,9 +330,8 @@ class TestTypeValidator(unittest.TestCase):
     def test_method_invalid_res(self) -> None:
         block = make_block("Service'", block_type="service")
         method = make_method(
-            "Method1", request_type=[ProtoModel], block=block, response_type=Path
+            "Method1", request_type=[BaseMessage], block=block, response_type=Path
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -353,9 +342,8 @@ class TestTypeValidator(unittest.TestCase):
     def test_method_none_res(self) -> None:
         block = make_block("Service'", block_type="service")
         method = make_method(
-            "Method1", request_type=[ProtoModel], block=block, response_type=None
+            "Method1", request_type=[BaseMessage], block=block, response_type=None
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -367,12 +355,11 @@ class TestTypeValidator(unittest.TestCase):
         block = make_block("Service'", block_type="service")
         method = make_method(
             "Method1",
-            request_type=[ProtoModel],
+            request_type=[BaseMessage],
             block=block,
-            response_type=Stream[ProtoModel],
+            response_type=Stream[BaseMessage],
             method_func=not_async,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)
@@ -384,12 +371,11 @@ class TestTypeValidator(unittest.TestCase):
         block = make_block("Service'", block_type="service")
         method = make_method(
             "Method1",
-            request_type=[ProtoModel],
+            request_type=[BaseMessage],
             block=block,
-            response_type=Stream[ProtoModel],
+            response_type=Stream[BaseMessage],
             method_func=not_gen,
         )
-        block.fields.append(method)
         context = CompilerContext(blocks=[block])
         validator = TypeValidator()
         validator.execute([block], context)

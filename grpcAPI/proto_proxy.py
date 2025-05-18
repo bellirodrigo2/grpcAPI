@@ -1,17 +1,24 @@
 from enum import Enum
 from functools import partial
-from typing import Any, Callable
+from types import ModuleType
+from typing import Any, Callable, Dict
 
 from grpcAPI.mapclass import FuncArg
+from grpcAPI.proxy.binder import bind_proxy
 from grpcAPI.proxy.proxy import (
     EnumDictProxy,
     EnumListProxy,
     MessageDictProxy,
     MessageListProxy,
-    ProxyMessage,
+    Proxy,
     ValueDictProxy,
     ValueListProxy,
 )
+
+
+class ProtoProxy(Proxy):
+    pass
+
 
 # ----------------- GETTERS -------------------------------------------------
 
@@ -19,7 +26,7 @@ from grpcAPI.proxy.proxy import (
 def list_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda self: EnumListProxy(getattr(self._wrapped, name), bt)
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return lambda self: MessageListProxy(getattr(self._wrapped, name), bt)
     else:
         return lambda self: ValueListProxy(getattr(self._wrapped, name), bt)
@@ -28,7 +35,7 @@ def list_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
 def dict_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda self: EnumDictProxy(getattr(self._wrapped, name), bt)
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return lambda self: MessageDictProxy(getattr(self._wrapped, name), bt)
     else:
         return lambda self: ValueDictProxy(getattr(self._wrapped, name), bt)
@@ -37,7 +44,7 @@ def dict_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
 def single_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda self: bt(getattr(self._wrapped, name))
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return lambda self: bt(getattr(self._wrapped, name))
     else:
         return lambda self: getattr(self._wrapped, name)
@@ -85,12 +92,12 @@ def list_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]:
     #             target.add().CopyFrom(item.unwrap)
     #     except Exception as e:
     #         raise TypeError(
-    #             f'At class "{self.__class__.__name__}", field: "{name}" list[ProxyMessage] set failed: {value}'
+    #             f'At class "{self.__class__.__name__}", field: "{name}" list[ProtoProxy] set failed: {value}'
     #         ) from e
 
     if issubclass(bt, Enum):
         return partial(set_list, set_v=lambda x: x.value)
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return partial(set_list, set_v=lambda x: x.unwrap)
     else:
         return partial(set_list, set_v=lambda x: x)
@@ -119,21 +126,19 @@ def dict_setter_factory(
     #             target[k].CopyFrom(v.unwrap)
     #     except Exception as e:
     #         raise TypeError(
-    #             f'At class "{self.__class__.__name__}", field: "{name}" dict[ProxyMessage] set failed: {value}'
+    #             f'At class "{self.__class__.__name__}", field: "{name}" dict[ProtoProxy] set failed: {value}'
     #         ) from e
 
     if issubclass(bt, Enum):
         return partial(set_dict, set_v=lambda x: x.value)
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return partial(set_dict, set_v=lambda x: x.unwrap)
     else:
         return partial(set_dict, set_v=lambda x: x)
 
 
 def single_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]:
-    def assign_value(
-        self: ProxyMessage, value: Any, set_v: Callable[[Any], Any]
-    ) -> None:
+    def assign_value(self: ProtoProxy, value: Any, set_v: Callable[[Any], Any]) -> None:
         try:
             setattr(self.unwrap, name, set_v(value))
         except (TypeError, AttributeError) as e:
@@ -141,7 +146,7 @@ def single_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]
                 f'At class "{self.__class__.__name__}", field: "{name}" set: Expected "{bt.__name__}", found "{type(value).__name__}":{value}'
             ) from e
 
-    def assign_message(self: ProxyMessage, value: Any) -> None:
+    def assign_message(self: ProtoProxy, value: Any) -> None:
         try:
             target = getattr(self.unwrap, name)
             print("aqui")
@@ -153,7 +158,7 @@ def single_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]
 
     if issubclass(bt, Enum):
         return partial(assign_value, set_v=lambda x: x.value)
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return assign_message
     else:
         return partial(assign_value, set_v=lambda x: x)
@@ -184,7 +189,7 @@ def make_setter(field: FuncArg) -> Callable[[Any, Any], Any]:
 def single_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda v: v.value
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return lambda v: v.unwrap
     else:
         return lambda v: v
@@ -193,7 +198,7 @@ def single_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
 def list_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda value: [v.value for v in value]
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return lambda value: [v.unwrap for v in value]
     else:
         return lambda value: value
@@ -202,7 +207,7 @@ def list_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
 def dict_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda value: {k: v.value for k, v in value.items()}
-    elif issubclass(bt, ProxyMessage):
+    elif issubclass(bt, ProtoProxy):
         return lambda value: {k: v.unwrap for k, v in value.items()}
     else:
         return lambda value: value
@@ -228,3 +233,16 @@ def make_kwarg(field: FuncArg) -> Callable[[Any], Any]:
     elif origin is None:
         return single_kwarg_factory(bt)
     raise TypeError
+
+
+def bind_proto_proxy(
+    mapcls: type[Any],
+    modules: Dict[str, ModuleType],
+) -> None:
+    bind_proxy(
+        mapcls=mapcls,
+        modules=modules,
+        make_getter=make_getter,
+        make_setter=make_setter,
+        make_kwarg=make_kwarg,
+    )

@@ -15,7 +15,7 @@ from typing import (
 )
 
 
-class ProxyMessage:
+class Proxy:
 
     def __init__(self, _wrapped: Any = None, **kwargs: Any):
 
@@ -39,7 +39,7 @@ class ProxyMessage:
         self._wrapped = wrapped_class(**wrapped_kwargs)
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, ProxyMessage):
+        if not isinstance(other, Proxy):
             return False
         return self._wrapped == other._wrapped
 
@@ -155,7 +155,7 @@ def EnumListProxy(container: List[Any], enum_type: type[enum.Enum]) -> ListProxy
     return ListProxy(container, enum_type, lambda v: v.value, enum_type)
 
 
-def MessageListProxy(container: List[Any], base_type: type[ProxyMessage]) -> ListProxy:
+def MessageListProxy(container: List[Any], base_type: type[Proxy]) -> ListProxy:
     return ListProxy(container, base_type, lambda v: v.unwrap, base_type)
 
 
@@ -244,9 +244,7 @@ def EnumDictProxy(container: Dict[Any, Any], enum_type: type[enum.Enum]) -> Dict
     return DictProxy(container, enum_type, lambda v: v.value, enum_type)
 
 
-def MessageDictProxy(
-    container: Dict[Any, Any], base_type: type[ProxyMessage]
-) -> DictProxy:
+def MessageDictProxy(container: Dict[Any, Any], base_type: type[Proxy]) -> DictProxy:
     return DictProxy(container, base_type, lambda v: v.unwrap, base_type)
 
 

@@ -1,11 +1,10 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import Any, Callable, Dict, List
 
-from grpcAPI.makeproto.block_models import Block, Field
-from grpcAPI.makeproto.protoobj.base import FieldSpec, OneOf
-from grpcAPI.makeproto.protoobj.message import BaseMessage, get_headers
+from grpcAPI.makeproto.block_models import Block, Field, Method
 from grpcAPI.makeproto.reserved import extract_reserveds
-from grpcAPI.mapclass import map_class_fields
+from grpcAPI.mapclass import map_class_fields, map_func_args
+from grpcAPI.types import BaseMessage, FieldSpec, OneOf, get_headers
 
 
 def make_msgblock(cls: type[BaseMessage]) -> Block:
@@ -105,3 +104,16 @@ def make_enumblock(
     enum_block.fields = fields
 
     return enum_block
+
+
+def make_method(func: Callable[..., Any]) -> Method:
+
+    args, returntype = map_func_args(func)
+
+    return Method(
+        name=func.__name__,
+        request_type=[arg.basetype for arg in args],
+        response_type=returntype.basetype,
+        block=None,
+        method_func=func,
+    )

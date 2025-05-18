@@ -1,7 +1,20 @@
+import inspect
 import sys
 from dataclasses import MISSING, Field, dataclass, fields, is_dataclass
+from functools import partial
 from inspect import Parameter, signature
-from typing import Any, Optional, TypeVar, Union, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from typing_extensions import Annotated
 
@@ -164,3 +177,96 @@ def map_model_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncAr
     return [
         field_factory(obj, hints.get(name), bt_default_fallback) for name, obj in items
     ]
+
+
+# -------------JUNTAR E ALINHAR
+
+
+class _NoDefault:
+    def __repr__(self) -> str:
+        return "NO_DEFAULT"
+
+    def __str__(self) -> str:
+        return "NO_DEFAULT"
+
+
+NO_DEFAULT = _NoDefault()
+
+
+def func_arg_factory(name: str, param: inspect.Parameter, annotation: type) -> FuncArg:
+    has_default = param.default is not inspect._empty  # type: ignore
+    default = param.default if has_default else NO_DEFAULT
+    argtype = (
+        annotation
+        if annotation is not inspect._empty  # type: ignore
+        else (type(default) if default not in [NO_DEFAULT, None] else None)
+    )
+    basetype = argtype
+    extras = None
+    if get_origin(annotation) is Annotated:
+        basetype, *extras_ = get_args(annotation)
+        extras = tuple(extras_)
+    arg = FuncArg(
+        name=name,
+        argtype=argtype,
+        basetype=basetype,
+        default=default,
+        extras=extras,
+        has_default=has_default,
+    )
+
+    return arg
+
+
+def make_funcarg(name: str, tgttype: type[Any]) -> FuncArg:
+
+    basetype = None
+    extras = None
+    if get_origin(tgttype) is Annotated:
+        basetype, *extras = get_args(tgttype)[0]
+
+    return FuncArg(
+        name=name,
+        argtype=tgttype,
+        basetype=basetype or tgttype,
+        default=None,
+        extras=tuple(extras) if extras else None,
+        has_default=False,
+    )
+
+
+def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]:
+    partial_args = {}
+
+    if isinstance(func, partial):
+        partial_args = func.keywords or {}
+        func = func.func
+
+    sig = inspect.signature(func)
+    # include_extras=True to preserve Annotated;
+    # globalns to resolve forward refs like "User"
+    hints = get_type_hints(
+        func, globalns=vars(sys.modules[func.__module__]), include_extras=True
+    )
+
+    funcargs: list[FuncArg] = []
+
+    for name, param in sig.parameters.items():
+        if name in partial_args:
+            continue  # already resolved by partial, ignore
+
+        if param.kind in (
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        ):
+            continue  # ignore *args e **kwargs
+
+        annotation: type = hints.get(name, param.annotation)
+        arg = func_arg_factory(name, param, annotation)
+        funcargs.append(arg)
+
+    raw_return_type: type = hints.get("return", sig.return_annotation)
+
+    return_type = make_funcarg(func.__name__, raw_return_type)
+
+    return (funcargs, return_type)

@@ -5,14 +5,12 @@ from typing import List, Mapping, Sequence
 
 from typing_extensions import Annotated
 
-from grpcAPI.makeproto.protoobj.base import FieldSpec, OneOf
-from grpcAPI.makeproto.protoobj.types import Float, Int32, String
+from grpcAPI.proto_proxy import ProtoProxy, bind_proto_proxy
 from grpcAPI.proxy.importer import import_py_files_from_folder
-from grpcAPI.proxy.proto_proxy import bind_proto_proxy
-from grpcAPI.proxy.proxy import ProxyMessage
+from grpcAPI.types import FieldSpec, Float, Int32, OneOf, String
 
 
-class ProtoMessage(ProxyMessage):
+class ProtoMessage(ProtoProxy):
     @classmethod
     def protofile(cls) -> str:
         return "teste"

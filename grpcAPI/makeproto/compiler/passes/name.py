@@ -1,6 +1,6 @@
 import re
 from enum import Enum, auto
-from typing import Callable, Dict, Set, Union
+from typing import Callable, Dict, Optional, Set, Union
 
 from grpcAPI.makeproto.block_models import Block, Field, Method
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
@@ -141,19 +141,29 @@ def normalize_name(name: str, strategy: NameTransformStrategy) -> str:
     return transform(name)
 
 
+DEFAULT_CASE = NameTransformStrategy.NO_TRANSFORM
+
+
 class NameNormalizer(CompilerPass):
-    def __init__(
-        self, strategy: NameTransformStrategy = NameTransformStrategy.NO_TRANSFORM
-    ):
+    def __init__(self, strategy: Optional[NameTransformStrategy] = None):
+        super().__init__()
         self.strategy = strategy
 
+    def _set_default(self) -> None:
+        if self.strategy is None:
+            settings = self.ctx.settings
+            self.strategy = settings.get("name_case", DEFAULT_CASE)
+
     def visit_block(self, block: "Block") -> None:
+        self._set_default()
         block.name = normalize_name(block.name, self.strategy)
         for field in block.fields:
             field.accept(self)
 
     def visit_field(self, field: "Field") -> None:
+        self._set_default()
         field.name = normalize_name(field.name, self.strategy)
 
     def visit_method(self, method: "Method") -> None:
+        self._set_default()
         method.name = normalize_name(method.name, self.strategy)

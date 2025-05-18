@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Protocol, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Protocol, Union
 
 
 class Visitor(Protocol):
@@ -17,7 +17,7 @@ class Node:
 @dataclass
 class Meta:
 
-    block: "Block"
+    block: Optional["Block"]
 
     description: str = ""
     options: Dict[str, Union[str, bool]] = field(
@@ -48,10 +48,10 @@ class Field(Meta, BaseField):
 @dataclass
 class BaseMethod(Node):
     name: str
-    request_type: type[Any]
+    request_type: List[type[Any]]
     response_type: type[Any]
-    request_stream: bool
-    response_stream: bool
+
+    method_func: Callable[..., Any]
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_method(self)

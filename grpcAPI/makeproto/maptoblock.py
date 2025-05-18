@@ -3,8 +3,8 @@ from typing import List, Optional, Set
 
 from grpcAPI.makeproto.block_models import Block
 from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
-from grpcAPI.makeproto.protoobj.message import BaseMessage
 from grpcAPI.mapclass import map_class_fields
+from grpcAPI.types import BaseMessage
 
 
 def cls_map(

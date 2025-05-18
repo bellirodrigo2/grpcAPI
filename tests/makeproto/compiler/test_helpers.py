@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Any, List, Optional, Set, Union
 
 from grpcAPI.makeproto.block_models import Block, Field, Method
@@ -25,18 +26,16 @@ def make_method(
     name: str,
     block: Optional[Block] = None,
     *,
-    request_type: Optional[type[Any]] = None,
+    request_type: List[type[Any]] = [],
     response_type: Optional[type[Any]] = None,
-    request_stream: bool = False,
-    response_stream: bool = False,
+    method_func: Optional[Callable[..., Any]] = None,
 ) -> Method:
     return Method(
         name=name,
         request_type=request_type,
         response_type=response_type,
-        request_stream=request_stream,
-        response_stream=response_stream,
         block=block,
+        method_func=method_func,
     )
 
 

@@ -40,7 +40,7 @@ class CompilerContext:
 
 class CompilerPass(Visitor):
     def __init__(self) -> None:
-        self._ctx: CompilerContext | None = None
+        self._ctx: Optional[CompilerContext] = None
 
     def execute(self, blocks: list[Block], ctx: CompilerContext) -> None:
         self._ctx = ctx

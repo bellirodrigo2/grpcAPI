@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from grpcAPI.makeproto.protoobj.base import BaseProto
+from grpcAPI.types.base import BaseProto
 
 
 class BaseField(BaseProto):

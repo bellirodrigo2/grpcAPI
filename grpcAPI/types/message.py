@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Union
 
-from grpcAPI.makeproto.protoobj.base import BaseProto, ProtoOption
+from grpcAPI.types.base import BaseProto, ProtoOption
 
 NO_PACKAGE = object()
 

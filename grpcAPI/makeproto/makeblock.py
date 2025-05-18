@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List
 
 from grpcAPI.makeproto.block_models import Block, Field, Method
 from grpcAPI.makeproto.reserved import extract_reserveds
-from grpcAPI.mapclass import map_class_fields, map_func_args
+from grpcAPI.mapclass import FuncArg, map_class_fields, map_func_args
 from grpcAPI.types import BaseMessage, FieldSpec, OneOf, get_headers
 
 
@@ -106,13 +106,18 @@ def make_enumblock(
     return enum_block
 
 
-def make_method(func: Callable[..., Any]) -> Method:
+def make_method(func: Callable[..., Any], ignore_instance: List[type[Any]]) -> Method:
 
     args, returntype = map_func_args(func)
 
+    def has_any(arg: FuncArg, ignore_instance: List[type[Any]]) -> bool:
+        return any(arg.hasinstance(bt) for bt in ignore_instance)
+
+    req_types = [arg.basetype for arg in args if not has_any(arg, ignore_instance)]
+
     return Method(
         name=func.__name__,
-        request_type=[arg.basetype for arg in args],
+        request_type=req_types,
         response_type=returntype.basetype,
         block=None,
         method_func=func,

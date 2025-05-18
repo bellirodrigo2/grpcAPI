@@ -1,12 +1,11 @@
 import argparse
 import os
-import subprocess
 from pathlib import Path
 
+from grpc_tools import protoc
 
-def compile(
-    tgt_folder: str, protofile: str, output_dir: str, compiler: str = "protoc"
-) -> bool:
+
+def compile(tgt_folder: str, protofile: str, output_dir: str) -> bool:
 
     folder = Path(tgt_folder)
     filepath = folder / protofile
@@ -16,19 +15,18 @@ def compile(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    command = [
-        compiler,
-        f"--proto_path={tgt_folder}",
-        f"--python_out={output_dir}",
-        protofile,
-    ]
-
-    result = subprocess.run(command, capture_output=True, text=True)
-
-    if result.returncode == 0:
+    result = protoc.main(
+        [
+            "grpc_tools.protoc",
+            f"--proto_path={tgt_folder}",
+            f"--python_out={output_dir}",
+            str(filepath),
+        ]
+    )
+    if result == 0:
         return True
     else:
-        raise Exception(f'Error when compiling file "{protofile}": {result.stderr}')
+        raise Exception(f'Error compiling "{protofile}"')
 
 
 def main() -> None:
@@ -38,11 +36,10 @@ def main() -> None:
     parser.add_argument(
         "-o", "--output_dir", help="Output Folder target for compiled files"
     )
-    parser.add_argument("-c", "--compiler", help="Choose compiler", default="protoc")
 
     args = parser.parse_args()
 
-    compile(args.folder, args.protofile, args.output_dir, args.compiler)
+    compile(args.folder, args.protofile, args.output_dir)
 
 
 if __name__ == "__main__":

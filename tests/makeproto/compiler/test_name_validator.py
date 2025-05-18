@@ -2,7 +2,7 @@ import unittest
 
 from grpcAPI.makeproto.compiler.compiler import CompilerContext
 from grpcAPI.makeproto.compiler.passes import NameValidator
-from tests.makeproto.compiler.test_helpers import make_block, make_field, make_method
+from tests.makeproto.compiler.test_helpers import make_block, make_field
 
 
 class TestNameValidator(unittest.TestCase):

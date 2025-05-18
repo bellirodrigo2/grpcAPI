@@ -126,12 +126,12 @@ class Bytes(BaseBytesField):
         return "bytes"
 
 
-DEFAULT_PRIMITIVES: dict[type[Any], str] = {
-    str: String.prototype(),
-    int: Int64.prototype(),
-    float: Float.prototype(),
-    bytes: Bytes.prototype(),
-    bool: Bool.prototype(),
+DEFAULT_PRIMITIVES: dict[type[Any], type[BaseField]] = {
+    str: String,
+    int: Int64,
+    float: Float,
+    bytes: Bytes,
+    bool: Bool,
 }
 
 allowed_map_key: List[type[Any]] = [

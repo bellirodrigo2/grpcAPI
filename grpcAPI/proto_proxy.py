@@ -1,7 +1,11 @@
+from copy import deepcopy
 from enum import Enum
 from functools import partial
 from types import ModuleType
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional, TypeVar
+
+from google.protobuf.descriptor import FieldDescriptor
+from google.protobuf.message import Message
 
 from grpcAPI.mapclass import FuncArg
 from grpcAPI.proxy.binder import bind_proxy
@@ -15,9 +19,66 @@ from grpcAPI.proxy.proxy import (
     ValueListProxy,
 )
 
+Self = TypeVar("Self", bound="ProtoProxy")
+
 
 class ProtoProxy(Proxy):
-    pass
+
+    def WhichOneof(self, oneof_group: str) -> Optional[str]:
+        return self._wrapped.WhichOneof(oneof_group)
+
+    def SerializeToString(self) -> bytes:
+        return self._wrapped.SerializeToString()
+
+    def ParseFromString(self: Self, data: bytes) -> Self:
+        return self._wrapped.ParseFromString(data)
+
+    def CopyFrom(self, other: Message) -> None:
+        self._wrapped.CopyFrom(other)
+
+    def MergeFrom(self, other: Message) -> None:
+        self._wrapped.MergeFrom(other)
+
+    def Clear(self) -> None:
+        self._wrapped.Clear()
+
+    def HasField(self, field_name: str) -> bool:
+        return self._wrapped.HasField(field_name)
+
+    def ClearField(self, field_name: str) -> None:
+        self._wrapped.ClearField(field_name)
+
+    def ListFields(self) -> list[tuple[FieldDescriptor, Any]]:
+        return self._wrapped.ListFields()
+
+    def IsInitialized(self) -> bool:
+        return self._wrapped.IsInitialized()
+
+    def ByteSize(self) -> int:
+        return self._wrapped.ByteSize()
+
+    def SetInParent(self) -> None:
+        self._wrapped.SetInParent()
+
+    def UnknownFields(self) -> Any:
+        return self._wrapped.UnknownFields()
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, ProtoProxy):
+            return False
+        return self._wrapped == other._wrapped
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return str(self._wrapped)
+
+    def __repr__(self) -> str:
+        return repr(self._wrapped)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> "ProtoProxy":
+        return self.__class__(_wrapped=deepcopy(self._wrapped, memo))
 
 
 # ----------------- GETTERS -------------------------------------------------

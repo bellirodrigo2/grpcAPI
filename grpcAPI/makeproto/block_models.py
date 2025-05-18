@@ -24,10 +24,9 @@ class Meta:
         default_factory=dict[str, Union[str, bool]]
     )
 
-    def to_dict(self) -> Dict[str, Any]:
-        _dict = asdict(self)
-        del _dict["block"]
-        return asdict(self)
+    render_dict: Dict[str, Union[str, bool]] = field(
+        default_factory=dict[str, Union[str, bool]]
+    )
 
 
 @dataclass

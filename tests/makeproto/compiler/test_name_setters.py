@@ -1,7 +1,7 @@
 import unittest
 
-from grpcAPI.makeproto.compiler.passes.name import (
-    NameNormalizer,
+from grpcAPI.makeproto.compiler import NameSetter
+from grpcAPI.makeproto.compiler.setters.name import (
     NameTransformStrategy,
     normalize_name,
     to_camel_case,
@@ -49,10 +49,10 @@ class TestNameTransforms(unittest.TestCase):
         )
 
 
-class TestNameNormalizer(unittest.TestCase):
+class TestNameSetter(unittest.TestCase):
 
     def test_visit_field_and_method(self) -> None:
-        normalizer = NameNormalizer(strategy=NameTransformStrategy.SNAKE_CASE)
+        normalizer = NameSetter(strategy=NameTransformStrategy.SNAKE_CASE)
 
         field = make_field("FieldName")
         method = make_method("MethodName")
@@ -60,20 +60,27 @@ class TestNameNormalizer(unittest.TestCase):
         normalizer.visit_field(field)
         normalizer.visit_method(method)
 
-        self.assertEqual(field.name, "field_name")
-        self.assertEqual(method.name, "method_name")
+        field_dict = field.render_dict
+        method_dict = method.render_dict
+
+        self.assertEqual(field_dict["name"], "field_name")
+        self.assertEqual(method_dict["name"], "method_name")
 
     def test_visit_block(self) -> None:
         field1 = make_field("FieldOne")
         field2 = make_field("FieldTwo")
         block = make_block("BlockName", [field1, field2])
 
-        normalizer = NameNormalizer(strategy=NameTransformStrategy.CAMEL_CASE)
+        normalizer = NameSetter(strategy=NameTransformStrategy.CAMEL_CASE)
         normalizer.visit_block(block)
 
-        self.assertEqual(block.name, "blockName")
-        self.assertEqual(field1.name, "fieldOne")
-        self.assertEqual(field2.name, "fieldTwo")
+        field1_dict = field1.render_dict
+        field2_dict = field2.render_dict
+        block_dict = block.render_dict
+
+        self.assertEqual(block_dict["name"], "blockName")
+        self.assertEqual(field1_dict["name"], "fieldOne")
+        self.assertEqual(field2_dict["name"], "fieldTwo")
 
 
 if __name__ == "__main__":

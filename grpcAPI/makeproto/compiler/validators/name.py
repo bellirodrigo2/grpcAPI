@@ -70,7 +70,7 @@ class NameValidator(CompilerPass):
 
         for field in block.fields:
             name = field.name
-            if name in block.reserveds:
+            if name in block.reserved_keys:
                 report.report_error(
                     code=CompileErrorCode.NAME_RESERVED_IN_BLOCK,
                     location=name,

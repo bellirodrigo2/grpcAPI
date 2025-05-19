@@ -215,6 +215,10 @@ class CompileErrorCode(Enum):
     def description(self) -> str:
         return self.value[2]
 
+    @property
+    def full_message(self) -> str:
+        return f"{self.message}: {self.description}"
+
 
 # ========== INSTÂNCIA DE ERRO OCORRIDO ==========
 
@@ -224,6 +228,9 @@ class CompileError:
     code: str
     message: str
     location: str
+
+    def __str__(self) -> str:
+        return f"Compile Error <code={self.code}, message={self.message},location={self.location}>"
 
 
 # ========== RELATÓRIO DE COMPILAÇÃO ==========
@@ -246,7 +253,8 @@ class CompileReport:
         location: str,
         override_msg: Optional[str] = None,
     ) -> None:
-        message = override_msg or code.message
+        description = override_msg or code.description
+        message = f"{code.message}: {description}"
         self.errors.append(
             CompileError(code=code.code, message=message, location=location)
         )
@@ -267,3 +275,6 @@ class CompileReport:
             table.add_row(error.code, error.location, error.message)
 
         console.print(table)
+
+    def __str__(self) -> str:
+        return str([str(err) for err in self.errors])

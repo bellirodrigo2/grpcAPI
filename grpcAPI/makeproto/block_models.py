@@ -86,6 +86,22 @@ class Block(Meta, BaseBlock):
         default_factory=list[Union[int, range, str]]
     )
 
+    @property
+    def reserved_indexes(self) -> List[int]:
+        indexes = [index for index in self.reserveds if not isinstance(index, str)]
+        start = 0 if self.block_type == "enum" else 1
+        flat = {
+            i
+            for x in indexes
+            for i in (range(x.start, x.stop + 1) if isinstance(x, range) else [x])
+            if i >= start
+        }
+        return list(flat)
+
+    @property
+    def reserved_keys(self) -> List[str]:
+        return [key for key in self.reserveds if isinstance(key, str)]
+
 
 @dataclass
 class ProtoBlocks:

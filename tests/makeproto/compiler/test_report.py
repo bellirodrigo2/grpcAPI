@@ -20,7 +20,7 @@ class TestCompileReport(unittest.TestCase):
         error = self.report.errors[0]
         self.assertEqual(error.code, "E101")
         self.assertEqual(error.location, "Line 5: message Foo")
-        self.assertEqual(error.message, "Invalid name")
+        self.assertTrue(error.message.startswith("Invalid name"))
 
     def test_report_multiple_errors(self) -> None:
         self.report.report_error(
@@ -43,7 +43,7 @@ class TestCompileReport(unittest.TestCase):
             override_msg=custom_msg,
         )
         error = self.report.errors[0]
-        self.assertEqual(error.message, custom_msg)
+        self.assertTrue(error.message.endswith(custom_msg))
 
     def test_show_does_not_crash(self) -> None:
         # Optional display for debugging; not asserting output here

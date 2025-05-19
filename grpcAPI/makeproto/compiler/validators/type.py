@@ -61,9 +61,9 @@ class TypeValidator(CompilerPass):
                 override_msg=str(error),
             )
 
-    def _check_arg(self, bt: Optional[type[Any]], name: str) -> Optional[TypeError]:
+    def _check_arg(self, bt: Optional[type[Any]], name: str) -> Optional[str]:
         if bt is None:
-            return TypeError(f'Field "{name}" has no type annotation')
+            return f'Field "{name}" has no type annotation'
 
         origin = get_origin(bt)
         args = get_args(bt)
@@ -75,16 +75,14 @@ class TypeValidator(CompilerPass):
             key_type, val_type = args
             if key_type in allowed_map_key:
                 return self._check_type(val_type, name)
-            return TypeError(
-                f'Field "{name}" is a dict with not allowed key type. Found "{key_type}" as dict key'
-            )
+            return f'Field "{name}" is a dict with not allowed key type. Found "{key_type}" as dict key'
 
         return self._check_type(bt, name)
 
-    def _check_type(self, bt: Any, name: str) -> Optional[TypeError]:
+    def _check_type(self, bt: Any, name: str) -> Optional[str]:
         # bt pode ser qualquer coisa
         if not isinstance(bt, type):
-            return TypeError(f'Field "{name}" is not a type. Found {bt}')
+            return f'Field "{name}" is not a type. Found {bt}'
 
         if issubclass(bt, BaseProto):  # se for mensagem protobuf pura
             return None
@@ -96,7 +94,7 @@ class TypeValidator(CompilerPass):
                 return None
 
         if bt not in DEFAULT_PRIMITIVES:
-            return TypeError(f'Field "{name}" type is not allowed. Found {bt}')
+            return f'Field "{name}" type is not allowed. Found {bt}'
 
         return None
 

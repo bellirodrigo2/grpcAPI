@@ -1,15 +1,15 @@
-from typing import List, Set
+from typing import Set
 
 from grpcAPI.makeproto.block_models import Block, Field, Method
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileReport
+from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
 
 
 class IndexValidator(CompilerPass):
-    def __init__(self, report: CompileReport, reserved: List[int]):
-        self.report = report
+
+    def __init__(self) -> None:
+        super().__init__()
         self.used: Set[int] = set()
-        self.reserveds = reserved
 
     def visit_block(self, block: Block) -> None:
         for field in block.fields:
@@ -21,24 +21,24 @@ class IndexValidator(CompilerPass):
     def visit_field(self, field: Field) -> None:
         index = field.number
         name = field.name
+        reserveds = field.block.reserved_indexes
+        report = self.ctx.get_report(field.block.name)
 
         if not isinstance(index, int):  # type: ignore
-            self.report.add_error(
-                name,
-                f"On Field '{name}', Index has wrong type: {index}",
-                code="E201",
+            report.report_error(code=CompileErrorCode.INVALID_INDEX_TYPE, location=name)
+        elif index in reserveds:
+            report.report_error(
+                code=CompileErrorCode.DUPLICATE_INDEX,
+                location=name,
+                override_msg=f"'{index}' is reserved",
             )
-
-        elif index in self.reserveds:
-            self.report.add_error(
-                name, f"On Field '{name}', duplicate index: {index}", code="E202"
+        elif index in self.used:
+            report.report_error(
+                code=CompileErrorCode.DUPLICATE_INDEX,
+                location=name,
             )
-        elif not self.is_in_index_range(index, 0 if not field.ftype else 1):
-            self.report.add_error(
-                name,
-                f"On Field '{name}', index out of range, got {index}",
-                code="E203",
-            )
+        elif not self.is_in_index_range(index, 1 if not field.ftype else 0):
+            report.report_error(code=CompileErrorCode.INDEX_OUT_OF_RANGE, location=name)
         else:
             self.used.add(index)
 

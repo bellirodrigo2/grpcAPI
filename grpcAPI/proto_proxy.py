@@ -1,16 +1,16 @@
 import enum
+import importlib.util
 from copy import deepcopy
 from enum import Enum
 from functools import partial
+from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar, get_args, get_origin
 
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 
-from grpcAPI.mapclass import FuncArg
-from grpcAPI.proxy.binder import bind_proxy
-from grpcAPI.proxy.proxy import DictProxy, ListProxy, Proxy
+from grpcAPI.proxy import DictProxy, ListProxy, Proxy, bind_proxy
 
 Self = TypeVar("Self", bound="ProtoProxy")
 
@@ -99,25 +99,8 @@ def list_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
 
 
 class DictProtoProxy(DictProxy):
-    def __setitem__(self, k: Any, v: Any) -> None:
-        if v is None:
-            raise TypeError(f'Can´t set "{k}" to None on DictProxy')
-        try:
-            self._container[k].CopyFrom(v.unwrap)
-        except (AttributeError, TypeError):
-            raise TypeError(
-                f'At DictProxy set method for key: "{k}": Expected "{self._base_type.__name__}", found "{type(v).__name__}":{v}'
-            )
-
-    def update(self, d: Dict[Any, Any]) -> None:
-        try:
-            for k, v in d.items():
-                if v is not None:
-                    self._container[k].CopyFrom(v.unwrap)
-        except (AttributeError, TypeError):
-            raise TypeError(
-                f'At DictProxy update method for key: "{k}": Expected "{self._base_type.__name__}", found "{type(v).__name__}":{v}'
-            )
+    def _internal_setitem(self, k: Any, v: Any) -> None:
+        self._container[k].CopyFrom(v.unwrap)
 
 
 def EnumDictProxy(container: Dict[Any, Any], enum_type: type[enum.Enum]) -> DictProxy:
@@ -150,11 +133,9 @@ def single_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
         return lambda self: getattr(self._wrapped, name)
 
 
-def make_getter(field: FuncArg) -> Callable[[Any], Any]:
-    name = field.name
-    bt = field.basetype
-    origin = field.origin
-    args = field.args
+def make_getter(name: str, bt: type[Any]) -> Callable[[Any], Any]:
+    origin = get_origin(bt)
+    args = get_args(bt)
 
     if origin is list:
         bt = args[0]
@@ -264,11 +245,9 @@ def single_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]
         return partial(assign_value, set_v=lambda x: x)
 
 
-def make_setter(field: FuncArg) -> Callable[[Any, Any], Any]:
-    name = field.name
-    bt = field.basetype
-    origin = field.origin
-    args = field.args
+def make_setter(name: str, bt: type[Any]) -> Callable[[Any, Any], Any]:
+    origin = get_origin(bt)
+    args = get_args(bt)
 
     if origin is list:
         bt = args[0]
@@ -313,14 +292,13 @@ def dict_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
         return lambda value: value
 
 
-def make_kwarg(field: FuncArg) -> Callable[[Any], Any]:
+def make_kwarg(bt: type[Any]) -> Callable[[Any], Any]:
     """
     Transform a dict of Python values (Message, Enum, list, dict)
     to viable args for protobuf constructor.
     """
-    bt = field.basetype
-    origin = field.origin
-    args = field.args
+    origin = get_origin(bt)
+    args = get_args(bt)
 
     if origin is list:
         bt = args[0]
@@ -335,13 +313,56 @@ def make_kwarg(field: FuncArg) -> Callable[[Any], Any]:
     raise TypeError
 
 
+def _get_class(
+    mapcls: type[Any],
+    modules: Dict[str, ModuleType],
+) -> type[Any]:
+
+    def get(modname: str, clsname: str) -> type[Any]:
+        mod = modules.get(modname)
+        if mod is None:
+            raise KeyError(f'Module "{modname}" not found.')
+        cls = getattr(mod, clsname, None)
+        if cls is None:
+            raise KeyError(f'Module "{modname}" has no class "{clsname}".')
+        return cls
+
+    protofile = getattr(mapcls, "protofile", None)
+    if protofile is None:
+        raise KeyError(f'Class "{mapcls.__name__}" has no protofile() set')
+    return get(protofile(), mapcls.__name__)
+
+
+def import_py_files_from_folder(folder: Path) -> dict[str, ModuleType]:
+    modules: dict[str, ModuleType] = {}
+
+    for py_file in folder.glob("*.py"):
+        if py_file.name == "__init__.py":
+            continue
+
+        module_name = py_file.stem
+        spec = importlib.util.spec_from_file_location(module_name, py_file)
+
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            # sys.modules[module_name] = module  # opcional
+            spec.loader.exec_module(module)
+            normalized_name = module_name.replace("_pb2", "")
+            modules[normalized_name] = module
+
+    return modules
+
+
 def bind_proto_proxy(
     mapcls: type[Any],
     modules: Dict[str, ModuleType],
 ) -> None:
+
+    proto_cls = _get_class(mapcls, modules)
+
     bind_proxy(
         mapcls=mapcls,
-        modules=modules,
+        wrapped_class=proto_cls,
         make_getter=make_getter,
         make_setter=make_setter,
         make_kwarg=make_kwarg,

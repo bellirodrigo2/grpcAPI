@@ -10,9 +10,12 @@ from typing import (
     List,
     MutableMapping,
     MutableSequence,
+    Optional,
     Union,
     ValuesView,
 )
+
+from grpcAPI.mapclass import map_model_fields
 
 
 class Proxy:
@@ -182,11 +185,14 @@ class DictProxy(MutableMapping[Any, Any]):
     def set(self, k: Any, v: Any) -> None:
         self[k] = v
 
+    def _internal_setitem(self, k: Any, v: Any) -> None:
+        self._container[k] = self._set_v(v)
+
     def __setitem__(self, k: Any, v: Any) -> None:
         if v is None:
             raise TypeError(f'Can´t set "{k}" to None on DictProxy')
         try:
-            self._container[k] = self._set_v(v)
+            self._internal_setitem(k, v)
         except (AttributeError, TypeError):
             raise TypeError(
                 f'At DictProxy setitem method for key: "{k}": Expected "{self._base_type.__name__}", found "{type(v).__name__}":{v}'
@@ -212,7 +218,7 @@ class DictProxy(MutableMapping[Any, Any]):
 
     def update(self, d: Dict[Any, Any]) -> None:
         for k, v in d.items():
-            self._container[k] = self._set_v(v)
+            self._internal_setitem(k, v)
 
     def clear(self) -> None:
         self._container.clear()
@@ -225,3 +231,54 @@ class DictProxy(MutableMapping[Any, Any]):
 
     def __repr__(self) -> str:
         return repr(dict(self.items()))
+
+
+def bind_proxy(
+    mapcls: type[Any],
+    wrapped_class: type[Any],
+    make_getter: Callable[[str, type[Any]], Callable[[Any], Any]],
+    make_setter: Callable[[str, type[Any]], Callable[[Any, Any], Any]],
+    make_kwarg: Callable[[type[Any]], Any],
+    tgtcls: Optional[type[Any]] = None,
+) -> None:
+
+    tgtcls = tgtcls or mapcls
+    if hasattr(tgtcls, "_wrapped_cls"):
+        return
+
+    # bind wrapped class constructor
+    tgtcls._wrapped_cls = wrapped_class
+
+    fields = map_model_fields(mapcls)
+    slot_names = tuple(f.name for f in fields)
+    tgtcls.__slots__ = slot_names + ("_wrapped",)
+
+    proto_kwargs: Dict[str, Callable[[Any], Any]] = {}
+
+    for field in fields:
+        name = field.name
+        bt = field.basetype
+        # set slots getter and setter
+        getter = make_getter(name, bt)
+        setter = make_setter(name, bt)
+        setattr(tgtcls, field.name, property(getter, setter))
+
+        try:
+            proto_kwargs[field.name] = make_kwarg(bt)
+        except TypeError:
+            raise TypeError(
+                f'Cannot resolve kwarg for class "{mapcls}", field "{field.name}"'
+            )
+
+    # set build proto kwargs
+    def set_constructor(kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        constructor: Dict[str, Any] = {}
+        for k, v in kwargs.items():
+            if k not in proto_kwargs:
+                raise TypeError(
+                    f" {tgtcls.__name__}.__init__()  got an unexpected keyword argument '{k}'"
+                )
+            constructor[k] = proto_kwargs[k](v)
+        return constructor
+
+    tgtcls._wrapped_kwargs = set_constructor

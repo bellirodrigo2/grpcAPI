@@ -91,4 +91,5 @@ class BlockStructureValidator(CompilerPass):
     def visit_method(self, method: Method) -> None:
         pass
 
-aqui falta checar se todos os fields tem bloco definido
+
+# aqui falta checar se todos os fields tem bloco definido

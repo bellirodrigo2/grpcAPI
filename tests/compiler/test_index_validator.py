@@ -58,7 +58,7 @@ class TestIndexValidator(unittest.TestCase):
         self.assertTrue(all(msg == "E202" for msg in list_ctx_error_code(self.context)))
 
     def test_field_index_not_int(self) -> None:
-        make_field("field1", block=self.block, number="foo")
+        make_field("field1", block=self.block, number="foo")  # type: ignore
         self.validator.execute([self.block], self.context)
         self.assertEqual(len(self.context), 1)
         self.assertTrue(all(msg == "E201" for msg in list_ctx_error_code(self.context)))

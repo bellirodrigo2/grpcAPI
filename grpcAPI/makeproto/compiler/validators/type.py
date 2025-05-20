@@ -1,7 +1,6 @@
 import inspect
 from collections.abc import AsyncGenerator as ABCAsyncGenerator
 from enum import Enum
-from operator import inv
 from typing import Annotated, Any, Callable, List, Optional, get_args, get_origin
 
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
@@ -89,7 +88,7 @@ class TypeValidator(CompilerPass):
             if callable(file) and callable(pack):
                 return None
             else:
-                return f'Enum type has no callable "protofile" or "package"'
+                return 'Enum type has no callable "protofile" or "package"'
 
         if bt not in DEFAULT_PRIMITIVES:
             return f'Field "{name}" type is not allowed. Found {bt.__name__}'

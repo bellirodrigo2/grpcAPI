@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from rich.console import Console
 
-from grpcAPI.makeproto.compiler.report import CompileError, CompileReport
+from grpcAPI.makeproto.compiler.report import CompileReport
 from grpcAPI.makeproto.protoblock import Block, Field, Method, Visitor
 
 

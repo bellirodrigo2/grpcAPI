@@ -1,11 +1,12 @@
 import inspect
 from collections.abc import AsyncGenerator as ABCAsyncGenerator
 from enum import Enum
+from operator import inv
 from typing import Annotated, Any, Callable, List, Optional, get_args, get_origin
 
-from grpcAPI.makeproto.block_models import Block, Method
-from grpcAPI.makeproto.compiler.compiler import CompilerPass, Field
+from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
+from grpcAPI.makeproto.protoblock import Block, Field, Method
 from grpcAPI.types import BaseMessage, Context
 from grpcAPI.types.base import BaseProto
 from grpcAPI.types.types import DEFAULT_PRIMITIVES, allowed_map_key
@@ -35,24 +36,17 @@ class TypeValidator(CompilerPass):
         super().__init__()
         self.extra_args: Optional[List[type[Any]]] = extra_args
 
+    def set_default(self) -> None:
+        if self.extra_args is None:
+            settings = self.ctx.settings
+            self.extra_args = settings.get("extra_args", DEFAULT_EXTRA_ARGS)
+
     def visit_block(self, block: Block) -> None:
         for field in block.fields:
             field.accept(self)
 
     def visit_field(self, field: Field) -> None:
-        report: CompileReport = self.ctx.get_report(field.block.name)
-
-        if field.block.block_type == "enum":
-            # Enum must have no type
-            if field.ftype is not None:
-                report.report_error(
-                    code=CompileErrorCode.ENUM_FIELD_HAS_TYPE,
-                    location=field.name,
-                    override_msg=f"Enum field '{field.name}' must not have a type. Found {field.ftype}",
-                )
-            return
-
-        # Non-enum: ftype must be valid
+        report = self.ctx.get_report(field.top_block.name)
         error = self._check_arg(field.ftype, field.name)
         if error:
             report.report_error(
@@ -85,6 +79,8 @@ class TypeValidator(CompilerPass):
             return f'Field "{name}" is not a type. Found {bt}'
 
         if issubclass(bt, BaseProto):  # se for mensagem protobuf pura
+            # TODO ISSO PRECISA MUDAR
+            # TODO pois pode raise quando chamar
             return None
 
         if issubclass(bt, Enum):
@@ -92,44 +88,30 @@ class TypeValidator(CompilerPass):
             pack = getattr(bt, "package", None)
             if callable(file) and callable(pack):
                 return None
+            else:
+                return f'Enum type has no callable "protofile" or "package"'
 
         if bt not in DEFAULT_PRIMITIVES:
-            return f'Field "{name}" type is not allowed. Found {bt}'
+            return f'Field "{name}" type is not allowed. Found {bt.__name__}'
 
         return None
-
-    def _set_default(self) -> None:
-        if self.extra_args is None:
-            settings = self.ctx.settings
-            self.extra_args = settings.get("extra_args", DEFAULT_EXTRA_ARGS)
 
     def _check_requests(
         self, name: str, report: CompileReport, requests: List[type[Any]]
     ) -> None:
-        error_code = None
+        msg = None
+        invalid_req = CompileErrorCode.METHOD_INVALID_REQUEST_TYPE
         if len(requests) == 0:
-            error_code = CompileErrorCode.METHOD_NO_REQUEST
+            msg = "Method must define a request message."
         elif len(requests) > 1:
-            error_code = CompileErrorCode.METHOD_TOO_MANY_REQUEST
+            msg = f"Only one request message allowed per method. Found {len(requests)}"
         elif not is_BaseMessage(requests.pop()):
-            error_code = CompileErrorCode.METHOD_INVALID_REQUEST_TYPE
-        if error_code is not None:
-            report.report_error(
-                code=error_code,
-                location=name,
-            )
+            msg = invalid_req.description
+        if msg is not None:
+            report.report_error(code=invalid_req, location=name, override_msg=msg)
 
-    def visit_method(self, method: Method) -> None:
-        self._set_default()
+    def _check_response(self, method: Method) -> None:
         report: CompileReport = self.ctx.get_report(method.block.name)
-        if method.request_type is None:
-            report.report_error(
-                CompileErrorCode.METHOD_INVALID_REQUEST_TYPE, location=method.name
-            )
-        else:
-            requests = list(set(method.request_type) - set(self.extra_args))
-            self._check_requests(method.name, report, requests)
-
         if not is_BaseMessage(method.response_type):
             report.report_error(
                 CompileErrorCode.METHOD_INVALID_RESPONSE_TYPE, location=method.name
@@ -141,3 +123,25 @@ class TypeValidator(CompilerPass):
                     code=CompileErrorCode.METHOD_RETURN_STREAM_IS_NOT_ASYNC_GENERATOR,
                     location=method.name,
                 )
+
+    def visit_method(self, method: Method) -> None:
+        report: CompileReport = self.ctx.get_report(method.block.name)
+        if method.request_type is None:
+            report.report_error(
+                CompileErrorCode.METHOD_INVALID_REQUEST_TYPE,
+                location=method.name,
+                override_msg='Request type is "None"',
+            )
+        else:
+            extras = self.extra_args or []
+            requests = list(set(method.request_type) - set(extras))
+            self._check_requests(method.name, report, requests)
+
+        if method.response_type is None:
+            report.report_error(
+                CompileErrorCode.METHOD_INVALID_RESPONSE_TYPE,
+                location=method.name,
+                override_msg="Response type is 'None'",
+            )
+        else:
+            self._check_response(method)

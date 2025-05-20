@@ -25,6 +25,7 @@ __all__ = [
     "UInt32",
     "UInt64",
     "allowed_map_key",
+    "Stream",
 ]
 
 from grpcAPI.types.base import BaseProto, EnumValue, FieldSpec, OneOf, ProtoOption
@@ -36,6 +37,7 @@ from grpcAPI.types.message import (
     get_headers,
     get_module,
 )
+from grpcAPI.types.method import Stream
 from grpcAPI.types.types import (
     DEFAULT_PRIMITIVES,
     Bool,

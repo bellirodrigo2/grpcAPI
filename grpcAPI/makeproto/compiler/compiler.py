@@ -2,23 +2,28 @@ from typing import Any, Dict, List, Optional
 
 from rich.console import Console
 
-from grpcAPI.makeproto.block_models import Block, Field, Method, Visitor
-from grpcAPI.makeproto.compiler.report import CompileReport
+from grpcAPI.makeproto.compiler.report import CompileError, CompileReport
+from grpcAPI.makeproto.protoblock import Block, Field, Method, Visitor
 
 
 class CompilerContext:
     def __init__(
         self,
-        blocks: List[Block],
+        blocks: Optional[List[Block]] = None,
         settings: Optional[Dict[str, Any]] = None,
         state: Optional[Dict[str, Any]] = None,
     ):
         self.blocks = blocks
         self.settings = settings or {}
-        self.reports: Dict[str, CompileReport] = {
-            block.name: CompileReport(name=block.name) for block in blocks
-        }
+        self.reports: Dict[str, CompileReport] = (
+            {block.name: CompileReport(name=block.name) for block in blocks}
+            if blocks
+            else {}
+        )
         self.state = state or {}
+
+    def __len__(self) -> int:
+        return sum(len(r) for r in self.reports.values())
 
     def get_report(self, block_name: str) -> CompileReport:
         if block_name not in self.reports:
@@ -38,14 +43,34 @@ class CompilerContext:
             console.print("[green bold]✓ All blocks compiled successfully!")
 
 
+def list_ctx_error(context: CompilerContext) -> List[str]:
+    return [err.code for report in context.reports.values() for err in report.errors]
+
+
+def list_ctx_error_messages(context: CompilerContext) -> List[str]:
+    return [err.message for report in context.reports.values() for err in report.errors]
+
+
+def list_ctx_error_code(context: CompilerContext) -> List[str]:
+    return [err.code for report in context.reports.values() for err in report.errors]
+
+
 class CompilerPass(Visitor):
     def __init__(self) -> None:
         self._ctx: Optional[CompilerContext] = None
 
+    def reset(self) -> None:
+        pass
+
+    def set_default(self) -> None:
+        pass
+
     def execute(self, blocks: list[Block], ctx: CompilerContext) -> None:
         self._ctx = ctx
+        self.set_default()
         for block in blocks:
             block.accept(self)
+            self.reset()
 
     @property
     def ctx(self) -> CompilerContext:
@@ -55,11 +80,14 @@ class CompilerPass(Visitor):
             )
         return self._ctx
 
-    def visit_block(self, block: Block) -> None: ...
+    def visit_block(self, block: Block) -> None:
+        return
 
-    def visit_field(self, field: Field) -> None: ...
+    def visit_field(self, field: Field) -> None:
+        return
 
-    def visit_method(self, method: Method) -> None: ...
+    def visit_method(self, method: Method) -> None:
+        return
 
 
 def compile_proto(

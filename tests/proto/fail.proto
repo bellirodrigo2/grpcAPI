@@ -1,0 +1,28 @@
+syntax= "proto3";
+
+message Code {
+  int64 Code = 1;
+}
+
+message Hello {
+  int64 Code = 1;
+}
+
+enum E1{
+    code =0;
+    our =-111;
+    outro = 1;
+    // foo = 1;
+}
+
+// message Foo {
+//   int32 bar = 3;
+// }
+
+// message BAR {
+//   int32 bar = 3;
+// }
+
+// service hello {
+//     rpc world(Foo) returns (BAR){}
+// }

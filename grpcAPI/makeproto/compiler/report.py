@@ -35,6 +35,16 @@ class CompileErrorCode(Enum):
         "Index out of range",
         "Index is outside the valid range",
     )
+    RESERVED_INDEX = (
+        "E204",
+        "Index is reserved",
+        "Reserved by block statement",
+    )
+    INVALID_ENUM_INDEX = (
+        "E205",
+        "Enum Block invalid index set",
+        'Enum block should have a default "0" index',
+    )
 
     # E300 - Estrutura dos blocos
     SERVICE_MUST_HAVE_METHODS = (
@@ -155,16 +165,6 @@ class CompileErrorCode(Enum):
         "Invalid request type",
         "Request type is invalid or not a BaseMessage",
     )
-    METHOD_NO_REQUEST = (
-        "E802",
-        "Method has no request",
-        "Method must define a request message",
-    )
-    METHOD_TOO_MANY_REQUEST = (
-        "E803",
-        "Too many request types",
-        "Only one request message allowed per method",
-    )
     METHOD_INVALID_RESPONSE_TYPE = (
         "E804",
         "Invalid response type",
@@ -276,5 +276,5 @@ class CompileReport:
 
         console.print(table)
 
-    def __str__(self) -> str:
-        return str([str(err) for err in self.errors])
+    def __repr__(self) -> str:
+        return f"CompileReport(name='{self.name}', errors={self.errors})"

@@ -84,9 +84,9 @@ class ListProxy(MutableSequence[Any]):
     def __setitem__(self, i: Any, value: Any) -> None:
         try:
             self._container[i] = self._set_v(value)
-        except TypeError:
+        except (TypeError, AttributeError):
             raise TypeError(
-                f'At ListProxy set method for index: "{i}": Expected "{self._base_type.__name__}", found "{type(value).__name__}":{value}'
+                f'At ListProxy setitem method for index: "{i}": Expected "{self._base_type.__name__}", found "{type(value).__name__}":{value}'
             )
 
     def __delitem__(self, index: Union[int, slice]) -> None:
@@ -104,7 +104,7 @@ class ListProxy(MutableSequence[Any]):
     def append(self, value: Any) -> None:
         try:
             self._container.append(self._set_v(value))
-        except TypeError:
+        except (TypeError, AttributeError):
             raise TypeError(
                 f'At ListProxy append method: Expected "{self._base_type.__name__}", found "{type(value).__name__}":{value}'
             )
@@ -112,7 +112,7 @@ class ListProxy(MutableSequence[Any]):
     def extend(self, values: Any) -> None:
         try:
             self._container.extend(self._set_v(v) for v in values)
-        except TypeError:
+        except (TypeError, AttributeError):
             raise TypeError(
                 f'At ListProxy extend method: Expected "List[{self._base_type.__name__}]", found "{type(values).__name__}":{values}'
             )
@@ -151,18 +151,6 @@ class ListProxy(MutableSequence[Any]):
         return repr(list(self))
 
 
-def EnumListProxy(container: List[Any], enum_type: type[enum.Enum]) -> ListProxy:
-    return ListProxy(container, enum_type, lambda v: v.value, enum_type)
-
-
-def MessageListProxy(container: List[Any], base_type: type[Proxy]) -> ListProxy:
-    return ListProxy(container, base_type, lambda v: v.unwrap, base_type)
-
-
-def ValueListProxy(container: List[Any], base_type: type[Any]) -> ListProxy:
-    return ListProxy(container, lambda v: v, lambda v: v, base_type)
-
-
 DEFAULT_VALUE = object()
 
 
@@ -198,11 +186,10 @@ class DictProxy(MutableMapping[Any, Any]):
         if v is None:
             raise TypeError(f'Can´t set "{k}" to None on DictProxy')
         try:
-            if v is not None:
-                self._container[k] = self._set_v(v)
+            self._container[k] = self._set_v(v)
         except (AttributeError, TypeError):
             raise TypeError(
-                f'At DictProxy set method for key: "{k}": Expected "{self._base_type.__name__}", found "{type(v).__name__}":{v}'
+                f'At DictProxy setitem method for key: "{k}": Expected "{self._base_type.__name__}", found "{type(v).__name__}":{v}'
             )
 
     def __contains__(self, k: Any) -> bool:
@@ -238,15 +225,3 @@ class DictProxy(MutableMapping[Any, Any]):
 
     def __repr__(self) -> str:
         return repr(dict(self.items()))
-
-
-def EnumDictProxy(container: Dict[Any, Any], enum_type: type[enum.Enum]) -> DictProxy:
-    return DictProxy(container, enum_type, lambda v: v.value, enum_type)
-
-
-def MessageDictProxy(container: Dict[Any, Any], base_type: type[Proxy]) -> DictProxy:
-    return DictProxy(container, base_type, lambda v: v.unwrap, base_type)
-
-
-def ValueDictProxy(container: Dict[Any, Any], base_type: type[Any]) -> DictProxy:
-    return DictProxy(container, lambda v: v, lambda v: v, base_type)

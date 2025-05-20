@@ -5,23 +5,18 @@ message Code {
 }
 
 message Hello {
-  int64 Code = 1;
+  int64 Code = 536870911;
+  // oneof oo {
+    
+  // }
 }
 
 enum E1{
     code =0;
-    our =1;
-    // foo = 1;
+    our =-2147483648;
+    foo = 2147483647;
 }
 
-// message Foo {
-//   int32 bar = 3;
-// }
-
-// message BAR {
-//   int32 bar = 3;
-// }
-
-// service hello {
-//     rpc world(Foo) returns (BAR){}
-// }
+service hello {
+    // rpc world(Hello) returns (Hello){}
+}

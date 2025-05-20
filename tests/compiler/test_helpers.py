@@ -40,7 +40,6 @@ def make_enumfield(
 def make_oneof_field(
     name: str,
     block: Optional[Block] = None,
-    *,
     ftype: Optional[type[Any]] = None,
     number: Optional[int] = None,
 ) -> OneOfField:
@@ -55,7 +54,6 @@ def make_oneof_field(
 def make_method(
     name: str,
     block: Optional[Block] = None,
-    *,
     request_type: List[type[Any]] = [],
     response_type: Optional[type[Any]] = None,
     method_func: Optional[Callable[..., Any]] = None,

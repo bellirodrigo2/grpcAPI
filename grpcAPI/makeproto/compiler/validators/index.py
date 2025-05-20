@@ -2,12 +2,19 @@ from typing import Optional, Set
 
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode
-from grpcAPI.makeproto.protoblock import Block, Field, is_enum, min_enum
+from grpcAPI.makeproto.protoblock import Block, Field, is_enum
+
+min_enum = -2147483647
+max_enum = 2147483647
+
+min_ohters = 1
+max_others = 536870911
 
 
 def is_in_index_range(index: int, is_enum: bool) -> bool:
-    start = min_enum if is_enum else 1
-    return start <= index <= 536870911
+    start = min_enum if is_enum else min_ohters
+    end = max_enum if is_enum else max_others
+    return start <= index <= end
 
 
 def is_in_google_range(index: int) -> bool:

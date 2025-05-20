@@ -49,3 +49,7 @@ message Requisition {
   int32 quantity = 4;
   Enum2 enum2 = 5;
 }
+message CollectionMsg{
+  repeated ID list_id = 1;
+  map<string, Product> dict_prod = 2;
+}

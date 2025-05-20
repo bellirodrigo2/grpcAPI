@@ -61,6 +61,14 @@ def bind_proxy(
             )
 
     # set build proto kwargs
-    tgtcls._wrapped_kwargs = lambda kwargs: {  # type: ignore
-        k: proto_kwargs[k](v) for k, v in kwargs.items()  # type: ignore
-    }
+    def set_constructor(kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        constructor: Dict[str, Any] = {}
+        for k, v in kwargs.items():
+            if k not in proto_kwargs:
+                raise TypeError(
+                    f" {tgtcls.__name__}.__init__()  got an unexpected keyword argument '{k}'"
+                )
+            constructor[k] = proto_kwargs[k](v)
+        return constructor
+
+    tgtcls._wrapped_kwargs = set_constructor

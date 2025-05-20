@@ -171,3 +171,11 @@ class TestIndexValidator(unittest.TestCase):
         self.validator.execute([eblock], self.context)
         self.assertEqual(len(self.context), 1)
         self.assertTrue(all(msg == "E204" for msg in list_ctx_error_code(self.context)))
+
+    def test_enum_index_none(self) -> None:
+        eblock = make_enum_block("e1")
+        make_enumfield("field1", block=eblock, number=0)
+        make_enumfield("field1", block=eblock, number=None)
+        self.validator.execute([eblock], self.context)
+        self.assertEqual(len(self.context), 1)
+        self.assertTrue(all(msg == "E201" for msg in list_ctx_error_code(self.context)))

@@ -1,23 +1,16 @@
+import enum
 from copy import deepcopy
 from enum import Enum
 from functools import partial
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 
 from grpcAPI.mapclass import FuncArg
 from grpcAPI.proxy.binder import bind_proxy
-from grpcAPI.proxy.proxy import (
-    EnumDictProxy,
-    EnumListProxy,
-    MessageDictProxy,
-    MessageListProxy,
-    Proxy,
-    ValueDictProxy,
-    ValueListProxy,
-)
+from grpcAPI.proxy.proxy import DictProxy, ListProxy, Proxy
 
 Self = TypeVar("Self", bound="ProtoProxy")
 
@@ -84,6 +77,18 @@ class ProtoProxy(Proxy):
 # ----------------- GETTERS -------------------------------------------------
 
 
+def EnumListProxy(container: List[Any], enum_type: type[enum.Enum]) -> ListProxy:
+    return ListProxy(container, enum_type, lambda v: v.value, enum_type)
+
+
+def MessageListProxy(container: List[Any], base_type: type[Proxy]) -> ListProxy:
+    return ListProxy(container, base_type, lambda v: v.unwrap, base_type)
+
+
+def ValueListProxy(container: List[Any], base_type: type[Any]) -> ListProxy:
+    return ListProxy(container, lambda v: v, lambda v: v, base_type)
+
+
 def list_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda self: EnumListProxy(getattr(self._wrapped, name), bt)
@@ -91,6 +96,40 @@ def list_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
         return lambda self: MessageListProxy(getattr(self._wrapped, name), bt)
     else:
         return lambda self: ValueListProxy(getattr(self._wrapped, name), bt)
+
+
+class DictProtoProxy(DictProxy):
+    def __setitem__(self, k: Any, v: Any) -> None:
+        if v is None:
+            raise TypeError(f'Can´t set "{k}" to None on DictProxy')
+        try:
+            self._container[k].CopyFrom(v.unwrap)
+        except (AttributeError, TypeError):
+            raise TypeError(
+                f'At DictProxy set method for key: "{k}": Expected "{self._base_type.__name__}", found "{type(v).__name__}":{v}'
+            )
+
+    def update(self, d: Dict[Any, Any]) -> None:
+        try:
+            for k, v in d.items():
+                if v is not None:
+                    self._container[k].CopyFrom(v.unwrap)
+        except (AttributeError, TypeError):
+            raise TypeError(
+                f'At DictProxy update method for key: "{k}": Expected "{self._base_type.__name__}", found "{type(v).__name__}":{v}'
+            )
+
+
+def EnumDictProxy(container: Dict[Any, Any], enum_type: type[enum.Enum]) -> DictProxy:
+    return DictProxy(container, enum_type, lambda v: v.value, enum_type)
+
+
+def MessageDictProxy(container: Dict[Any, Any], base_type: type[Proxy]) -> DictProxy:
+    return DictProtoProxy(container, base_type, lambda v: v.unwrap, base_type)
+
+
+def ValueDictProxy(container: Dict[Any, Any], base_type: type[Any]) -> DictProxy:
+    return DictProxy(container, lambda v: v, lambda v: v, base_type)
 
 
 def dict_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
@@ -145,21 +184,22 @@ def list_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]:
                 f'At class "{self.__class__.__name__}", field: "{name}" set: Expected "List[{bt.__name__}]", found "{type(value).__name__}":{value}'
             ) from e
 
-    # def set_list_message(self: Message, value: Any) -> None:
-    #     try:
-    #         target = getattr(self._wrapped, name)
-    #         del target[:]
-    #         for item in value:
-    #             target.add().CopyFrom(item.unwrap)
-    #     except Exception as e:
-    #         raise TypeError(
-    #             f'At class "{self.__class__.__name__}", field: "{name}" list[ProtoProxy] set failed: {value}'
-    #         ) from e
+    def set_list_message(self: Any, value: Any) -> None:
+        try:
+            target = getattr(self.unwrap, name)
+            del target[:]
+            for item in value:
+                msg = target.add()
+                msg.CopyFrom(item.unwrap)
+        except (TypeError, AttributeError) as e:
+            raise TypeError(
+                f'At class "{self.__class__.__name__}", field: "{name}" list[ProtoProxy] set failed: {value}'
+            ) from e
 
     if issubclass(bt, Enum):
         return partial(set_list, set_v=lambda x: x.value)
     elif issubclass(bt, ProtoProxy):
-        return partial(set_list, set_v=lambda x: x.unwrap)
+        return set_list_message
     else:
         return partial(set_list, set_v=lambda x: x)
 
@@ -179,21 +219,21 @@ def dict_setter_factory(
                 f'At class "{self.__class__.__name__}", field: "{name}" set: Expected "dict[{dict_key},{bt.__name__}]", found "{type(value).__name__}": {value}'
             ) from e
 
-    # def set_dict_message(self: Message, value: Any) -> None:
-    #     try:
-    #         target = getattr(self._wrapped, name)
-    #         target.clear()
-    #         for k, v in value.items():
-    #             target[k].CopyFrom(v.unwrap)
-    #     except Exception as e:
-    #         raise TypeError(
-    #             f'At class "{self.__class__.__name__}", field: "{name}" dict[ProtoProxy] set failed: {value}'
-    #         ) from e
+    def set_dict_message(self: Any, value: Any) -> None:
+        try:
+            target = getattr(self.unwrap, name)
+            target.clear()
+            for k, v in value.items():
+                target[k].CopyFrom(v.unwrap)
+        except (TypeError, AttributeError) as e:
+            raise TypeError(
+                f'At class "{self.__class__.__name__}", field: "{name}" dict[ProtoProxy] set failed: {value}'
+            ) from e
 
     if issubclass(bt, Enum):
         return partial(set_dict, set_v=lambda x: x.value)
     elif issubclass(bt, ProtoProxy):
-        return partial(set_dict, set_v=lambda x: x.unwrap)
+        return set_dict_message
     else:
         return partial(set_dict, set_v=lambda x: x)
 
@@ -210,7 +250,6 @@ def single_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]
     def assign_message(self: ProtoProxy, value: Any) -> None:
         try:
             target = getattr(self.unwrap, name)
-            print("aqui")
             target.CopyFrom(value.unwrap)
         except (TypeError, AttributeError) as e:
             raise TypeError(

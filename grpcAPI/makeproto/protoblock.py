@@ -4,17 +4,8 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Union
 
 class Visitor(Protocol):
     def visit_block(self, block: "Block") -> None: ...
-
-    # def visit_service(self, service: "ServiceBlock") -> None: ...
-    # def visit_oneof(self, oneof: "OneOfBlock") -> None: ...
-    # def visit_enum_block(self, enumblock: "EnumBlock") -> None: ...
-
     def visit_field(self, field: "Field") -> None: ...
-
-    # def visit_oneof_field(self, field: "OneOfField") -> None: ...
     def visit_method(self, method: "Method") -> None: ...
-
-    # def visit_enum_field(self, enumfield: "EnumField") -> None: ...
 
 
 @dataclass
@@ -121,7 +112,9 @@ class EnumBlock(Block):
 
 @dataclass
 class OneOfBlock(Block):
-    pass
+    @property
+    def index(self) -> Optional[int]:
+        return min([f.index for f in self.fields if f.index is not None])
 
 
 @dataclass
@@ -131,6 +124,3 @@ class Service(Block):
 
 def is_enum(item: Union[Block, Field]) -> bool:
     return isinstance(item, EnumBlock) or isinstance(item, EnumField)
-
-
-min_enum = -536870911

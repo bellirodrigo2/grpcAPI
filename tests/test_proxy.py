@@ -1,7 +1,7 @@
 import unittest
 from enum import Enum
 from pathlib import Path
-from typing import List, Mapping, Sequence
+from typing import Dict, List, Mapping, Sequence
 
 from typing_extensions import Annotated
 
@@ -73,6 +73,11 @@ class Requisition(ProtoMessage):
     enum2: Enum2
 
 
+class CollectionMsg(ProtoMessage):
+    list_id: List[ID]
+    dict_prod: Dict[str, Product]
+
+
 class ProxyTest(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -84,6 +89,7 @@ class ProxyTest(unittest.TestCase):
         bind_proto_proxy(Code, self.modules)
         bind_proto_proxy(Product, self.modules)
         bind_proto_proxy(Requisition, self.modules)
+        bind_proto_proxy(CollectionMsg, self.modules)
 
         self.id_value = 15
         self.proxy_id = ID(id=self.id_value)
@@ -136,6 +142,11 @@ class ProxyTest(unittest.TestCase):
             product=self.proxy_product,
             quantity=quantity,
             enum2=self.obj_enum2,
+        )
+        self.proxy_id2 = ID(id=42)
+        self.proxy_collection = CollectionMsg(
+            list_id=[self.proxy_id, self.proxy_id2],
+            dict_prod={"foo": self.proxy_product},
         )
 
     def test_proxy(self) -> None:
@@ -271,8 +282,10 @@ class ProxyTest(unittest.TestCase):
 
     def test_code_dict_setdefault_and_get_default(self) -> None:
         code = self.proxy_code
-
+        self.assertEqual(len(code.me), 1)
         code.me["new_key"] = Enum2.e1
+        self.assertEqual(len(code.me), 2)
+        self.assertIn("new_key", code.me)
         self.assertEqual(code.me.setdefault("new_key", Enum2.e2), Enum2.e1)
         self.assertEqual(code.me.get("no_existant", 45), 45)
 
@@ -281,6 +294,15 @@ class ProxyTest(unittest.TestCase):
 
         self.assertEqual(len(code.me), 1)
         code.me.set("new_key2", Enum2.e1)
+        self.assertEqual(len(code.me), 2)
+
+    def test_code_dict_reassign(self) -> None:
+        code = self.proxy_code
+
+        self.assertEqual(len(code.me), 1)
+        code.me = {}
+        self.assertEqual(len(code.me), 0)
+        code.me = {"foo": Enum2.e1, "bar": Enum2.e2}
         self.assertEqual(len(code.me), 2)
 
     def test_code_dict_type_errors(self) -> None:
@@ -371,6 +393,10 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(product.code, self.proxy_code)
         self.assertEqual(product.code.code, self.proxy_code.code)
 
+    def test_nested_message_assign(self) -> None:
+        code2 = Code(code=10, pa=ProductArea.Area3, s=[], le=[], me={})
+        self.proxy_product.code = code2
+
     def test_user(self) -> None:
         user = self.proxy_user
         self.assertEqual(user.id.id, self.proxy_id.id)
@@ -419,6 +445,115 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(req.user.o2, "")
         self.assertEqual(req.user.o3, 123)
         self.assertEqual(req.user.o4, "")
+
+    def test_collections_get(self) -> None:
+        coll_list = self.proxy_collection.list_id
+        coll_dict = self.proxy_collection.dict_prod
+        self.assertEqual(coll_list, [self.proxy_id, self.proxy_id2])
+        self.assertEqual(coll_dict["foo"], self.proxy_product)
+        self.assertEqual(coll_dict.get("foo"), self.proxy_product)
+
+    def test_collections_dunders(self) -> None:
+        coll_list = self.proxy_collection.list_id
+        coll_dict = self.proxy_collection.dict_prod
+        self.assertEqual(len(coll_list), 2)
+        self.assertEqual(len(coll_dict), 1)
+        self.assertIn(self.proxy_id, coll_list)
+        self.assertIn("foo", coll_dict)
+
+        self.assertNotIn(self.proxy_code, coll_list)
+        self.assertNotIn("bar", coll_dict)
+
+    def test_collections_append_list(self) -> None:
+        coll_list = self.proxy_collection.list_id
+
+        newid = ID(id=457)
+        coll_list.append(newid)
+        self.assertEqual(coll_list[-1], newid)
+        self.assertEqual(len(coll_list), 3)
+        self.assertIn(newid, coll_list)
+        self.proxy_collection.list_id.extend([ID(id=32), ID(id=100)])
+        self.assertEqual(len(coll_list), 5)
+        id35 = ID(id=35)
+        self.proxy_collection.list_id.insert(1, id35)
+        self.assertEqual(len(coll_list), 6)
+        self.assertEqual(coll_list[1].id, 35)
+        self.proxy_collection.list_id.remove(id35)
+        self.assertEqual(len(coll_list), 5)
+
+    def test_collections_setitem_del(self) -> None:
+        coll_dict = self.proxy_collection.dict_prod
+
+        newprod = Product(
+            name="prod2",
+            unit_price={},
+            code=self.proxy_code,
+            area=ProductArea.Area3,
+            enum2=Enum2.e1,
+        )
+        self.assertEqual(len(coll_dict), 1)
+        self.assertNotIn("bar", coll_dict)
+        coll_dict["bar"] = newprod
+        self.assertIn("bar", coll_dict)
+        self.assertEqual(len(coll_dict), 2)
+        self.assertIn("foo", coll_dict)
+        del coll_dict["foo"]
+        self.assertNotIn("foo", coll_dict)
+        self.assertEqual(len(coll_dict), 1)
+        coll_dict.set("hello", newprod)
+        self.assertEqual(len(coll_dict), 2)
+        self.assertIn("hello", coll_dict)
+
+    def test_collections_update(self) -> None:
+        coll_dict = self.proxy_collection.dict_prod
+
+        newprod = Product(
+            name="prod2",
+            unit_price={},
+            code=self.proxy_code,
+            area=ProductArea.Area3,
+            enum2=Enum2.e1,
+        )
+        self.proxy_collection.dict_prod.update({"bar": newprod})
+        self.assertEqual(len(coll_dict), 2)
+        self.assertIn("bar", coll_dict)
+
+    def test_collections_list_assign(self) -> None:
+        coll_list = self.proxy_collection.list_id
+
+        newid = ID(id=457)
+        self.assertEqual(len(coll_list), 2)
+        self.proxy_collection.list_id = [newid]
+        self.assertEqual(len(coll_list), 1)
+        self.assertEqual(coll_list[0], newid)
+
+    def test_collections_dict_assign(self) -> None:
+        coll_dict = self.proxy_collection.dict_prod
+        self.assertIn("foo", coll_dict)
+        self.assertEqual(len(coll_dict), 1)
+
+        self.proxy_collection.dict_prod = {}
+        self.assertNotIn("foo", coll_dict)
+        self.assertEqual(len(coll_dict), 0)
+
+        self.proxy_collection.dict_prod = {"hello": self.proxy_product}
+        self.assertIn("hello", coll_dict)
+        self.assertNotIn("foo", coll_dict)
+        self.assertEqual(len(coll_dict), 1)
+
+    def test_collections_collections_fail(self) -> None:
+        coll_list = self.proxy_collection.list_id
+        coll_dict = self.proxy_collection.dict_prod
+
+        with self.assertRaises(TypeError):
+            coll_list.append(1)
+        with self.assertRaises(TypeError):
+            coll_list[0] = "world"
+
+        with self.assertRaises(TypeError):
+            coll_dict.set("1", "foobar")
+        with self.assertRaises(TypeError):
+            coll_dict["0"] = "world"
 
 
 if __name__ == "__main__":

@@ -47,40 +47,20 @@ class CompileErrorCode(Enum):
     )
 
     # E300 - Estrutura dos blocos
-    SERVICE_MUST_HAVE_METHODS = (
-        "E301",
-        "Invalid service block",
-        "Service block must contain only methods",
-    )
     ENUM_MUST_HAVE_FIELDS = (
-        "E302",
+        "E301",
         "Invalid enum block",
         "Enum block must contain only fields",
     )
-    ENUM_FIELD_SHOULD_NOT_HAVE_TYPE = (
-        "E303",
-        "Enum field has type",
-        "Enum fields must not have explicit types",
-    )
-    MESSAGE_SHOULD_NOT_HAVE_METHODS = (
-        "E304",
-        "Message with methods",
-        "Message blocks must not contain methods",
-    )
-    MESSAGE_FIELD_MISSING_TYPE = (
-        "E305",
-        "Field missing type",
-        "Field must declare a type",
-    )
     ONEOF_MUST_HAVE_FIELDS = (
-        "E306",
+        "E302",
         "Invalid oneof block",
         "Oneof blocks must contain only fields",
     )
-    ONEOF_FIELD_MISSING_TYPE = (
-        "E307",
-        "Oneof field missing type",
-        "Oneof field must declare a type",
+    UNLINKED_FIELD = (
+        "E303",
+        "Unlinked Field",
+        "Every Field should be linked to a block",
     )
 
     # E400 - Descrições
@@ -147,12 +127,6 @@ class CompileErrorCode(Enum):
         "Option values must be string or boolean",
     )
 
-    # E600 - Tipagem
-    ENUM_FIELD_HAS_TYPE = (
-        "E620",
-        "Enum field has type",
-        "Enum fields should not declare a type",
-    )
     FIELD_TYPE_INVALID = (
         "E621",
         "Invalid field type",

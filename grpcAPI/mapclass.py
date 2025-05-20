@@ -16,12 +16,28 @@ from typing import (
     get_type_hints,
 )
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated as typing_extensions_Annotated
+
+try:
+    from typing import Annotated as typing_Annotated
+except ImportError:
+    typing_Annotated = None
 
 T = TypeVar("T")
 
 
-@dataclass  # (frozen=True)
+def is_Annotated(origin: type[Any]) -> bool:
+    return origin in (typing_extensions_Annotated, typing_Annotated)
+
+
+def resolve_annotation(hint: Any) -> tuple[type, Optional[tuple[Any]]]:
+    if is_Annotated(get_origin(hint)):
+        base, *extras = get_args(hint)
+        return base, tuple(extras)
+    return hint, None
+
+
+@dataclass
 class FuncArg:
     name: str
     argtype: Optional[type[Any]]
@@ -54,10 +70,18 @@ class FuncArg:
         return None
 
     def hasinstance(self, tgttype: type, default: bool = True) -> bool:
-        return False if self.getinstance(tgttype, default) is None else True
+        return self.getinstance(tgttype, default) is not None
 
 
-NO_DEFAULT = object()
+class _NoDefault:
+    def __repr__(self) -> str:
+        return "NO_DEFAULT"
+
+    def __str__(self) -> str:
+        return "NO_DEFAULT"
+
+
+NO_DEFAULT = _NoDefault()
 
 
 def resolve_class_default(param: Parameter) -> tuple[bool, Any]:
@@ -66,18 +90,12 @@ def resolve_class_default(param: Parameter) -> tuple[bool, Any]:
     return False, NO_DEFAULT
 
 
-def resolve_dataclass_default(field: Field[Any]) -> tuple[Any, ...]:
-
+def resolve_dataclass_default(field: Field[Any]) -> tuple[bool, Any]:
     if field.default is not MISSING:
-        default = field.default
-        has_default = True
+        return True, field.default
     elif field.default_factory is not MISSING:
-        default = field.default_factory  # armazena a fábrica, sem chamar
-        has_default = True
-    else:
-        default = NO_DEFAULT
-        has_default = False
-    return has_default, default
+        return True, field.default_factory
+    return False, NO_DEFAULT
 
 
 def field_factory(
@@ -85,7 +103,6 @@ def field_factory(
     hint: Any,
     bt_default_fallback: bool = True,
 ) -> FuncArg:
-
     resolve_default = (
         resolve_class_default
         if isinstance(obj, Parameter)
@@ -93,31 +110,38 @@ def field_factory(
     )
 
     has_default, default = resolve_default(obj)
-
     argtype = hint
-
     if argtype is None and bt_default_fallback:
         argtype = type(default) if default not in (NO_DEFAULT, None) else None
 
-    basetype = argtype
-    extras = None
-
-    if get_origin(hint) is Annotated:
-        basetype, *extras_ = get_args(hint)
-        extras = tuple(extras_)
-
-    return FuncArg(
+    funcarg = make_funcarg(
         name=obj.name,
-        argtype=argtype,
+        tgttype=argtype,
+        annotation=hint,
+    )
+    funcarg.default = default
+    funcarg.has_default = has_default
+
+    return funcarg
+
+
+def make_funcarg(
+    name: str,
+    tgttype: type[Any],
+    annotation: Optional[type[Any]] = None,
+) -> FuncArg:
+    basetype, extras = resolve_annotation(annotation or tgttype)
+    return FuncArg(
+        name=name,
+        argtype=tgttype,
         basetype=basetype,
-        default=default,
-        has_default=has_default,
+        default=None,
         extras=extras,
+        has_default=False,
     )
 
 
 def map_class_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
-
     init_method = getattr(cls, "__init__", None)
     if is_dataclass(cls):
         return map_dataclass_fields(cls, bt_default_fallback)
@@ -128,31 +152,25 @@ def map_class_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncAr
 
 
 def map_init_field(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
-
     init_method = getattr(cls, "__init__", None)
+    if not init_method:
+        raise ValueError("No __init__ defined for the class")
 
-    if init_method:
-        hints = get_type_hints(
-            init_method, globalns=vars(sys.modules[cls.__module__]), include_extras=True
-        )
-        sig = signature(init_method)
-        items: list[tuple[str, Parameter]] = [
-            (name, param) for name, param in sig.parameters.items() if name != "self"
-        ]
-        return [
-            field_factory(obj, hints.get(name), bt_default_fallback)
-            for name, obj in items
-        ]
-    raise ValueError("No __init__ defined for the class")
+    hints = get_type_hints(
+        init_method, globalns=vars(sys.modules[cls.__module__]), include_extras=True
+    )
+    sig = signature(init_method)
+    items = [(name, param) for name, param in sig.parameters.items() if name != "self"]
+    return [
+        field_factory(obj, hints.get(name), bt_default_fallback) for name, obj in items
+    ]
 
 
 def map_dataclass_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
-
     hints = get_type_hints(
         cls, globalns=vars(sys.modules[cls.__module__]), include_extras=True
     )
     items = [(field.name, field) for field in fields(cls)]
-
     return [
         field_factory(obj, hints.get(name), bt_default_fallback) for name, obj in items
     ]
@@ -171,67 +189,31 @@ def map_model_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncAr
                 default=getattr(cls, name, Parameter.empty),
             ),
         )
-        for name, _ in hints.items()
+        for name in hints
     ]
-
     return [
         field_factory(obj, hints.get(name), bt_default_fallback) for name, obj in items
     ]
 
 
-# -------------JUNTAR E ALINHAR
+def map_return_type(func: Callable[..., Any]) -> FuncArg:
+    sig = inspect.signature(func)
 
-
-class _NoDefault:
-    def __repr__(self) -> str:
-        return "NO_DEFAULT"
-
-    def __str__(self) -> str:
-        return "NO_DEFAULT"
-
-
-NO_DEFAULT = _NoDefault()
-
-
-def func_arg_factory(name: str, param: inspect.Parameter, annotation: type) -> FuncArg:
-    has_default = param.default is not inspect._empty  # type: ignore
-    default = param.default if has_default else NO_DEFAULT
-    argtype = (
-        annotation
-        if annotation is not inspect._empty  # type: ignore
-        else (type(default) if default not in [NO_DEFAULT, None] else None)
-    )
-    basetype = argtype
-    extras = None
-    if get_origin(annotation) is Annotated:
-        basetype, *extras_ = get_args(annotation)
-        extras = tuple(extras_)
-    arg = FuncArg(
-        name=name,
-        argtype=argtype,
-        basetype=basetype,
-        default=default,
-        extras=extras,
-        has_default=has_default,
+    hints = get_type_hints(
+        func,
+        globalns=vars(sys.modules[func.__module__]),
+        include_extras=True,
     )
 
-    return arg
+    raw_return_type = hints.get("return", sig.return_annotation)
 
+    if raw_return_type is inspect.Signature.empty:
+        raw_return_type = None
 
-def make_funcarg(name: str, tgttype: type[Any]) -> FuncArg:
-
-    basetype = None
-    extras = None
-    if get_origin(tgttype) is Annotated:
-        basetype, *extras = get_args(tgttype)[0]
-
-    return FuncArg(
-        name=name,
-        argtype=tgttype,
-        basetype=basetype or tgttype,
-        default=None,
-        extras=tuple(extras) if extras else None,
-        has_default=False,
+    return make_funcarg(
+        name=func.__name__,
+        tgttype=raw_return_type,
+        annotation=raw_return_type,
     )
 
 
@@ -243,8 +225,6 @@ def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]
         func = func.func
 
     sig = inspect.signature(func)
-    # include_extras=True to preserve Annotated;
-    # globalns to resolve forward refs like "User"
     hints = get_type_hints(
         func, globalns=vars(sys.modules[func.__module__]), include_extras=True
     )
@@ -253,20 +233,17 @@ def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]
 
     for name, param in sig.parameters.items():
         if name in partial_args:
-            continue  # already resolved by partial, ignore
-
+            continue
         if param.kind in (
             inspect.Parameter.VAR_POSITIONAL,
             inspect.Parameter.VAR_KEYWORD,
         ):
-            continue  # ignore *args e **kwargs
+            continue
 
         annotation: type = hints.get(name, param.annotation)
-        arg = func_arg_factory(name, param, annotation)
+        arg = field_factory(param, annotation)
         funcargs.append(arg)
 
-    raw_return_type: type = hints.get("return", sig.return_annotation)
+    return_type = map_return_type(func)
 
-    return_type = make_funcarg(func.__name__, raw_return_type)
-
-    return (funcargs, return_type)
+    return funcargs, return_type

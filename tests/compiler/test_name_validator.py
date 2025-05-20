@@ -17,7 +17,6 @@ class TestBlockNameValidator(unittest.TestCase):
         self.block = make_message_block("ValidBlock")
         self.validator = BlockNameValidator()
         self.context = CompilerContext()
-        self.report = self.context.get_report("ValidBlock")
 
     def test_valid_block_name(self) -> None:
         self.validator.execute([self.block], self.context)
@@ -81,7 +80,6 @@ class TestFieldNameValidator(unittest.TestCase):
         self.block = make_message_block(self.name)
         self.context = CompilerContext()
         self.validator = FieldNameValidator()
-        self.report = self.context.get_report(self.name)
 
     def test_valid_field_name(self) -> None:
         make_field("field1", block=self.block)

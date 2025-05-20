@@ -3,9 +3,9 @@ from typing import Any, Tuple, get_args, get_origin
 
 from typing_extensions import Annotated
 
-from grpcAPI.makeproto.block_models import Block, Field, Method
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
+from grpcAPI.makeproto.protoblock import Block, Field, Method
 from grpcAPI.types.base import BaseProto
 from grpcAPI.types.types import DEFAULT_PRIMITIVES
 
@@ -13,11 +13,11 @@ from grpcAPI.types.types import DEFAULT_PRIMITIVES
 def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
 
     pack = getattr(bt, "package", None)
+
     if pack is not None:
         # covers basemessage and enum
-        package = str(pack()).strip()
-        block_package = str(block_package).strip()
-        if package == block_package:
+        # TODO caso em que pack nao eh callable
+        if pack() == block_package:
             return bt.prototype()
         else:
             return bt.qualified_prototype()

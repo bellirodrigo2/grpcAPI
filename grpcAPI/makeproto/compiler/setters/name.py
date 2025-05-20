@@ -5,8 +5,8 @@ import re
 from enum import Enum, auto
 from typing import Callable, Dict, Optional
 
-from grpcAPI.makeproto.block_models import Block, Field, Method
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
+from grpcAPI.makeproto.protoblock import Block, Field, Method
 
 
 class NameTransformStrategy(Enum):
@@ -61,25 +61,22 @@ class NameSetter(CompilerPass):
         super().__init__()
         self.strategy = strategy
 
-    def _set_default(self) -> None:
+    def set_default(self) -> None:
         if self.strategy is None:
             settings = self.ctx.settings
             self.strategy = settings.get("name_case", DEFAULT_CASE)
 
     def visit_block(self, block: Block) -> None:
-        self._set_default()
         render_dict = block.render_dict
         render_dict["name"] = normalize_name(block.name, self.strategy)
         for field in block.fields:
             field.accept(self)
 
     def visit_field(self, field: Field) -> None:
-        self._set_default()
         render_dict = field.render_dict
         render_dict["name"] = normalize_name(field.name, self.strategy)
 
     def visit_method(self, method: Method) -> None:
-        self._set_default()
         render_dict = method.render_dict
         render_dict["name"] = normalize_name(method.name, self.strategy)
         method.name = normalize_name(method.name, self.strategy)

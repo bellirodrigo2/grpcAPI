@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nfail.proto\"\x14\n\x04\x43ode\x12\x0c\n\x04\x43ode\x18\x01 \x01(\x03\"\x15\n\x05Hello\x12\x0c\n\x04\x43ode\x18\x01 \x01(\x03*+\n\x02\x45\x31\x12\x08\n\x04\x63ode\x10\x00\x12\x10\n\x03our\x10\x91\xff\xff\xff\xff\xff\xff\xff\xff\x01\x12\t\n\x05outro\x10\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nfail.proto\"\x14\n\x04\x43ode\x12\x0c\n\x04\x43ode\x18\x01 \x01(\x03\"\x15\n\x05Hello\x12\x0c\n\x04\x43ode\x18\x01 \x01(\x03*\x17\n\x02\x45\x31\x12\x08\n\x04\x63ode\x10\x00\x12\x07\n\x03our\x10\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,7 +32,7 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'fail_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_E1']._serialized_start=59
-  _globals['_E1']._serialized_end=102
+  _globals['_E1']._serialized_end=82
   _globals['_CODE']._serialized_start=14
   _globals['_CODE']._serialized_end=34
   _globals['_HELLO']._serialized_start=36

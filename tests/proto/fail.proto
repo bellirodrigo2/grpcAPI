@@ -10,8 +10,7 @@ message Hello {
 
 enum E1{
     code =0;
-    our =-111;
-    outro = 1;
+    our =1;
     // foo = 1;
 }
 

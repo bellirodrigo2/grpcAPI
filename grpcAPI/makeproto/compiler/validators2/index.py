@@ -28,6 +28,7 @@ class IndexValidator(CompilerPass):
         self.reserveds.clear()
 
     def visit_block(self, block: Block) -> None:
+        self.reserveds.update(block.reserved_indexes)
         has_zero = False
         for field in block.fields:
             field.accept(self)
@@ -67,5 +68,4 @@ class IndexValidator(CompilerPass):
                 override_msg="Reserved by protobuf",
             )
         else:
-            if not is_enum(field.block):
-                self.used.add(index)
+            self.used.add(index)

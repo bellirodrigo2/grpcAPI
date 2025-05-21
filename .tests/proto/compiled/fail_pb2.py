@@ -9,34 +9,30 @@ from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    5,
-    29,
-    0,
-    '',
-    'fail.proto'
+    _runtime_version.Domain.PUBLIC, 5, 29, 0, "", "fail.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nfail.proto\"\x14\n\x04\x43ode\x12\x0c\n\x04\x43ode\x18\x01 \x01(\x03\"\x19\n\x05Hello\x12\x10\n\x04\x43ode\x18\xff\xff\xff\xff\x01 \x01(\x03*-\n\x02\x45\x31\x12\x08\n\x04\x63ode\x10\x00\x12\x10\n\x03our\x10\x80\x80\x80\x80\xf8\xff\xff\xff\xff\x01\x12\x0b\n\x03\x66oo\x10\xff\xff\xff\xff\x07\x32\x07\n\x05hellob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\nfail.proto"\x14\n\x04\x43ode\x12\x0c\n\x04\x43ode\x18\x01 \x01(\x03"\x19\n\x05Hello\x12\x10\n\x04\x43ode\x18\xff\xff\xff\xff\x01 \x01(\x03*-\n\x02\x45\x31\x12\x08\n\x04\x63ode\x10\x00\x12\x10\n\x03our\x10\x80\x80\x80\x80\xf8\xff\xff\xff\xff\x01\x12\x0b\n\x03\x66oo\x10\xff\xff\xff\xff\x07\x32\x07\n\x05hellob\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'fail_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "fail_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_E1']._serialized_start=63
-  _globals['_E1']._serialized_end=108
-  _globals['_CODE']._serialized_start=14
-  _globals['_CODE']._serialized_end=34
-  _globals['_HELLO']._serialized_start=36
-  _globals['_HELLO']._serialized_end=61
-  _globals['_HELLO']._serialized_start=110
-  _globals['_HELLO']._serialized_end=117
+    DESCRIPTOR._loaded_options = None
+    _globals["_E1"]._serialized_start = 63
+    _globals["_E1"]._serialized_end = 108
+    _globals["_CODE"]._serialized_start = 14
+    _globals["_CODE"]._serialized_end = 34
+    _globals["_HELLO"]._serialized_start = 36
+    _globals["_HELLO"]._serialized_end = 61
+    _globals["_HELLO"]._serialized_start = 110
+    _globals["_HELLO"]._serialized_end = 117
 # @@protoc_insertion_point(module_scope)

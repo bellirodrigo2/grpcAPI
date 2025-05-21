@@ -1,6 +1,6 @@
 import unittest
 from dataclasses import dataclass, field
-from typing import Annotated, List, Optional, Union, get_origin
+from typing import Annotated, Any, List, Optional, Union
 
 from grpcAPI.mapclass import NO_DEFAULT, map_class_fields, map_func_args
 
@@ -369,7 +369,7 @@ class TestBasicMappings(unittest.TestCase):
 
 
 def test_function_args(self) -> None:
-    def foo(x: int, y: str = "abc", z=None) -> None:
+    def foo(x: int, y: str = "abc", z: Any = None) -> None:
         pass
 
     args = map_func_args(foo)

@@ -52,7 +52,7 @@ class BaseMessage(BaseProto, Module, Meta):
         pack = cls.package()
         if isinstance(pack, _NoPackage):
             return cls.prototype()
-        return f"{str(cls.package())}.{cls.prototype()}"
+        return f"{str(pack)}.{cls.prototype()}"
 
 
 # ---------------- Extract Class Info ---------------------------------------

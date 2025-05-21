@@ -64,7 +64,8 @@ class Proto3(BaseMessage):
         return "pack"
 
 
-class WrongEnum(Enum): ...
+class WrongEnum(Enum):
+    pass
 
 
 class TestTypeSetter(unittest.TestCase):

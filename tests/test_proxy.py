@@ -185,7 +185,7 @@ class ProxyTest(unittest.TestCase):
         self.assertEqual(proto_code.code, self.code_num)
         self.assertEqual(proto_code.pa, self.obj_prodarea.value)
         self.assertEqual(proto_code.s, self.s)
-        self.assertEqual(proto_code.le, [l.value for l in self.le])
+        self.assertEqual(proto_code.le, [litem.value for litem in self.le])
         self.assertEqual(proto_code.me, {k: v.value for k, v in self.me.items()})
 
         self.assertEqual(code2, code)

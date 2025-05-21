@@ -6,8 +6,7 @@ from typing_extensions import Annotated
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
 from grpcAPI.makeproto.protoblock import Block, Field, Method
-from grpcAPI.types.base import BaseProto
-from grpcAPI.types.types import DEFAULT_PRIMITIVES
+from grpcAPI.types import DEFAULT_PRIMITIVES, BaseProto
 
 
 def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:

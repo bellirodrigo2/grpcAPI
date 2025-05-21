@@ -56,7 +56,8 @@ class NotAllowed:
     pass
 
 
-class Proto2(BaseMessage): ...
+class Proto2(BaseMessage):
+    pass
 
 
 async def agen():  # type: ignore

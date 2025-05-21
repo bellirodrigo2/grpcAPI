@@ -54,13 +54,13 @@ def make_oneof_field(
 def make_method(
     name: str,
     block: Optional[Block] = None,
-    request_type: List[type[Any]] = [],
+    request_type: Optional[List[type[Any]]] = None,
     response_type: Optional[type[Any]] = None,
     method_func: Optional[Callable[..., Any]] = None,
 ) -> Method:
     method = Method(
         name=name,
-        request_type=request_type,
+        request_type=request_type or [],
         response_type=response_type,
         block=block,
         method_func=method_func,

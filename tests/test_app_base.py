@@ -37,7 +37,7 @@ class TestModulePackage(unittest.TestCase):
         mod1 = pack.make_module("mod1")
 
         self.assertEqual(mod1.modname, "mod1")
-        self.assertEqual(mod1.package, "pack1")
+        self.assertEqual(mod1.packname, "pack1")
         self.assertIs(pack.modules["mod1"], mod1)
 
         with self.assertRaises(ValueError):
@@ -83,7 +83,7 @@ class TestModulePackage(unittest.TestCase):
 
         # Verifica se o método foi registrado
         self.assertIn("test_service", mod._services)
-        method_obj = mod._services["test_service"]
+        method_obj = mod._services["test_service"][0]
 
         self.assertEqual(method_obj.description, "Test service description")
         self.assertEqual(method_obj.options, proto_option)

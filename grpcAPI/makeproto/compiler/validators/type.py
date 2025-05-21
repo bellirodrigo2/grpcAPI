@@ -78,8 +78,6 @@ class TypeValidator(CompilerPass):
             return f'Field "{name}" is not a type. Found {bt}'
 
         if issubclass(bt, BaseProto):  # se for mensagem protobuf pura
-            # TODO ISSO PRECISA MUDAR
-            # TODO pois pode raise quando chamar
             return None
 
         if issubclass(bt, Enum):

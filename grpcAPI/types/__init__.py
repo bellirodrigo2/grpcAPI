@@ -1,7 +1,7 @@
 __all__ = [
     "BaseProto",
     "EnumValue",
-    "FieldSpec",
+    "Metadata",
     "OneOf",
     "ProtoOption",
     "Context",
@@ -28,7 +28,7 @@ __all__ = [
     "Stream",
 ]
 
-from grpcAPI.types.base import BaseProto, EnumValue, FieldSpec, OneOf, ProtoOption
+from grpcAPI.types.base import BaseProto, EnumValue, Metadata, OneOf, ProtoOption
 from grpcAPI.types.context import Context
 from grpcAPI.types.message import (
     NO_PACKAGE,

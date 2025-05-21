@@ -1,7 +1,7 @@
 from typing import Union
 
 from grpcAPI.makeproto.compiler import CompileErrorCode, CompilerPass
-from grpcAPI.makeproto.protoblock import Block, Field, Method
+from grpcAPI.makeproto.protoblock import Block, Field, Method, OneOfBlock, OneOfField
 
 
 class OptionsValidator(CompilerPass):
@@ -60,3 +60,20 @@ class DescriptionValidator(CompilerPass):
 
     def visit_method(self, method: Method) -> None:
         self._visit(method)
+
+
+class OneOfValidator(CompilerPass):
+
+    def visit_block(self, block: Block) -> None:
+        if isinstance(block, OneOfBlock):
+            for field in block.fields:
+                field.accept(self)
+
+    def visit_field(self, field: Field) -> None:
+
+        report = self.ctx.get_report(field.block.name)
+        if not isinstance(field, OneOfField) or not isinstance(field.key, str):
+            report.report_error(
+                code=CompileErrorCode.INVALID_ONEOF_FIELD,
+                location=field.name,
+            )

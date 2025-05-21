@@ -6,7 +6,7 @@ from grpcAPI.makeproto.compiler import (
     FieldNameValidator,
 )
 from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
-from tests.compiler.test_helpers import (
+from tests.compilerpasses.test_helpers import (
     make_enum_block,
     make_enumfield,
     make_field,

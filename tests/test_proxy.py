@@ -10,7 +10,7 @@ from grpcAPI.proto_proxy import (
     bind_proto_proxy,
     import_py_files_from_folder,
 )
-from grpcAPI.types import FieldSpec, Float, Int32, OneOf, String
+from grpcAPI.types import Float, Int32, Metadata, OneOf, String
 
 
 class ProtoMessage(ProtoProxy):
@@ -29,7 +29,7 @@ class User(ProtoMessage):
     lastname: str
     email: Annotated[
         String,
-        FieldSpec(comment="email comment", options={"json_name": "email_field"}),
+        Metadata(comment="email comment", options={"json_name": "email_field"}),
     ]
     age: int
     tags: list[String]

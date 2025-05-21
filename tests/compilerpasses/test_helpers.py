@@ -9,7 +9,7 @@ from grpcAPI.makeproto.protoblock import (
     Method,
     OneOfBlock,
     OneOfField,
-    Service,
+    ServiceBlock,
 )
 
 
@@ -25,8 +25,6 @@ def _make_generic_field(
 
     if type == "enum":
         BlockClass = EnumField
-    elif type == "oneof":
-        BlockClass = OneOfField
     else:
         BlockClass = Field
 
@@ -67,15 +65,26 @@ def make_enumfield(
 
 def make_oneof_field(
     name: str,
+    key: str = "key1",
     block: Optional[Block] = None,
     ftype: Optional[type[Any]] = None,
     number: Optional[int] = None,
     description: str = "",
     options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> OneOfField:
-    return _make_generic_field(
-        name, block, ftype, number, description, options, "oneof"
+    field = OneOfField(
+        name=name,
+        key=key,
+        ftype=ftype,
+        number=number,
+        block=block,
+        render_dict={},
+        description=description,
+        options=options or {},
     )
+    if block is not None:
+        block.fields.append(field)
+    return field
 
 
 def make_method(
@@ -116,7 +125,7 @@ def _make_reserved_block(
     type: str = "message",
 ) -> Block:
     if type == "service":
-        BlockClass = Service
+        BlockClass = ServiceBlock
     if type == "enum":
         BlockClass = EnumBlock
     elif type == "oneof":
@@ -204,7 +213,7 @@ def make_service_block(
     package: str = "test.package",
     description: str = "",
     options: Optional[Dict[str, Union[str, bool]]] = None,
-) -> Service:
+) -> ServiceBlock:
     return _make_reserved_block(
         name, fields, block, set(), protofile, package, description, options, "service"
     )

@@ -8,7 +8,11 @@ from grpcAPI.makeproto.compiler.setters.name import (
     to_pascal_case,
     to_snake_case,
 )
-from tests.compiler.test_helpers import make_field, make_message_block, make_method
+from tests.compilerpasses.test_helpers import (
+    make_field,
+    make_message_block,
+    make_method,
+)
 
 
 class TestNameTransforms(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 
 from grpcAPI.makeproto.compiler import CompilerContext, IndexSetter
-from tests.compiler.test_helpers import (
+from tests.compilerpasses.test_helpers import (
     make_enum_block,
     make_enumfield,
     make_field,

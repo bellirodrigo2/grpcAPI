@@ -5,7 +5,11 @@ from typing import Union
 from grpcAPI.makeproto.compiler import CompilerContext, TypeSetter
 from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
 from grpcAPI.types import NO_PACKAGE, BaseMessage, Bool, Bytes, Int32, Stream, String
-from tests.compiler.test_helpers import make_field, make_message_block, make_method
+from tests.compilerpasses.test_helpers import (
+    make_field,
+    make_message_block,
+    make_method,
+)
 
 
 class Enum1(Enum):

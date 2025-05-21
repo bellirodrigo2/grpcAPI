@@ -46,6 +46,8 @@ class EnumField(Field):
 
 @dataclass
 class OneOfField(Field):
+    key: str
+
     @property
     def top_block(self) -> Optional["Block"]:
         if self.block is None:
@@ -81,7 +83,7 @@ class Block(Node):
         return 0
 
     reserveds: List[Union[int, range, str]]
-    counter: int
+    counter: int = 1
 
     @property
     def raw_reserved_indexes(self) -> List[Union[range, int]]:
@@ -121,7 +123,7 @@ class OneOfBlock(Block):
 
 
 @dataclass
-class Service(Block):
+class ServiceBlock(Block):
     pass
 
 

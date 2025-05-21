@@ -41,7 +41,7 @@ validate_map: Dict[Block, Callable[[Block, CompileReport], None]] = {
 
 def wrong_validation(block: Block, report: CompileReport) -> None:
     raise NotImplementedError(
-        f'At Block "{block.name}", no implementation found for block structure validation type: "{block.block_type}"'
+        f'At Block "{block.name}", no implementation found for block structure validation type: "{type(block).__name__}"'
     )
 
 

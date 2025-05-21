@@ -13,9 +13,8 @@ def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
 
     pack = getattr(bt, "package", None)
 
-    if pack is not None:
+    if pack is not None and callable(pack):
         # covers basemessage and enum
-        # TODO caso em que pack nao eh callable
         if pack() == block_package:
             return bt.prototype()
         else:

@@ -1,65 +1,80 @@
 from collections import defaultdict
-from typing import Any, Callable, Dict, List
+from dataclasses import asdict
+from typing import Any, Callable, Dict, List, Optional
 
-from grpcAPI.makeproto.block_models import Block, Field, Method
-from grpcAPI.makeproto.reserved import extract_reserveds
-from grpcAPI.mapclass import FuncArg, map_class_fields, map_func_args
-from grpcAPI.types import BaseMessage, FieldSpec, OneOf, get_headers
+from grpcAPI.makeproto.protoblock import (
+    Block,
+    EnumBlock,
+    EnumField,
+    Field,
+    MessageBlock,
+    Method,
+    Node,
+    OneOfBlock,
+    OneOfField,
+    ServiceBlock,
+)
+from grpcAPI.mapclass import FuncArg, map_func_args, map_model_fields
+from grpcAPI.types import BaseMessage, Metadata, OneOf, ProtoOption, get_headers
 
 
 def make_msgblock(cls: type[BaseMessage]) -> Block:
 
     protofile, package, description, options, reserveds = get_headers(cls)
-    reserved_index, reserved_keys = extract_reserveds(reserveds)
 
-    block = Block(
+    block = MessageBlock(
         protofile=protofile,
         package=package,
         name=cls.__name__,
-        block_type="message",
         fields=[],
+        block=None,
         description=description,
         options=options,
-        reserved_index=reserved_index,
-        reserved_keys=reserved_keys,
+        number=0,
+        reserveds=reserveds,
+        render_dict={},
     )
 
-    fields: List[Block] = []
+    fields: List[Node] = []
     oneofs: Dict[str, List[Field]] = defaultdict(list)
-    args = map_class_fields(cls, False)
+    args = map_model_fields(cls, False)
     for arg in args:
-        spec = arg.getinstance(FieldSpec, True)
-        if spec is None:
-            spec = FieldSpec()
+        metadata = arg.getinstance(Metadata, True)
+        if metadata is None:
+            metadata = Metadata()
 
         field = Field(
             name=arg.name,
             ftype=arg.basetype,
-            description=spec.description,
-            options=spec.options,
-            number=spec.index,
+            description=metadata.description,
+            options=metadata.options,
+            number=metadata.index,
             block=block,
+            render_dict={},
         )
 
-        if isinstance(spec, OneOf):
-            key = spec.key
-            oneofs[key].append(field)
+        if isinstance(metadata, OneOf):
+            key = metadata.key
+            field_dict = asdict(field)
+            oneof_field = OneOfField(**field_dict, key=key)
+            oneofs[key].append(oneof_field)
         else:
             fields.append(field)
 
     for k, v in oneofs.items():
         # How to pick description and reserveds from oneof ?
         # If implemented, the main block reserved has got to accumulate those
-        ootemp = Block(
+        ootemp = OneOfBlock(
             protofile=protofile,
             package=package,
             name=k,
-            block_type="oneof",
+            number=0,
+            block=block,
             fields=v,
             description="",
             options={},
-            reserved_index=[],
-            reserved_keys=[],
+            reserveds=[],
+            render_dict={},
         )
         fields.append(ootemp)
 
@@ -68,36 +83,35 @@ def make_msgblock(cls: type[BaseMessage]) -> Block:
     return block
 
 
-def make_enumblock(
-    enum: type[BaseMessage], default_protofile: str, default_package: str
-) -> Block:
+def make_enumblock(enum: type[BaseMessage]) -> Block:
 
     protofile, package, description, options, reserveds = get_headers(enum)
-    reserved_index, reserved_keys = extract_reserveds(reserveds)
 
-    enum_block: Block = Block(
+    enum_block = EnumBlock(
         protofile=protofile,
         package=package,
         name=enum.__name__,
-        block_type="enum",
         fields=[],
+        block=None,
+        number=0,
         description=description,
         options=options,
-        reserved_index=reserved_index,
-        reserved_keys=reserved_keys,
+        reserveds=reserveds,
+        render_dict={},
     )
 
     fields: List[Field] = []
     for member in enum:
         name, value = member.name, member.value
         fields.append(
-            Field(
+            EnumField(
                 name=name,
                 number=value,
                 ftype=None,
                 description="",
                 options={},
                 block=enum_block,
+                render_dict={},
             )
         )
 
@@ -106,7 +120,11 @@ def make_enumblock(
     return enum_block
 
 
-def make_method(func: Callable[..., Any], ignore_instance: List[type[Any]]) -> Method:
+def make_method(
+    func: Callable[..., Any],
+    ignore_instance: List[type[Any]],
+    block: Optional[ServiceBlock] = None,
+) -> Method:
 
     args, returntype = map_func_args(func)
 
@@ -119,6 +137,37 @@ def make_method(func: Callable[..., Any], ignore_instance: List[type[Any]]) -> M
         name=func.__name__,
         request_type=req_types,
         response_type=returntype.basetype,
-        block=None,
+        block=block,
         method_func=func,
+        number=0,
+        description="",
+        options=ProtoOption(),
+        render_dict={},
     )
+
+
+def make_service(
+    servicename: str,
+    protofile: str,
+    package: str,
+    methods: List[Callable[..., Any]],
+    ignore_instance: List[type[Any]],
+    description: str,
+    options: ProtoOption,
+) -> ServiceBlock:
+
+    service = ServiceBlock(
+        name=servicename,
+        protofile=protofile,
+        package=package,
+        fields=[],
+        number=0,
+        block=None,
+        options=options,
+        description=description,
+        render_dict={},
+        reserveds=[],
+    )
+    method_list = [make_method(method, ignore_instance, service) for method in methods]
+    service.fields = method_list
+    return service

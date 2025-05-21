@@ -9,7 +9,7 @@ from grpcAPI.makeproto.compiler.compiler import (
     list_ctx_error_messages,
 )
 from grpcAPI.types import DEFAULT_PRIMITIVES, BaseMessage, Bytes, Stream, String
-from tests.compiler.test_helpers import (
+from tests.compilerpasses.test_helpers import (
     make_field,
     make_message_block,
     make_method,

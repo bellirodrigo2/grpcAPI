@@ -1,10 +1,11 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from grpcAPI.proto_proxy import ProtoProxy
 from grpcAPI.types.base import ProtoOption
-from grpcAPI.types.message import NO_PACKAGE, BaseMessage
+from grpcAPI.types.message import NO_PACKAGE, BaseMessage, _NoPackage
 
 
 def create_proto_model(
@@ -37,14 +38,16 @@ class MethodPack:
 @dataclass(frozen=True)
 class Module:
     modname: str
-    package: Union[object, str] = field(default=NO_PACKAGE)
-    _services: Dict[str, MethodPack] = field(default_factory=dict[str, MethodPack])
+    packname: Union[_NoPackage, str] = field(default=NO_PACKAGE)
+    _services: Dict[str, List[MethodPack]] = field(
+        default_factory=lambda: defaultdict(list)
+    )
     _model: type[BaseMessage] = ProtoModel
 
     def __post_init__(self) -> None:
-        proto_cls = create_proto_model(self._model, self.modname, self.package)
+        proto_cls = create_proto_model(self._model, self.modname, self.packname)
         object.__setattr__(self, "_proto_model", proto_cls)
-        proto_enum = create_proto_model(IntEnum, self.modname, self.package)
+        proto_enum = create_proto_model(IntEnum, self.modname, self.packname)
         object.__setattr__(self, "_proto_enum", proto_enum)
 
     @property
@@ -62,11 +65,8 @@ class Module:
         description: str,
         options: ProtoOption,
     ) -> None:
-        self._services[servicename] = MethodPack(
-            description,
-            options,
-            method,
-        )
+        methodpack = MethodPack(description, options, method)
+        self._services[servicename].append(methodpack)
 
     def service(
         self,
@@ -88,8 +88,36 @@ class Package:
     modules: Dict[str, Module] = field(default_factory=dict[str, Module])
 
     def make_module(self, modname: str) -> Module:
-        if modname in self.modules:
-            raise ValueError
-        module = Module(modname=modname, package=self.packname)
-        self.modules[modname] = module
+        module = Module(modname=modname, packname=self.packname)
+        self.add_module(module)
         return module
+
+    def add_module(self, module: Module) -> None:
+        modname = module.modname
+        modules = self.modules
+        if modname in modules:
+            raise ValueError(
+                f"Module '{modname}' already exists in package '{self.packname}'."
+            )
+        modules[modname] = module
+
+
+@dataclass(frozen=True)
+class App:
+
+    packages: Dict[Union[_NoPackage, str], Package] = field(
+        default_factory=dict[Union[_NoPackage, str], Package]
+    )
+
+    def add_package(self, package: Package) -> None:
+        thispackages = self.packages
+        packname = package.packname
+        if packname in thispackages:
+            raise ValueError
+        thispackages[packname] = package
+
+    def add_module(self, module: Module) -> None:
+        package = self.packages.get(module.packname)
+        if package is None:
+            raise ValueError(f"Package '{module.packname}' not found in App.")
+        package.add_module(module)

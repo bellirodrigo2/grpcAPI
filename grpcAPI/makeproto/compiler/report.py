@@ -62,6 +62,11 @@ class CompileErrorCode(Enum):
         "Unlinked Field",
         "Every Field should be linked to a block",
     )
+    INVALID_ONEOF_FIELD = (
+        "E304",
+        "Invalid OneOfField",
+        "OneOf Field must define a str key",
+    )
 
     # E400 - Descrições
     INVALID_DESCRIPTION = (

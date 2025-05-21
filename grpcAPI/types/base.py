@@ -24,12 +24,12 @@ class BaseProto:
         )
 
 
-class FieldSpec:
+class Metadata:
     def __init__(
         self,
         description: str = "",
         options: Optional[ProtoOption] = None,
-        index: int = 0,
+        index: Optional[int] = None,
         **meta: Any,
     ) -> None:
         self.description = description
@@ -38,13 +38,14 @@ class FieldSpec:
         self.meta = meta
 
 
-class OneOf(FieldSpec):
+class OneOf(Metadata):
     def __init__(
         self,
         key: str,
         description: str = "",
         options: Optional[ProtoOption] = None,
+        index: Optional[int] = None,
         **meta: Any,
     ):
         self.key = key
-        super().__init__(description, options, **meta)
+        super().__init__(description, options, index, **meta)

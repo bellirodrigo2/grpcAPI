@@ -5,7 +5,7 @@ from grpcAPI.makeproto.compiler import CompilerContext, DescriptionSetter, Optio
 from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
 from grpcAPI.makeproto.compiler.setters.info import format_description
 from grpcAPI.types import EnumValue
-from tests.compiler.test_helpers import (
+from tests.compilerpasses.test_helpers import (
     make_field,
     make_message_block,
     make_method,
@@ -78,9 +78,8 @@ class TestInfoSetter(unittest.TestCase):
 
     def test_multiline_comment_with_newlines(self) -> None:
         text = "This is a line\nand this is another line"
-        expected = "/*\nThis is a line\nand this is another line\n*/"
-        print(repr(format_description(text, 50, False)))
-        # assert format_description(text, 50, False) == expected
+        expected = "/*\nThis is a line and this is another line\n*/"
+        assert format_description(text, 50, False) == expected
 
     def test_always_format_true_for_multiline(self) -> None:
         text = "/* already formatted */"
@@ -90,8 +89,7 @@ class TestInfoSetter(unittest.TestCase):
     def test_removes_prefix_suffix_and_trims(self) -> None:
         text = " /* text with extra spaces */ "
         expected = "// text with extra spaces"
-        # assert format_description(text, 50, False) == expected
-        print(repr(format_description(text, 50, False)))
+        assert format_description(text, 50, True) == expected
 
     def test_extremely_long_text(self) -> None:
         text = "word " * 20  # ~100 chars

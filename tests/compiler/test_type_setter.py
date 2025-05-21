@@ -2,11 +2,9 @@ import unittest
 from enum import Enum
 from typing import Union
 
-from grpcAPI.makeproto.compiler import TypeSetter
-from grpcAPI.makeproto.compiler.compiler import CompilerContext, list_ctx_error_code
-from grpcAPI.types.message import NO_PACKAGE, BaseMessage
-from grpcAPI.types.method import Stream
-from grpcAPI.types.types import Bool, Bytes, Int32, String
+from grpcAPI.makeproto.compiler import CompilerContext, TypeSetter
+from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
+from grpcAPI.types import NO_PACKAGE, BaseMessage, Bool, Bytes, Int32, Stream, String
 from tests.compiler.test_helpers import make_field, make_message_block, make_method
 
 

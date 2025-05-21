@@ -1,8 +1,7 @@
 import unittest
 
-from grpcAPI.makeproto.compiler import IndexValidator
+from grpcAPI.makeproto.compiler import CompilerContext, IndexValidator
 from grpcAPI.makeproto.compiler.compiler import (
-    CompilerContext,
     list_ctx_error_code,
     list_ctx_error_messages,
 )

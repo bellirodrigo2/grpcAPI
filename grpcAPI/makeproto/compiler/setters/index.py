@@ -7,12 +7,10 @@ from grpcAPI.makeproto.protoblock import Block, Field, Method, is_enum
 
 class IndexSetter(CompilerPass):
 
-    def __init__(
-        self, reserveds: Optional[Set[int]] = None, counter: Optional[int] = None
-    ) -> None:
+    def __init__(self, reserveds: Optional[Set[int]] = None, counter: int = 1) -> None:
         super().__init__()
         self.reserveds = reserveds or set()
-        self.counter = counter or 1
+        self.counter = counter
 
     def reset(self) -> None:
         self.reserveds.clear()

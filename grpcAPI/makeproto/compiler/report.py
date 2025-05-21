@@ -64,68 +64,88 @@ class CompileErrorCode(Enum):
     )
 
     # E400 - Descrições
-    INVALID_BLOCK_DESCRIPTION = (
-        "E411",
-        "Invalid block description",
+    INVALID_DESCRIPTION = (
+        "E401",
+        "Invalid description",
         "Description must be a string",
     )
-    INVALID_FIELD_DESCRIPTION = (
-        "E421",
-        "Invalid field description",
-        "Description must be a string",
-    )
-    INVALID_METHOD_DESCRIPTION = (
-        "E431",
-        "Invalid method description",
-        "Description must be a string",
-    )
+    # INVALID_BLOCK_DESCRIPTION = (
+    #     "E411",
+    #     "Invalid block description",
+    #     "Description must be a string",
+    # )
+    # INVALID_FIELD_DESCRIPTION = (
+    #     "E421",
+    #     "Invalid field description",
+    #     "Description must be a string",
+    # )
+    # INVALID_METHOD_DESCRIPTION = (
+    #     "E431",
+    #     "Invalid method description",
+    #     "Description must be a string",
+    # )
 
     # E500 - Opções
-    INVALID_BLOCK_OPTIONS = (
-        "E512",
-        "Invalid block options",
+    INVALID_OPTIONS = (
+        "E501",
+        "Invalid options",
         "Options must be a dictionary",
     )
-    INVALID_BLOCK_OPTION_KEY = (
-        "E513",
-        "Invalid option key",
+    INVALID_KEY_OPTIONS = (
+        "E502",
+        "Invalid options",
         "Option keys must be strings",
     )
-    INVALID_BLOCK_OPTION_VALUE = (
-        "E514",
-        "Invalid option value",
+    INVALID_VALUE_OPTIONS = (
+        "E503",
+        "Invalid options",
         "Option values must be string or boolean",
     )
-    INVALID_FIELD_OPTIONS = (
-        "E522",
-        "Invalid field options",
-        "Options must be a dictionary",
-    )
-    INVALID_FIELD_OPTION_KEY = (
-        "E523",
-        "Invalid field option key",
-        "Option keys must be strings",
-    )
-    INVALID_FIELD_OPTION_VALUE = (
-        "E524",
-        "Invalid field option value",
-        "Option values must be string or boolean",
-    )
-    INVALID_METHOD_OPTIONS = (
-        "E532",
-        "Invalid method options",
-        "Options must be a dictionary",
-    )
-    INVALID_METHOD_OPTION_KEY = (
-        "E533",
-        "Invalid method option key",
-        "Option keys must be strings",
-    )
-    INVALID_METHOD_OPTION_VALUE = (
-        "E534",
-        "Invalid method option value",
-        "Option values must be string or boolean",
-    )
+    # INVALID_BLOCK_OPTIONS = (
+    #     "E512",
+    #     "Invalid block options",
+    #     "Options must be a dictionary",
+    # )
+    # INVALID_BLOCK_OPTION_KEY = (
+    #     "E513",
+    #     "Invalid option key",
+    #     "Option keys must be strings",
+    # )
+    # INVALID_BLOCK_OPTION_VALUE = (
+    #     "E514",
+    #     "Invalid option value",
+    #     "Option values must be string or boolean",
+    # )
+    # INVALID_FIELD_OPTIONS = (
+    #     "E522",
+    #     "Invalid field options",
+    #     "Options must be a dictionary",
+    # )
+    # INVALID_FIELD_OPTION_KEY = (
+    #     "E523",
+    #     "Invalid field option key",
+    #     "Option keys must be strings",
+    # )
+    # INVALID_FIELD_OPTION_VALUE = (
+    #     "E524",
+    #     "Invalid field option value",
+    #     "Option values must be string or boolean",
+    # )
+    # INVALID_METHOD_OPTIONS = (
+    #     "E532",
+    #     "Invalid method options",
+    #     "Options must be a dictionary",
+    # )
+    # INVALID_METHOD_OPTION_KEY = (
+    #     "E533",
+    #     "Invalid method option key",
+    #     "Option keys must be strings",
+    # )
+    # INVALID_METHOD_OPTION_VALUE = (
+    #     "E534",
+    #     "Invalid method option value",
+    #     "Option values must be string or boolean",
+    # )
 
     FIELD_TYPE_INVALID = (
         "E621",

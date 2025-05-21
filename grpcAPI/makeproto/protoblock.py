@@ -13,8 +13,11 @@ class Node:
     name: str
     number: Optional[int]
 
+    description: str
+    options: Dict[str, Union[bool, str]]
+
     block: Optional["Block"]
-    render_dict: Dict[str, Union[str, bool]]
+    render_dict: Dict[str, str]
 
     @property
     def index(self) -> Optional[int]:

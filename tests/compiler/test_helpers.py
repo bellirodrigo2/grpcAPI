@@ -1,5 +1,4 @@
-from collections.abc import Callable
-from typing import Any, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from grpcAPI.makeproto.protoblock import (
     Block,
@@ -14,27 +13,56 @@ from grpcAPI.makeproto.protoblock import (
 )
 
 
+def _make_generic_field(
+    name: str,
+    block: Optional[Block] = None,
+    ftype: Optional[type[Any]] = None,
+    number: Optional[int] = None,
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
+    type: str = "field",
+) -> Field:
+
+    if type == "enum":
+        BlockClass = EnumField
+    elif type == "oneof":
+        BlockClass = OneOfField
+    else:
+        BlockClass = Field
+
+    field = BlockClass(
+        name=name,
+        ftype=ftype,
+        number=number,
+        block=block,
+        render_dict={},
+        description=description,
+        options=options or {},
+    )
+    if block is not None:
+        block.fields.append(field)
+    return field
+
+
 def make_field(
     name: str,
     block: Optional[Block] = None,
     ftype: Optional[type[Any]] = None,
     number: Optional[int] = None,
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> Field:
-    field = Field(name=name, ftype=ftype, number=number, block=block, render_dict={})
-    if block is not None:
-        block.fields.append(field)
-    return field
+    return _make_generic_field(name, block, ftype, number, description, options)
 
 
 def make_enumfield(
     name: str,
     block: Optional[Block] = None,
     number: int = 1,
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> EnumField:
-    field = EnumField(name=name, number=number, block=block, render_dict={})
-    if block is not None:
-        block.fields.append(field)
-    return field
+    return _make_generic_field(name, block, None, number, description, options, "enum")
 
 
 def make_oneof_field(
@@ -42,13 +70,12 @@ def make_oneof_field(
     block: Optional[Block] = None,
     ftype: Optional[type[Any]] = None,
     number: Optional[int] = None,
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> OneOfField:
-    field = OneOfField(
-        name=name, ftype=ftype, number=number, block=block, render_dict={}
+    return _make_generic_field(
+        name, block, ftype, number, description, options, "oneof"
     )
-    if block is not None:
-        block.fields.append(field)
-    return field
 
 
 def make_method(
@@ -57,6 +84,8 @@ def make_method(
     request_type: Optional[List[type[Any]]] = None,
     response_type: Optional[type[Any]] = None,
     method_func: Optional[Callable[..., Any]] = None,
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> Method:
     method = Method(
         name=name,
@@ -66,6 +95,8 @@ def make_method(
         method_func=method_func,
         number=0,
         render_dict={},
+        description=description,
+        options=options or {},
     )
 
     if block is not None:
@@ -80,7 +111,9 @@ def _make_reserved_block(
     reserveds: Optional[Set[Union[str, int]]],
     protofile: str,
     package: str,
-    type: str,
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
+    type: str = "message",
 ) -> Block:
     if type == "service":
         BlockClass = Service
@@ -101,6 +134,8 @@ def _make_reserved_block(
         block=block,
         number=0,
         render_dict={},
+        description=description,
+        options=options or {},
     )
 
     if block is not None:
@@ -116,9 +151,11 @@ def make_enum_block(
     reserveds: Optional[Set[Union[str, int]]] = None,
     protofile: str = "test.proto",
     package: str = "test.package",
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> Block:
     return _make_reserved_block(
-        name, fields, block, reserveds, protofile, package, "enum"
+        name, fields, block, reserveds, protofile, package, description, options, "enum"
     )
 
 
@@ -129,9 +166,19 @@ def make_message_block(
     reserveds: Optional[Set[Union[str, int]]] = None,
     protofile: str = "test.proto",
     package: str = "test.package",
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> MessageBlock:
     return _make_reserved_block(
-        name, fields, block, reserveds, protofile, package, "message"
+        name,
+        fields,
+        block,
+        reserveds,
+        protofile,
+        package,
+        description,
+        options,
+        "message",
     )
 
 
@@ -141,8 +188,12 @@ def make_oneof_block(
     block: Optional[Block] = None,
     protofile: str = "test.proto",
     package: str = "test.package",
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> OneOfBlock:
-    return _make_reserved_block(name, fields, block, set(), protofile, package, "oneof")
+    return _make_reserved_block(
+        name, fields, block, set(), protofile, package, description, options, "oneof"
+    )
 
 
 def make_service_block(
@@ -151,7 +202,9 @@ def make_service_block(
     block: Optional[Block] = None,
     protofile: str = "test.proto",
     package: str = "test.package",
+    description: str = "",
+    options: Optional[Dict[str, Union[str, bool]]] = None,
 ) -> Service:
     return _make_reserved_block(
-        name, fields, block, set(), protofile, package, "service"
+        name, fields, block, set(), protofile, package, description, options, "service"
     )

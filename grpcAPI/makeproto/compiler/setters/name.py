@@ -57,14 +57,13 @@ DEFAULT_CASE = NameTransformStrategy.NO_TRANSFORM
 
 
 class NameSetter(CompilerPass):
-    def __init__(self, strategy: Optional[NameTransformStrategy] = None):
+    def __init__(self, strategy: NameTransformStrategy = DEFAULT_CASE):
         super().__init__()
         self.strategy = strategy
 
     def set_default(self) -> None:
-        if self.strategy is None:
-            settings = self.ctx.settings
-            self.strategy = settings.get("name_case", DEFAULT_CASE)
+        settings = self.ctx.settings
+        self.strategy = settings.get("name_case", self.strategy)
 
     def visit_block(self, block: Block) -> None:
         render_dict = block.render_dict

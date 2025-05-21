@@ -1,7 +1,6 @@
 import unittest
 
-from grpcAPI.makeproto.compiler import NameSetter
-from grpcAPI.makeproto.compiler.compiler import CompilerContext
+from grpcAPI.makeproto.compiler import CompilerContext, NameSetter
 from grpcAPI.makeproto.compiler.setters.name import (
     NameTransformStrategy,
     normalize_name,

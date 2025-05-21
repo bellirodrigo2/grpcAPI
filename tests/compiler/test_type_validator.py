@@ -3,16 +3,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List
 
-from grpcAPI.makeproto.compiler import TypeValidator
+from grpcAPI.makeproto.compiler import CompilerContext, TypeValidator
 from grpcAPI.makeproto.compiler.compiler import (
-    CompilerContext,
     list_ctx_error_code,
     list_ctx_error_messages,
 )
-from grpcAPI.types import DEFAULT_PRIMITIVES, String
-from grpcAPI.types.message import BaseMessage
-from grpcAPI.types.method import Stream
-from grpcAPI.types.types import Bytes
+from grpcAPI.types import DEFAULT_PRIMITIVES, BaseMessage, Bytes, Stream, String
 from tests.compiler.test_helpers import (
     make_field,
     make_message_block,

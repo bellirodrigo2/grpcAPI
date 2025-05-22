@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Annotated, Dict, List, Optional, Union
 
 from grpcAPI.makeproto.makeblock import (
+    MethodPack,
     make_enumblock,
     make_method,
     make_msgblock,
@@ -231,7 +232,10 @@ class TestMakeMethodService(unittest.TestCase):
         self.assertEqual(method.request_type[0], ReqMessage)
 
     def test_make_service_basic(self) -> None:
-        methods = [my_method, another_method, ignored_method]
+        my_method_p = MethodPack(my_method, "", {})
+        another_method_p = MethodPack(another_method, "", {})
+        ignored_method_p = MethodPack(ignored_method, "", {})
+        methods = [my_method_p, another_method_p, ignored_method_p]
         service = make_service(
             servicename="TestService",
             protofile="test.proto",

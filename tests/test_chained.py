@@ -1,11 +1,11 @@
 import unittest
 from enum import Enum
-from typing import Dict, List
+from typing import Any, Callable, Dict, List, Set, Union
 
 from typing_extensions import Annotated
 
-from grpcAPI.makeproto.maptoblock import map_service_to_blocks
-from grpcAPI.makeproto.protoblock import EnumBlock, MessageBlock
+from grpcAPI.makeproto.maptoblock import map_classes_blocks, map_service_classes
+from grpcAPI.makeproto.protoblock import Block, EnumBlock, MessageBlock
 from grpcAPI.types import (
     BaseMessage,
     Context,
@@ -106,23 +106,29 @@ def func1(coll: CollectionMsg, context: Context) -> Requisition:
     pass
 
 
-def func2(col: CollectionMsg, name: str) -> Stream[Requisition]:
+def func2(col: Requisition, name: str) -> Stream[Requisition]:
     pass
 
 
-def func3(coll: Stream[CollectionMsg]) -> CollectionMsg:
+def func3(coll: Stream[CollectionMsg]) -> ID:
     pass
 
 
-def func4(coll: Stream[CollectionMsg]) -> Stream[CollectionMsg]:
+def func4(coll: Stream[Product]) -> Stream[CollectionMsg]:
     pass
+
+
+def map_service_to_blocks(
+    methods: List[Callable[..., Any]],
+) -> List[Block]:
+    clss = map_service_classes(methods)
+    return map_classes_blocks(clss)
 
 
 class MapServiceToBlocksTest(unittest.TestCase):
     def test_map_service_to_blocks_various_funcs(self) -> None:
         methods = [func1, func2, func3, func4]
         blocks = map_service_to_blocks(methods)
-
         expected_messages = {
             "CollectionMsg",
             "Requisition",
@@ -142,16 +148,16 @@ class MapServiceToBlocksTest(unittest.TestCase):
         self.assertEqual(
             message_blocks,
             expected_messages,
-            f"Message blocks incorretos: {message_blocks}",
+            f"Incorrect Message blocks: {message_blocks}",
         )
         self.assertEqual(
-            enum_blocks, expected_enums, f"Enum blocks incorretos: {enum_blocks}"
+            enum_blocks, expected_enums, f"Incorrect Enum blocks: {enum_blocks}"
         )
         total_expected = len(expected_messages) + len(expected_enums)
         self.assertEqual(
             len(blocks),
             total_expected,
-            f"Quantidade total de blocks incorreta: {len(blocks)}",
+            f"Incorrect number of blocks: {len(blocks)}",
         )
 
         excluded_types = {"Context", "str", "int", "float"}

@@ -33,13 +33,20 @@ PROTOBUF_RESERVED_WORDS = {
 
 
 def check_valid(name: str, report: CompileReport) -> None:
-    if not VALID_NAME_RE.match(name):
+
+    if not name:
+        report.report_error(
+            code=CompileErrorCode.INVALID_NAME,
+            location=name,
+            override_msg=f"Invalid (Empty) name: '{name}'",
+        )
+    elif not VALID_NAME_RE.match(name):
         report.report_error(
             code=CompileErrorCode.INVALID_NAME,
             location=name,
             override_msg=f"Invalid name: '{name}'",
         )
-    if name in PROTOBUF_RESERVED_WORDS:
+    elif name in PROTOBUF_RESERVED_WORDS:
         report.report_error(
             code=CompileErrorCode.RESERVED_NAME,
             location=name,

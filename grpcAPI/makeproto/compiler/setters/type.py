@@ -64,17 +64,20 @@ class TypeSetter(CompilerPass):
             field.accept(self)
 
     def visit_field(self, field: Field) -> None:
-        report: CompileReport = self.ctx.get_report(field.block.name)
         block = field.block
         try:
             render_dict = field.render_dict
             type_str = get_type_str(field.ftype, block.package)
             render_dict["ftype"] = type_str
         except Exception as e:
-            report.report_error(CompileErrorCode.SETTER_PASS_ERROR, field.name, str(e))
+            report: CompileReport = self.ctx.get_report(field.block.name)
+            report.report_error(
+                CompileErrorCode.SETTER_PASS_ERROR,
+                field.name,
+                f"TypeSetter.visit_field: {str(e)}",
+            )
 
     def visit_method(self, method: Method) -> None:
-        report: CompileReport = self.ctx.get_report(method.block.name)
         try:
             render_dict = method.render_dict
             request_type, request_stream = get_func_arg_info(method.request_type[0])
@@ -84,4 +87,9 @@ class TypeSetter(CompilerPass):
             render_dict["response_type"] = response_type
             render_dict["response_stream"] = response_stream
         except Exception as e:
-            report.report_error(CompileErrorCode.SETTER_PASS_ERROR, method.name, str(e))
+            report: CompileReport = self.ctx.get_report(method.block.name)
+            report.report_error(
+                CompileErrorCode.SETTER_PASS_ERROR,
+                method.name,
+                f"TypeSetter.visit_method: {str(e)}",
+            )

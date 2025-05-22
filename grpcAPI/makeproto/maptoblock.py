@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Callable, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
 from grpcAPI.makeproto.protoblock import Block
@@ -48,7 +48,9 @@ def cls_to_blocks(tgt: type[BaseMessage]) -> List[Block]:
     return blocks
 
 
-def map_service_to_blocks(methods: List[Callable[..., Any]]) -> List[Block]:
+def map_service_classes(
+    methods: List[Callable[..., Any]],
+) -> Set[type[Union[BaseMessage, Enum]]]:
     all_types: Set[type] = set()
 
     for method in methods:
@@ -61,10 +63,23 @@ def map_service_to_blocks(methods: List[Callable[..., Any]]) -> List[Block]:
         if base:
             all_types.add(base)
 
-    all_blocks: List[Block] = []
-
+    classes: Set[type[Union[BaseMessage, Enum]]] = set()
     for typ in all_types:
-        blocks = cls_to_blocks(typ)
-        all_blocks.extend(blocks)
+        clss = cls_map(typ)
+        classes.update(clss)
+    return classes
 
-    return all_blocks
+
+def map_classes_blocks(clss: Set[type[Union[BaseMessage, Enum]]]) -> List[Block]:
+    all_blocks: Dict[str, Block] = {}
+    for cls in clss:
+        if issubclass(cls, Enum):
+            name = cls.__name__
+            if name not in all_blocks:
+                all_blocks[name] = make_enumblock(cls)
+        elif issubclass(cls, BaseMessage):
+            name = cls.__name__
+            if name not in all_blocks:
+                all_blocks[name] = make_msgblock(cls)
+
+    return list(all_blocks.values())

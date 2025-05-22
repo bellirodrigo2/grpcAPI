@@ -1,11 +1,12 @@
 syntax= "proto3";
 
+package fail;
 message Code {
-  int64 Code = 1;
+  int64 code = 1;
 }
 
 message Hello {
-  int64 Code = 536870911;
+  int64 code = 536870911;
   // oneof oo {
     
   // }

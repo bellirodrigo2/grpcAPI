@@ -30,6 +30,7 @@ class TestBlockNameValidator(unittest.TestCase):
         block = make_message_block("1InvalidName")
         self.validator.execute([block], self.context)
         report = self.context.get_report(block.name)
+        self.assertEqual(len(self.context), 1)
         self.assertTrue(any("E101" == e.code for e in report.errors))
 
     def test_reserved_word_block_name(self) -> None:
@@ -92,8 +93,9 @@ class TestFieldNameValidator(unittest.TestCase):
 
     def test_invalid_field_name(self) -> None:
         make_field("1InvalidName", block=self.block)
+        make_field("", block=self.block)
         self.validator.execute([self.block], self.context)
-        self.assertEqual(len(self.context), 1)
+        self.assertEqual(len(self.context), 2)
         self.assertTrue(all(msg == "E101" for msg in list_ctx_error_code(self.context)))
 
     def test_field_reserved_name(self) -> None:

@@ -157,17 +157,16 @@ def make_method(
 
 @dataclass
 class MethodPack:
+    method: Callable[..., Any]
     description: str
     options: ProtoOption
-    method: Callable[..., Any]
 
 
 def make_service(
     servicename: str,
     protofile: str,
     package: Union[str, _NoPackage],
-    methods: List[Callable[..., Any]],
-    # aqui method precisa carregar descriptions e options
+    methods: List[MethodPack],
     ignore_instance: List[type[Any]],
     description: str,
     options: ProtoOption,
@@ -185,6 +184,11 @@ def make_service(
         render_dict={},
         reserveds=[],
     )
-    method_list = [make_method(method, ignore_instance, service) for method in methods]
+    method_list = [
+        make_method(
+            method.method, ignore_instance, service, method.description, method.options
+        )
+        for method in methods
+    ]
     service.fields = method_list
     return service

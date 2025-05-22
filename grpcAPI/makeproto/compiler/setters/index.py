@@ -34,7 +34,9 @@ class IndexSetter(CompilerPass):
             block.fields.sort(key=lambda x: x.index)
         except Exception as e:
             report = self.ctx.get_report(block.name)
-            report.report_error(CompileErrorCode.SETTER_PASS_ERROR, block.name, str(e))
+            report.report_error(
+                CompileErrorCode.SETTER_PASS_ERROR, block.name, f"IndexSetter: {str(e)}"
+            )
 
     @property
     def next(self) -> int:

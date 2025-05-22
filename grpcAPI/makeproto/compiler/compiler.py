@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Union
 
 from rich.console import Console
 
@@ -13,8 +14,8 @@ class CompilerContext:
         settings: Optional[Dict[str, Any]] = None,
         state: Optional[Dict[str, Any]] = None,
     ):
-        self.blocks = blocks
-        self.settings = settings or {}
+        self.blocks: List[Block] = blocks or []
+        self.settings: Dict[str, Any] = settings or {}
         self.reports: Dict[str, CompileReport] = (
             {block.name: CompileReport(name=block.name) for block in blocks}
             if blocks
@@ -65,12 +66,16 @@ class CompilerPass(Visitor):
     def set_default(self) -> None:
         pass
 
+    def finish(self) -> None:
+        pass
+
     def execute(self, blocks: list[Block], ctx: CompilerContext) -> None:
         self._ctx = ctx
         self.set_default()
         for block in blocks:
             block.accept(self)
             self.reset()
+        self.finish()
 
     @property
     def ctx(self) -> CompilerContext:
@@ -93,10 +98,9 @@ class CompilerPass(Visitor):
 def compile_proto(
     blocks: list[Block],
     passes: list[CompilerPass],
-    settings: Optional[Dict[str, Any]] = None,
+    ctx: CompilerContext,
+    # settings: Optional[Dict[str, Any]] = None,
 ) -> CompilerContext:
-
-    ctx = CompilerContext(blocks, settings)
 
     for p in passes:
         p.execute(blocks, ctx)

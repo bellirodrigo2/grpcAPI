@@ -12,6 +12,8 @@ from grpcAPI.types import (
     allowed_map_key,
     is_BaseMessage,
 )
+from grpcAPI.types.message import BaseMessage
+from grpcAPI.types.types import BaseField
 from grpcAPI.utils import is_asyncgen
 
 DEFAULT_EXTRA_ARGS = [Context]
@@ -69,8 +71,15 @@ class TypeValidator(CompilerPass):
         if not isinstance(bt, type):
             return f'Field "{name}" is not a type. Found {bt}'
 
-        if issubclass(bt, BaseProto):  # se for mensagem protobuf pura
+        if issubclass(bt, BaseField):  # se for mensagem protobuf pura
             return None
+
+        if issubclass(bt, BaseMessage):  # se for mensagem protobuf pura
+            try:
+                bt.protofile()
+                return None
+            except NotImplementedError:
+                return f"BaseMessage class {bt.__name__} does not implement protofile()"
 
         if issubclass(bt, Enum):
             file = getattr(bt, "protofile", None)

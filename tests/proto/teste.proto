@@ -1,4 +1,6 @@
 syntax= "proto3";
+
+package teste;
 enum ProductArea {
   Area1 = 0;
   Area2 = 1;

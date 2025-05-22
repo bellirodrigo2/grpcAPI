@@ -115,8 +115,9 @@ class TestTypeValidator(unittest.TestCase):
 
     def test_field_invalid_type(self) -> None:
         make_field("field1", block=self.block, ftype=NotAllowed)
+        make_field("field1", block=self.block, ftype=Proto2)
         self.validator.execute([self.block], self.context)
-        self.assertEqual(len(self.context), 1)
+        self.assertEqual(len(self.context), 2)
         self.assertTrue(all(msg == "E621" for msg in list_ctx_error_code(self.context)))
 
     def test_field_list_of_valid_type(self) -> None:

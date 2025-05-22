@@ -67,6 +67,11 @@ class CompileErrorCode(Enum):
         "Invalid OneOfField",
         "OneOf Field must define a str key",
     )
+    OBJECT_MODULE_NOT_FOUND = (
+        "E305",
+        "Invalid Module",
+        "Model or Enum package/protofile was not found",
+    )
 
     # E400 - Descrições
     INVALID_DESCRIPTION = (

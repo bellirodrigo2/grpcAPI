@@ -4,8 +4,7 @@ from typing import Dict, List
 
 from grpcAPI.makeproto.maptoblock import cls_map, cls_to_blocks
 from grpcAPI.makeproto.protoblock import EnumBlock, MessageBlock
-from grpcAPI.types import BaseMessage
-from grpcAPI.types.types import Int32
+from grpcAPI.types import BaseMessage, Int32
 
 
 class Proto1(BaseMessage):

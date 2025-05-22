@@ -28,12 +28,14 @@ __all__ = [
     "Stream",
     "is_BaseMessage",
     "get_BaseMessage",
+    "_NoPackage",
 ]
 from grpcAPI.types.base import BaseProto, EnumValue, Metadata, OneOf, ProtoOption
 from grpcAPI.types.context import Context
 from grpcAPI.types.message import (
     NO_PACKAGE,
     BaseMessage,
+    _NoPackage,
     get_BaseMessage,
     get_description_options,
     get_headers,

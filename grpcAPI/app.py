@@ -1,11 +1,10 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Union
 
 from grpcAPI.proto_proxy import ProtoProxy
-from grpcAPI.types.base import ProtoOption
-from grpcAPI.types.message import NO_PACKAGE, BaseMessage, _NoPackage
+from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption, _NoPackage
 
 
 def create_proto_model(
@@ -121,3 +120,14 @@ class App:
         if package is None:
             raise ValueError(f"Package '{module.packname}' not found in App.")
         package.add_module(module)
+
+
+if __name__ == "__main__":
+
+    app = App()
+
+    pack1 = Package("pack1")
+    mod1 = pack1.make_module("modservice1")
+
+    class MyRequest(mod1.ProtoModel):
+        user: str

@@ -9,8 +9,7 @@ from grpcAPI.makeproto.makeblock import (
     make_service,
 )
 from grpcAPI.makeproto.protoblock import Method
-from grpcAPI.types.base import Metadata
-from grpcAPI.types.message import BaseMessage
+from grpcAPI.types import BaseMessage, Metadata
 
 
 # 1. Enum para testar make_enumblock

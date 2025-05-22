@@ -1,8 +1,8 @@
 import unittest
 from enum import IntEnum
 
-from grpcAPI.app import NO_PACKAGE, BaseMessage, Module, Package
-from grpcAPI.types.base import ProtoOption
+from grpcAPI.app import Module, Package
+from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption
 
 
 class TestModulePackage(unittest.TestCase):

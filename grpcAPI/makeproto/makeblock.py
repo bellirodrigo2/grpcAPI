@@ -1,6 +1,6 @@
 from collections import defaultdict
-from dataclasses import asdict
-from typing import Any, Callable, Dict, List, Optional
+from dataclasses import asdict, dataclass
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from grpcAPI.makeproto.protoblock import (
     Block,
@@ -15,7 +15,14 @@ from grpcAPI.makeproto.protoblock import (
     ServiceBlock,
 )
 from grpcAPI.mapclass import FuncArg, map_func_args, map_model_fields
-from grpcAPI.types import BaseMessage, Metadata, OneOf, ProtoOption, get_headers
+from grpcAPI.types import (
+    BaseMessage,
+    Metadata,
+    OneOf,
+    ProtoOption,
+    _NoPackage,
+    get_headers,
+)
 
 
 def make_msgblock(cls: type[BaseMessage]) -> Block:
@@ -124,6 +131,8 @@ def make_method(
     func: Callable[..., Any],
     ignore_instance: List[type[Any]],
     block: Optional[ServiceBlock] = None,
+    description: str = "",
+    options: Optional[ProtoOption] = None,
 ) -> Method:
 
     args, returntype = map_func_args(func)
@@ -140,17 +149,25 @@ def make_method(
         block=block,
         method_func=func,
         number=0,
-        description="",
-        options=ProtoOption(),
+        description=description,
+        options=options or ProtoOption(),
         render_dict={},
     )
+
+
+@dataclass
+class MethodPack:
+    description: str
+    options: ProtoOption
+    method: Callable[..., Any]
 
 
 def make_service(
     servicename: str,
     protofile: str,
-    package: str,
+    package: Union[str, _NoPackage],
     methods: List[Callable[..., Any]],
+    # aqui method precisa carregar descriptions e options
     ignore_instance: List[type[Any]],
     description: str,
     options: ProtoOption,

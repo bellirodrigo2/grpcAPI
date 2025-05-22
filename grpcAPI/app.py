@@ -1,8 +1,11 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, Iterator, List, Union
 
+from grpcAPI.makeproto.makeblock import MethodPack, make_service
+from grpcAPI.makeproto.maptoblock import map_service_to_blocks
+from grpcAPI.makeproto.protoblock import Block
 from grpcAPI.proto_proxy import ProtoProxy
 from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption, _NoPackage
 
@@ -28,19 +31,18 @@ class ProtoModel(BaseMessage, ProtoProxy):
 
 
 @dataclass
-class MethodPack:
+class ServicePack:
+    methods: List[MethodPack]
     description: str
     options: ProtoOption
-    method: Callable[..., Any]
 
 
 @dataclass(frozen=True)
 class Module:
     modname: str
     packname: Union[_NoPackage, str] = field(default=NO_PACKAGE)
-    _services: Dict[str, List[MethodPack]] = field(
-        default_factory=lambda: defaultdict(list)
-    )
+
+    _services: Dict[str, ServicePack] = field(default_factory=lambda: defaultdict(list))
     _model: type[BaseMessage] = ProtoModel
 
     def __post_init__(self) -> None:
@@ -56,6 +58,9 @@ class Module:
     @property
     def ProtoEnum(self) -> type[Enum]:
         return self._proto_enum
+
+    def __iter__(self) -> Iterator[tuple[str, List[MethodPack]]]:
+        return iter(self._services.items())
 
     def add_service(
         self,
@@ -122,12 +127,40 @@ class App:
         package.add_module(module)
 
 
-if __name__ == "__main__":
+# fazer modules em pack...um set, onde hash e eq considera packname e mopdname apenas
+def list_blocks(mod: Module) -> List[Block]:
 
-    app = App()
+    blocks: List[Block] = []
+    for service_name, list_method in mod:
+        funcs = [pack.method for pack in list_method]
+        service = make_service(
+            servicename=service_name,
+            protofile=mod.modname,
+            package=mod.packname,
+            methods=funcs,
+            ignore_instance=[],
+            description="",  # ainda nao tem description de servie...teria que ter make_service()
+            # ...muit verboso
+            options=ProtoOption(),
+        )
+        blocks.append(service)
+        msgs_enums = map_service_to_blocks(methods=funcs)
+        blocks.extend(msgs_enums)
+    return blocks
 
-    pack1 = Package("pack1")
-    mod1 = pack1.make_module("modservice1")
 
-    class MyRequest(mod1.ProtoModel):
-        user: str
+# if __name__ == "__main__":
+
+#     app = App()
+
+#     pack1 = Package("pack1")
+#     mod1 = pack1.make_module("modservice1")
+
+#     class MyRequest(mod1.ProtoModel):
+#         user: str
+
+#     class MyResponse(mod1.ProtoModel):
+#         id: int
+
+#     @mod1.service("service1")
+#     def method1(req: MyRequest) -> MyResponse: ...

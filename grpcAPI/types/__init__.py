@@ -26,16 +26,19 @@ __all__ = [
     "UInt64",
     "allowed_map_key",
     "Stream",
+    "is_BaseMessage",
+    "get_BaseMessage",
 ]
-
 from grpcAPI.types.base import BaseProto, EnumValue, Metadata, OneOf, ProtoOption
 from grpcAPI.types.context import Context
 from grpcAPI.types.message import (
     NO_PACKAGE,
     BaseMessage,
+    get_BaseMessage,
     get_description_options,
     get_headers,
     get_module,
+    is_BaseMessage,
 )
 from grpcAPI.types.method import Stream
 from grpcAPI.types.types import (

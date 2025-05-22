@@ -16,18 +16,9 @@ from typing import (
     get_type_hints,
 )
 
-from typing_extensions import Annotated as typing_extensions_Annotated
-
-try:
-    from typing import Annotated as typing_Annotated
-except ImportError:
-    typing_Annotated = None
+from grpcAPI.utils import is_Annotated
 
 T = TypeVar("T")
-
-
-def is_Annotated(origin: type[Any]) -> bool:
-    return origin in (typing_extensions_Annotated, typing_Annotated)
 
 
 def resolve_annotation(hint: Any) -> tuple[type, Optional[tuple[Any]]]:
@@ -82,6 +73,26 @@ class _NoDefault:
 
 
 NO_DEFAULT = _NoDefault()
+
+
+def get_safe_type_hints(obj: Any) -> dict[str, Any]:
+    """
+    Get type hints, including ForwardRef for Self
+    """
+    if inspect.isclass(obj):
+        cls = obj
+    elif inspect.isfunction(obj) or inspect.ismethod(obj):
+        cls = obj.__qualname__.split(".")[0]
+        cls = getattr(sys.modules[obj.__module__], cls, None)
+    else:
+        cls = None
+
+    globalns = vars(sys.modules[obj.__module__]).copy()
+
+    if cls and inspect.isclass(cls):
+        globalns[cls.__name__] = cls
+
+    return get_type_hints(obj, globalns=globalns, include_extras=True)
 
 
 def resolve_class_default(param: Parameter) -> tuple[bool, Any]:
@@ -155,10 +166,7 @@ def map_init_field(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]
     init_method = getattr(cls, "__init__", None)
     if not init_method:
         raise ValueError("No __init__ defined for the class")
-
-    hints = get_type_hints(
-        init_method, globalns=vars(sys.modules[cls.__module__]), include_extras=True
-    )
+    hints = get_safe_type_hints(init_method)
     sig = signature(init_method)
     items = [(name, param) for name, param in sig.parameters.items() if name != "self"]
     return [
@@ -167,9 +175,7 @@ def map_init_field(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]
 
 
 def map_dataclass_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
-    hints = get_type_hints(
-        cls, globalns=vars(sys.modules[cls.__module__]), include_extras=True
-    )
+    hints = get_safe_type_hints(cls)
     items = [(field.name, field) for field in fields(cls)]
     return [
         field_factory(obj, hints.get(name), bt_default_fallback) for name, obj in items
@@ -177,9 +183,7 @@ def map_dataclass_fields(cls: type, bt_default_fallback: bool = True) -> list[Fu
 
 
 def map_model_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
-    hints = get_type_hints(
-        cls, globalns=vars(sys.modules[cls.__module__]), include_extras=True
-    )
+    hints = get_safe_type_hints(cls)
     items = [
         (
             name,
@@ -198,13 +202,7 @@ def map_model_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncAr
 
 def map_return_type(func: Callable[..., Any]) -> FuncArg:
     sig = inspect.signature(func)
-
-    hints = get_type_hints(
-        func,
-        globalns=vars(sys.modules[func.__module__]),
-        include_extras=True,
-    )
-
+    hints = get_safe_type_hints(func)
     raw_return_type = hints.get("return", sig.return_annotation)
 
     if raw_return_type is inspect.Signature.empty:
@@ -225,9 +223,7 @@ def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]
         func = func.func
 
     sig = inspect.signature(func)
-    hints = get_type_hints(
-        func, globalns=vars(sys.modules[func.__module__]), include_extras=True
-    )
+    hints = get_safe_type_hints(func)
 
     funcargs: list[FuncArg] = []
 

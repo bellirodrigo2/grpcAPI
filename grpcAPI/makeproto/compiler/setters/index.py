@@ -52,6 +52,3 @@ class IndexSetter(CompilerPass):
             next_index = self.next
             field.number = next_index
             render_dict["number"] = str(next_index)
-
-    def visit_method(self, method: Method) -> None:
-        pass

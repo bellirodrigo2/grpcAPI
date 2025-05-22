@@ -75,7 +75,7 @@ class TestTypeSetter(unittest.TestCase):
         self.block = make_message_block(
             "ValidBlock",
         )
-        self.context = CompilerContext(blocks=[self.block])
+        self.context = CompilerContext()
         self.setter = TypeSetter()
 
     def test_field_primary_types_ok(self) -> None:

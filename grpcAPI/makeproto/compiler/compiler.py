@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from rich.console import Console
 
@@ -10,17 +9,13 @@ from grpcAPI.makeproto.protoblock import Block, Field, Method, Visitor
 class CompilerContext:
     def __init__(
         self,
-        blocks: Optional[List[Block]] = None,
+        name: str = "",
         settings: Optional[Dict[str, Any]] = None,
         state: Optional[Dict[str, Any]] = None,
     ):
-        self.blocks: List[Block] = blocks or []
+        self.name = name
         self.settings: Dict[str, Any] = settings or {}
-        self.reports: Dict[str, CompileReport] = (
-            {block.name: CompileReport(name=block.name) for block in blocks}
-            if blocks
-            else {}
-        )
+        self.reports: Dict[str, CompileReport] = {}
         self.state = state or {}
 
     def __len__(self) -> int:

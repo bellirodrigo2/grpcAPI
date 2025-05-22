@@ -5,11 +5,9 @@ from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
 from grpcAPI.makeproto.protoblock import (
     Block,
     EnumBlock,
-    Field,
     MessageBlock,
-    Method,
     OneOfBlock,
-    Service,
+    ServiceBlock,
 )
 
 
@@ -17,7 +15,7 @@ def validate_service(block: Block, report: CompileReport) -> None: ...
 
 
 def validate_enum(block: Block, report: CompileReport) -> None:
-    if len(block.fields) > 0:
+    if len(block.fields) == 0:
         report.report_error(CompileErrorCode.ENUM_MUST_HAVE_FIELDS, location=block.name)
 
 
@@ -25,14 +23,14 @@ def validate_message(block: Block, report: CompileReport) -> None: ...
 
 
 def validate_oneof(block: Block, report: CompileReport) -> None:
-    if len(block.fields) > 0:
+    if len(block.fields) == 0:
         report.report_error(
             CompileErrorCode.ONEOF_MUST_HAVE_FIELDS, location=block.name
         )
 
 
 validate_map: Dict[Block, Callable[[Block, CompileReport], None]] = {
-    Service: validate_service,
+    ServiceBlock: validate_service,
     EnumBlock: validate_enum,
     MessageBlock: validate_message,
     OneOfBlock: validate_oneof,
@@ -49,7 +47,7 @@ class BlockStructureValidator(CompilerPass):
 
     def visit_block(self, block: Block) -> None:
         report: CompileReport = self.ctx.get_report(block.name)
-        validate = validate_map.get(block, wrong_validation)
+        validate = validate_map.get(type(block), wrong_validation)
         validate(block, report)
 
         for field in block.fields:
@@ -58,9 +56,3 @@ class BlockStructureValidator(CompilerPass):
                 report.report_error(
                     CompileErrorCode.UNLINKED_FIELD, location=field.name
                 )
-
-    def visit_field(self, field: Field) -> None:
-        pass
-
-    def visit_method(self, method: Method) -> None:
-        pass

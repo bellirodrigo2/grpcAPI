@@ -12,6 +12,9 @@ class ImportsValidator(CompilerPass):
 
     def __init__(self) -> None:
         super().__init__()
+        self.packset = None
+
+    def set_default(self) -> None:
         if "_packages" not in self.ctx.state:
             raise ValueError(
                 'Compiler Context must have a packages set on state with key "_packages"'
@@ -30,7 +33,12 @@ class ImportsValidator(CompilerPass):
             return
         # BaseMessage or Enum (guaranteed by type validator)
         ftype_pack = ftype.package()
-        ftype_proto = ftype.protofile()
+        try:
+            ftype_proto = ftype.protofile()
+        except NotImplementedError:
+            # protofile not implemented is covered in types validator
+            return
+
         if (ftype_pack, ftype_proto) not in self.packset:
             report = self.ctx.get_report(field.top_block.name)
             report.report_error(

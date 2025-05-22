@@ -6,7 +6,7 @@ message Code {
 }
 
 message Hello {
-  int64 code = 536870911;
+  // int64 code = 536870911;
   // oneof oo {
     
   // }

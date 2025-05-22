@@ -3,7 +3,7 @@
 
 import re
 from enum import Enum, auto
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict
 
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, Method

@@ -40,9 +40,8 @@ class ImportsSetter(CompilerPass):
 
             render_dict = field.block.render_dict
             if "imports" not in render_dict:
-                render_dict["imports"] = []
-            if import_str not in render_dict["imports"]:
-                render_dict["imports"].append(import_str)
+                render_dict["imports"] = set()
+            render_dict["imports"].add(import_str)
         except Exception as e:
             report: CompileReport = self.ctx.get_report(field.block.name)
             report.report_error(

@@ -1,4 +1,4 @@
-{% extends "comment.j2" %}
+{% extends "description.j2" %}
 {% block content %}
 rpc {{ name }}({% if request_stream %}stream {% endif %}{{ request_type }}) returns ({% if response_stream %}stream {% endif %}{{ response_type }}) {
 {% for key, val in (options or {}).items() %}

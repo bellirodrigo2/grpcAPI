@@ -6,6 +6,8 @@ message Code {
 }
 
 message Hello {
+  reserved 1, 2,2 to 4;
+  reserved "old_field";
   // int64 code = 536870911;
   // oneof oo {
     

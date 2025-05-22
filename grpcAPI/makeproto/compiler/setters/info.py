@@ -1,12 +1,12 @@
 import textwrap
-from typing import List
+from typing import List, Union
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, Method
 from grpcAPI.types import EnumValue, ProtoOption
 
 
-def format_option(options: ProtoOption) -> str:
+def format_option(options: ProtoOption) -> List[str]:
 
     str_options: List[str] = []
 
@@ -21,7 +21,7 @@ def format_option(options: ProtoOption) -> str:
             val_txt = f'"{value}"'  # string literal
 
         str_options.append(f"{key} = {val_txt}")
-    return ", ".join(str_options)
+    return str_options
 
 
 class OptionsSetter(CompilerPass):
@@ -95,3 +95,33 @@ class DescriptionSetter(CompilerPass):
     def visit_method(self, method: Method) -> None:
         description = self._format(method.description)
         method.render_dict["description"] = description
+
+
+def reserveds_to_string(reserveds: List[Union[int, range]]) -> str:
+    ranges = [r for r in reserveds if isinstance(r, range)]
+    range_numbers = set(i for r in ranges for i in r)
+
+    unique_ints = sorted(
+        set(n for n in reserveds if isinstance(n, int) and n not in range_numbers)
+    )
+    combined = list(ranges) + list(unique_ints)
+    combined.sort(key=lambda x: x.start if isinstance(x, range) else x)
+    parts = []
+    for item in combined:
+        if isinstance(item, range):
+            parts.append(f"{item.start} to {item.stop - 1}")
+        else:
+            parts.append(str(item))
+    return ", ".join(parts)
+
+
+class ReservedSetter(CompilerPass):
+    def visit_block(self, block: Block) -> None:
+        reserveds: List[str] = []
+        if block.reserved_keys:
+            reserveds.append(",".join(block.reserved_keys))
+        if block.raw_reserved_indexes:
+            indexes_str = reserveds_to_string(block.raw_reserved_indexes)
+            reserveds.append(indexes_str)
+
+        block.render_dict["reserveds"] = reserveds

@@ -4,7 +4,11 @@ from grpcAPI.app import App, Package, map_package_block
 from grpcAPI.makeproto.compiler.compiler import CompilerContext, CompilerPass
 from grpcAPI.makeproto.compiler.setters.imports import ImportsSetter
 from grpcAPI.makeproto.compiler.setters.index import IndexSetter
-from grpcAPI.makeproto.compiler.setters.info import DescriptionSetter, OptionsSetter
+from grpcAPI.makeproto.compiler.setters.info import (
+    DescriptionSetter,
+    OptionsSetter,
+    ReservedSetter,
+)
 from grpcAPI.makeproto.compiler.setters.name import NameSetter
 from grpcAPI.makeproto.compiler.setters.type import TypeSetter
 from grpcAPI.makeproto.compiler.validators.blockstructure import BlockStructureValidator
@@ -13,6 +17,7 @@ from grpcAPI.makeproto.compiler.validators.info import (
     DescriptionValidator,
     OneOfValidator,
     OptionsValidator,
+    ReservedValidator,
 )
 from grpcAPI.makeproto.compiler.validators.name import (
     BlockNameValidator,
@@ -92,6 +97,7 @@ validators: List[CompilerPass] = [
     OptionsValidator,
     DescriptionValidator,
     OneOfValidator,
+    ReservedValidator,
 ]  # type: ignore
 
 setters: List[CompilerPass] = [
@@ -101,4 +107,5 @@ setters: List[CompilerPass] = [
     ImportsSetter,
     DescriptionSetter,
     OptionsSetter,
+    ReservedSetter,
 ]

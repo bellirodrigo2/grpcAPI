@@ -1,8 +1,7 @@
 import textwrap
 import unittest
 
-from grpcAPI.makeproto.compiler import CompilerContext, DescriptionSetter, OptionsSetter
-from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
+from grpcAPI.makeproto.compiler import CompilerContext, OptionsSetter, ReservedSetter
 from grpcAPI.makeproto.compiler.setters.info import format_description
 from grpcAPI.types import EnumValue
 from tests.compilerpasses.test_helpers import (
@@ -26,7 +25,7 @@ class TestInfoSetter(unittest.TestCase):
         self.method = make_method("method1", block=self.service)
 
         self.optionssetter = OptionsSetter()
-        self.descriptionvalidator = DescriptionSetter()
+        self.reservedsetter = ReservedSetter()
         self.context = CompilerContext()
         self.report = self.context.get_report(self.block.name)
 
@@ -38,9 +37,17 @@ class TestInfoSetter(unittest.TestCase):
         }
         self.optionssetter.execute([self.block, self.service], self.context)
         self.assertEqual(len(self.context), 0)
-        self.assertEqual(
+        self.assertIn(
+            'foo = "bar"',
             self.block.render_dict["options"],
-            'foo = "bar", deprecated = true, hello = world',
+        )
+        self.assertIn(
+            "deprecated = true",
+            self.block.render_dict["options"],
+        )
+        self.assertIn(
+            "hello = world",
+            self.block.render_dict["options"],
         )
 
     def test_already_single_line_comment(self) -> None:
@@ -95,3 +102,10 @@ class TestInfoSetter(unittest.TestCase):
         text = "word " * 20  # ~100 chars
         expected = "/*\n" + "\n".join(textwrap.wrap(text.strip(), width=30)) + "\n*/"
         assert format_description(text, 30, False) == expected
+
+    def test_reserveds_ok(self) -> None:
+        self.block.reserveds = [1, 4, range(5, 9), "foo", "bar", range(12, 45)]
+        self.reservedsetter.execute([self.block], self.context)
+        reserveds = self.block.render_dict["reserveds"]
+        self.assertIn("foo,bar", reserveds)
+        self.assertIn("1, 4, 5 to 8, 12 to 44", reserveds)

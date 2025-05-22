@@ -79,21 +79,11 @@ class CompileErrorCode(Enum):
         "Invalid description",
         "Description must be a string",
     )
-    # INVALID_BLOCK_DESCRIPTION = (
-    #     "E411",
-    #     "Invalid block description",
-    #     "Description must be a string",
-    # )
-    # INVALID_FIELD_DESCRIPTION = (
-    #     "E421",
-    #     "Invalid field description",
-    #     "Description must be a string",
-    # )
-    # INVALID_METHOD_DESCRIPTION = (
-    #     "E431",
-    #     "Invalid method description",
-    #     "Description must be a string",
-    # )
+    INVALID_RESERVED_DESCRIPTION = (
+        "E402",
+        "Invalid Reserved type",
+        "Reserved should be a str, int or range",
+    )
 
     # E500 - Opções
     INVALID_OPTIONS = (

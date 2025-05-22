@@ -1,12 +1,10 @@
-from collections.abc import AsyncGenerator as ABCAsyncGenerator
 from typing import Any, Tuple, get_args, get_origin
-
-from typing_extensions import Annotated
 
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
-from grpcAPI.makeproto.protoblock import Block, Field, Method
+from grpcAPI.makeproto.protoblock import Block, EnumField, Field, Method
 from grpcAPI.types import DEFAULT_PRIMITIVES, BaseProto
+from grpcAPI.utils import is_Annotated, is_asyncgen
 
 
 def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
@@ -31,7 +29,7 @@ def get_type_str(bt: type[Any], block_package: str) -> str:
     origin = get_origin(bt)
     args = get_args(bt)
 
-    if origin is Annotated:
+    if is_Annotated(origin):
         return get_type_str(args[0], block_package)
 
     if origin is list:
@@ -50,9 +48,9 @@ def get_type_str(bt: type[Any], block_package: str) -> str:
 def get_func_arg_info(tgt: type[Any]) -> Tuple[str, bool]:
     origin = get_origin(tgt)
     args = get_args(tgt)
-    if origin is Annotated:
+    if is_Annotated(origin):
         return get_func_arg_info(args[0])
-    if origin is ABCAsyncGenerator:
+    if is_asyncgen(origin):
         return args[0].__name__, True
     return tgt.__name__, False
 
@@ -67,7 +65,10 @@ class TypeSetter(CompilerPass):
         block = field.block
         try:
             render_dict = field.render_dict
-            type_str = get_type_str(field.ftype, block.package)
+            if isinstance(field, EnumField):
+                type_str = ""
+            else:
+                type_str = get_type_str(field.ftype, block.package)
             render_dict["ftype"] = type_str
         except Exception as e:
             report: CompileReport = self.ctx.get_report(field.block.name)

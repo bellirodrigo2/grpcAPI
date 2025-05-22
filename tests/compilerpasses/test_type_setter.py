@@ -6,6 +6,7 @@ from grpcAPI.makeproto.compiler import CompilerContext, TypeSetter
 from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
 from grpcAPI.types import NO_PACKAGE, BaseMessage, Bool, Bytes, Int32, Stream, String
 from tests.compilerpasses.test_helpers import (
+    make_enumfield,
     make_field,
     make_message_block,
     make_method,
@@ -90,7 +91,7 @@ class TestTypeSetter(unittest.TestCase):
         self.setter.execute([self.block], self.context)
         self.assertEqual(len(self.context), 0)
 
-    def test_field_enum_types_ok(self) -> None:
+    def test_fields_w_pack(self) -> None:
 
         make_field("field1", block=self.block, ftype=Enum2)
         make_field("field2", block=self.block, ftype=Enum1)
@@ -101,6 +102,17 @@ class TestTypeSetter(unittest.TestCase):
         types = [list(rdict.values())[0] for rdict in render_dicts]
         self.assertIn("hello.world", types)
         self.assertIn("foo.bar", types)
+
+    def test_field_enum_types_ok(self) -> None:
+
+        make_enumfield("field1", block=self.block)
+        make_enumfield("field2", block=self.block)
+
+        self.setter.execute([self.block], self.context)
+        self.assertEqual(len(self.context), 0)
+        render_dicts = [field.render_dict for field in self.block.fields]
+        types = [list(rdict.values())[0] for rdict in render_dicts]
+        self.assertEqual(["", ""], types)
 
     def test_field_message_types_ok(self) -> None:
         make_field("field1", block=self.block, ftype=Proto1)

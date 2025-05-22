@@ -77,3 +77,12 @@ class OneOfValidator(CompilerPass):
                 code=CompileErrorCode.INVALID_ONEOF_FIELD,
                 location=field.name,
             )
+
+
+class ReservedValidator(CompilerPass):
+    def visit_block(self, block: Block) -> None:
+        report = self.ctx.get_report(block.name)
+        if any(not isinstance(item, (str, int, range)) for item in block.reserveds):
+            report.report_error(
+                CompileErrorCode.INVALID_RESERVED_DESCRIPTION, location=block.name
+            )

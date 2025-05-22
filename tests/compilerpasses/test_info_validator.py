@@ -4,6 +4,7 @@ from grpcAPI.makeproto.compiler import (
     CompilerContext,
     DescriptionValidator,
     OptionsValidator,
+    ReservedValidator,
 )
 from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
 from tests.compilerpasses.test_helpers import (
@@ -28,6 +29,7 @@ class TestInfoValidator(unittest.TestCase):
 
         self.optionsvalidator = OptionsValidator()
         self.descriptionvalidator = DescriptionValidator()
+        self.reservedvalidator = ReservedValidator()
         self.context = CompilerContext()
         self.report = self.context.get_report(self.block.name)
 
@@ -77,3 +79,13 @@ class TestInfoValidator(unittest.TestCase):
         self.assertEqual(len(self.context), 5)
         errors = list_ctx_error_code(self.context)
         self.assertTrue(all(err == "E401" for err in errors))
+
+    def test_reserved_ok(self) -> None:
+        self.block.reserveds = [1, range(4, 10), "foo", "bar"]
+        self.reservedvalidator.execute([self.block], self.context)
+        self.assertEqual(len(self.context), 0)
+
+    def test_reserved_fail(self) -> None:
+        self.block.reserveds = [1, range(4, 10), {}]
+        self.reservedvalidator.execute([self.block], self.context)
+        self.assertEqual(len(self.context), 1)

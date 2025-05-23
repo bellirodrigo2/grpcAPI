@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, List, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Set, Tuple, Union
 
+from grpcAPI.makeproto.compiler.compiler import CompilerContext, CompilerPass
 from grpcAPI.makeproto.makeblock import make_cls_block, make_service
 from grpcAPI.makeproto.protoblock import Block
 from grpcAPI.types import BaseMessage, ProtoOption, _NoPackage
@@ -24,6 +25,60 @@ class ModuleCompilerPack:
     description: str
     options: ProtoOption
     ignore_instance: List[type[Any]]
+
+
+class CompilationError(Exception):
+    def __init__(self, contexts: List[CompilerContext]) -> None:
+        self.contexts = contexts
+        self.total_errors = sum(len(ctx) for ctx in contexts)
+        super().__init__(
+            f"Compilation failed with {self.total_errors} errors across {len(self.contexts)} packages."
+        )
+
+
+def make_execution_list(
+    compilerpacks: List[ModuleCompilerPack],
+    settings: Dict[str, Any],
+) -> List[Tuple[ModuleCompilerPack, CompilerContext]]:
+    # ) -> List[Tuple[List[Block], CompilerContext]]:
+
+    global_modules = [(mcp.package, mcp.protofile) for mcp in compilerpacks]
+
+    execution_list: List[Tuple[ModuleCompilerPack, CompilerContext]] = []
+    for module in compilerpacks:
+        ctx = CompilerContext(
+            name=module.package,
+            state={"globalpacks": global_modules},
+            settings=settings,
+        )
+        execution_list.append((module, ctx))
+    return execution_list
+
+
+def compile_packs(
+    compilerpacks: List[ModuleCompilerPack],
+    settings: Dict[str, Any],
+    passes: List[List[CompilerPass]],
+) -> None:
+    execution_list = make_execution_list(compilerpacks, settings)
+    # FALTA SO MUDAR DE MODULECOMPILER PACK PARA LISTA DE BLOCKS
+    for compilerpass in passes:
+        run_compiler_passes(execution_list, compilerpass)
+
+
+def run_compiler_passes(
+    packs: List[Tuple[ModuleCompilerPack, CompilerContext]],
+    compilerpass: List[CompilerPass],
+) -> None:
+    ctxs = [tup[1] for tup in packs]
+    for passes in compilerpass:
+        for block, ctx in packs:
+            for pass_ in compilerpass:
+                pass_.execute(block, ctx)
+
+        total_errors = sum(len(ctx) for ctx in ctxs)
+        if total_errors > 0:
+            raise CompilationError(ctxs)
 
 
 def map_to_blocks(module: ModuleCompilerPack) -> Tuple[str, ProtoOption, List[Block]]:

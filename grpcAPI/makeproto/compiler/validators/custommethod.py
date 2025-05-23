@@ -1,18 +1,14 @@
-from typing import Any, Callable, List, Optional, Protocol
+from typing import Any, Callable, List, Optional
 
-from grpcAPI.makeproto.compiler.compiler import CompilerContext, CompilerPass
+from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode
 from grpcAPI.makeproto.protoblock import Method
-
-
-class checkfunc(Protocol):
-    def __call__(self, arg: Callable[..., Any], ctx: CompilerContext) -> List[str]: ...
 
 
 class CustomPass(CompilerPass):
     def __init__(
         self,
-        visitmethod: checkfunc,
+        visitmethod: Callable[[Callable[..., Any]], List[str]],
         reset: Optional[Callable[[Any], None]] = None,
         setdefault: Optional[Callable[[Any], None]] = None,
         finish: Optional[Callable[[Any], None]] = None,
@@ -41,5 +37,5 @@ class CustomPass(CompilerPass):
             report.report_error(CompileErrorCode.RUNTIME_POSSIBLE_ERROR, name, error)
 
     def visit_method(self, method: Method) -> None:
-        error_msg = self._visit_method(method.method_func, self.ctx)
+        error_msg = self._visit_method(method.method_func)
         self._report(error_msg, method.name)

@@ -1,103 +1,81 @@
-from enum import Enum
-from typing import Any, Callable, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional
 
-from grpcAPI.app import App, Module
-from grpcAPI.makeproto import ModuleCompilerPack, ServiceCompilerPack
-from grpcAPI.typemapping import map_class_fields, map_func_args
-from grpcAPI.types import BaseMessage, _NoPackage, get_BaseMessage
+from grpcAPI.app import App
+from grpcAPI.compileutils import make_compiler_entry
+from grpcAPI.makeproto import compile_packs
+from grpcAPI.makeproto.compiler import (
+    BlockNameValidator,
+    BlockStructureValidator,
+    DescriptionSetter,
+    DescriptionValidator,
+    FieldNameValidator,
+    ImportsSetter,
+    IndexSetter,
+    IndexValidator,
+    NameSetter,
+    OneOfValidator,
+    OptionsSetter,
+    OptionsValidator,
+    ReservedSetter,
+    ReservedValidator,
+    TypeSetter,
+    TypeValidator,
+)
+from grpcAPI.makeproto.compiler.validators.custommethod import CustomPass
+from grpcAPI.types import Context
 
-
-def prepare_modules(
-    app: App, ignore_instance: List[type[Any]]
-) -> List[ModuleCompilerPack]:
-
-    compilerpacks: List[ModuleCompilerPack] = []
-    for package in app._packages.values():
-        for module in package:
-            objects = map_module_cls(module)
-            services = map_module_service(module)
-
-            modulecompilerpack = ModuleCompilerPack(
-                package=module.packname,
-                protofile=module.modname,
-                objects=objects,
-                services=services,
-                description=module.description,
-                options=module.options,
-                ignore_instance=ignore_instance,
-            )
-            compilerpacks.append(modulecompilerpack)
-    return compilerpacks
+settings: Dict[str, Any] = {}
 
 
-def map_module_cls(mod: Module) -> Set[type[Union[BaseMessage, Enum]]]:
-
-    clss: Set[type[Union[BaseMessage, Enum]]] = set()
-    for servicepack in mod:
-        funcs = [pack.method for pack in servicepack.methods]
-        msgs_enums = map_service_classes(methods=funcs)
-        clss.update(msgs_enums)
-    return clss
+def placeholder(func: Callable[..., Any]) -> List[str]:
+    return []
 
 
-def cls_map(
-    tgt: type[BaseMessage],
-    visited: Optional[Set[type[BaseMessage]]] = None,
-) -> Set[type[BaseMessage]]:
+ctxinjectpass = CustomPass(visitmethod=placeholder)
 
-    if visited is None:
-        visited = set()
+# LER DE std_config.json em makeproto.compiler
+# ler de makeproto.compiler
 
-    if tgt in visited:
-        return visited
+# NAMESETTER
+# DEFAULT_CASE = NameTransformStrategy.NO_TRANSFORM
+# **** precisa de um de para
 
-    if issubclass(tgt, Enum) or issubclass(tgt, BaseMessage):
-        visited.add(tgt)
+# DA PRA PASSAR O SET DE (PACKAGE,PROTOFILE) em ImportsValidator
+# global_modules = [(mcp.package, mcp.protofile) for mcp in compilerpacks]
 
-        args = map_class_fields(tgt, False)
+# DescriptionSetter
+MAXCHAR_PER_LINE = 80
+ALWAYS_FORMAT = True
 
-        for arg in args:
-            if arg.istype(BaseMessage):
-                msgs = cls_map(arg.basetype, visited)
-                visited.update(msgs)
-            elif arg.istype(Enum):
-                visited.add(arg.basetype)
-    return visited
+# TypeValidator
+DEFAULT_EXTRA_ARGS = [Context]
 
 
-def map_service_classes(
-    methods: List[Callable[..., Any]],
-) -> Set[type[Union[BaseMessage, Enum]]]:
-    all_types: Set[type] = set()
+validators = [
+    BlockStructureValidator(),
+    TypeValidator(DEFAULT_EXTRA_ARGS),
+    BlockNameValidator(),
+    FieldNameValidator(),
+    IndexValidator(),
+    OptionsValidator(),
+    DescriptionValidator(),
+    OneOfValidator(),
+    ReservedValidator(),
+    ctxinjectpass,
+]  # type: ignore
 
-    for method in methods:
-        funcargs, return_type = map_func_args(method)
-        for arg in funcargs:
-            base = get_BaseMessage(arg.basetype)
-            if base:
-                all_types.add(base)
-        base = get_BaseMessage(return_type.basetype)
-        if base:
-            all_types.add(base)
-
-    classes: Set[type[Union[BaseMessage, Enum]]] = set()
-    for typ in all_types:
-        clss = cls_map(typ)
-        classes.update(clss)
-    return classes
+setters = [
+    TypeSetter(),
+    NameSetter(),
+    IndexSetter(),
+    ImportsSetter(),
+    DescriptionSetter(MAXCHAR_PER_LINE, ALWAYS_FORMAT),
+    OptionsSetter(),
+    ReservedSetter(),
+]
 
 
-def map_module_service(mod: Module) -> List[ServiceCompilerPack]:
-    servicecompilerpacks: List[ServiceCompilerPack] = []
-    for servicepack in mod:
-        servicecompiler = ServiceCompilerPack(
-            servicename=servicepack.servname,
-            methods=[
-                (method.method, method.description, method.options)
-                for method in servicepack.methods
-            ],
-            description=servicepack.description,
-            options=servicepack.options,
-        )
-        servicecompilerpacks.append(servicecompiler)
-    return servicecompilerpacks
+def compile(app: App, ignore_instance: List[type[Any]]) -> None:
+
+    compilerpack_list = make_compiler_entry(app, ignore_instance)
+    compile_packs(compilerpack_list, settings, [validators, setters])

@@ -2,24 +2,30 @@
 # import "pack1/file2.proto";
 # import "pack2/file2.proto";
 
+from typing import List, Optional, Tuple, Union
+
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode
 from grpcAPI.makeproto.protoblock import Block, EnumField, Field
-from grpcAPI.types.types import DEFAULT_PRIMITIVES, BaseField
+from grpcAPI.types import DEFAULT_PRIMITIVES, _NoPackage
+from grpcAPI.types.types import BaseField
 
 
 class ImportsValidator(CompilerPass):
 
-    def __init__(self) -> None:
+    def __init__(
+        self, packset: Optional[List[Tuple[Union[str, _NoPackage]]]] = None
+    ) -> None:
         super().__init__()
-        self.packset = None
+        self.packset = packset
 
     def set_default(self) -> None:
-        if "_packages" not in self.ctx.state:
+        if self.packset is None:
+            self.packset = self.ctx.state.get("_packages", None)
+        if self.packset is None:
             raise ValueError(
                 'Compiler Context must have a packages set on state with key "_packages"'
             )
-        self.packset = self.ctx.state["_packages"]
 
     def visit_block(self, block: Block) -> None:
         for field in block.fields:

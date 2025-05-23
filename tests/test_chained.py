@@ -1,10 +1,10 @@
 import unittest
 from enum import Enum
-from typing import Any, Callable, Dict, Iterable, List, Set, Union
+from typing import Any, Callable, Dict, Iterable, List, Union
 
 from typing_extensions import Annotated
 
-from grpcAPI.compile import map_service_classes
+from grpcAPI.compileutils import map_service_classes
 from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
 from grpcAPI.makeproto.protoblock import Block, EnumBlock, MessageBlock
 from grpcAPI.types import (

@@ -129,9 +129,11 @@ def field_factory(
         name=obj.name,
         tgttype=argtype,
         annotation=hint,
+        default=default,
+        has_default=has_default,
     )
-    funcarg.default = default
-    funcarg.has_default = has_default
+    # funcarg.default = default
+    # funcarg.has_default = has_default
 
     return funcarg
 
@@ -140,15 +142,17 @@ def make_funcarg(
     name: str,
     tgttype: type[Any],
     annotation: Optional[type[Any]] = None,
+    default: Any = None,
+    has_default: bool = False,
 ) -> FuncArg:
     basetype, extras = resolve_annotation(annotation or tgttype)
     return FuncArg(
         name=name,
         argtype=tgttype,
         basetype=basetype,
-        default=None,
+        default=default,
         extras=extras,
-        has_default=False,
+        has_default=has_default,
     )
 
 

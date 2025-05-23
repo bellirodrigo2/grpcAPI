@@ -119,9 +119,9 @@ class ReservedSetter(CompilerPass):
     def visit_block(self, block: Block) -> None:
         reserveds: List[str] = []
         if block.reserved_keys:
-            reserveds.append(",".join(block.reserved_keys))
+            keys = [f'"{key}"' for key in block.reserved_keys]
+            reserveds.append(",".join(keys))
         if block.raw_reserved_indexes:
             indexes_str = reserveds_to_string(block.raw_reserved_indexes)
             reserveds.append(indexes_str)
-
         block.render_dict["reserveds"] = reserveds

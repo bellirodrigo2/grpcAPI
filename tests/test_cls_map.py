@@ -2,9 +2,26 @@ import unittest
 from enum import Enum
 from typing import Dict, List
 
-from grpcAPI.makeproto.maptoblock import cls_map, cls_to_blocks
-from grpcAPI.makeproto.protoblock import EnumBlock, MessageBlock
+from grpcAPI.compile import cls_map
+from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
+from grpcAPI.makeproto.protoblock import Block, EnumBlock, MessageBlock
 from grpcAPI.types import BaseMessage, Int32
+
+
+def cls_to_blocks(tgt: type[BaseMessage]) -> List[Block]:
+
+    clss = cls_map(tgt)
+
+    blocks: List[Block] = []
+    for cls in clss:
+        if issubclass(cls, Enum):
+            enumblock = make_enumblock(cls)
+            blocks.append(enumblock)
+
+        elif issubclass(cls, BaseMessage):
+            msgblock = make_msgblock(cls)
+            blocks.append(msgblock)
+    return blocks
 
 
 class Proto1(BaseMessage):

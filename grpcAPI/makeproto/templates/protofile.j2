@@ -1,27 +1,26 @@
 {% extends "description.j2" %}
 {% block content %}
 
-syntax = "proto{{version if version else '3'}}";
+syntax = "proto{{ version if version else '3' }}";
 
 {% block imports %}
-  {% for imp in imports or [] %}
+{% for imp in imports or [] %}
 import "{{ imp }}";
-  {% endfor %}
+{% endfor %}
 {% endblock %}
 
 {% if package %}package {{ package }};{% endif %}
 
 {% block options %}
-    {% for key, val in (options or {}).items() %}
-    option {{ (key, val) | format_option }};
-    {% endfor %}
+{% for opt in options %}
+option {{ opt }};
+{% endfor %}
 {% endblock %}
 
 {% block blocks %}
-  {% for block in blocks %}
-  {{block}}
-  {% endfor %}
+{% for block in blocks %}
+{{ block }}
+{% endfor %}
 {% endblock %}
-
 
 {% endblock %}

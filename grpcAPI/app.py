@@ -1,10 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
-from grpcAPI.makeproto.makeblock import MethodPack, make_service
-from grpcAPI.makeproto.maptoblock import map_classes_blocks, map_service_classes
-from grpcAPI.makeproto.protoblock import Block
 from grpcAPI.proto_proxy import ProtoProxy
 from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption, _NoPackage
 
@@ -30,6 +27,13 @@ class ProtoModel(BaseMessage, ProtoProxy):
 
 
 @dataclass
+class MethodPack:
+    method: Callable[..., Any]
+    description: str
+    options: ProtoOption
+
+
+@dataclass
 class ServicePack:
     servname: str
     modname: str
@@ -44,6 +48,8 @@ class Module:
     modname: str
     packname: Union[_NoPackage, str] = field(default=NO_PACKAGE)
 
+    description: str = field(default="")
+    options: ProtoOption = field(default_factory=ProtoOption)
     _services: List[ServicePack] = field(default_factory=list[ServicePack])
     _model: type[BaseMessage] = ProtoModel
 
@@ -125,68 +131,22 @@ class Package:
 @dataclass(frozen=True)
 class App:
 
-    packages: Dict[Union[_NoPackage, str], Package] = field(
+    _packages: Dict[Union[_NoPackage, str], Package] = field(
         default_factory=dict[Union[_NoPackage, str], Package]
     )
 
     def add_package(self, package: Package) -> None:
-        thispackages = self.packages
+        thispackages = self._packages
         packname = package.packname
         if packname in thispackages:
             raise ValueError(f"Package '{packname}' already exists.")
         thispackages[packname] = package
 
     def add_module(self, module: Module) -> None:
-        package = self.packages.get(module.packname)
+        package = self._packages.get(module.packname)
         if package is None:
             raise ValueError(f"Package '{module.packname}' not found in App.")
         package._add_module(module)
-
-
-def map_module_cls(mod: Module) -> Set[type[Union[BaseMessage, Enum]]]:
-
-    clss: Set[type[Union[BaseMessage, Enum]]] = set()
-    for servicepack in mod:
-        funcs = [pack.method for pack in servicepack.methods]
-        msgs_enums = map_service_classes(methods=funcs)
-        clss.update(msgs_enums)
-    return clss
-
-
-def map_module_service_block(
-    mod: Module, ignore_instance: List[type[Any]]
-) -> List[Block]:
-    blocks: List[Block] = []
-    for servicepack in mod:
-        service = make_service(
-            servicename=servicepack.servname,
-            protofile=mod.modname,
-            package=mod.packname,
-            methods=servicepack.methods,
-            ignore_instance=ignore_instance,
-            description=servicepack.description,
-            options=servicepack.options,
-        )
-        blocks.append(service)
-    return blocks
-
-
-def map_package_block(
-    package: Package, ignore_instance: List[type[Any]]
-) -> List[Block]:
-
-    blocklist: List[Block] = []
-    cls_set: Set[type[Union[BaseMessage, Enum]]] = set()
-    for module in package:
-        clss_list = map_module_cls(module)
-        cls_set.update(clss_list)
-
-        service_blocks = map_module_service_block(module, ignore_instance)
-        blocklist.extend(service_blocks)
-
-    msg_blocks = map_classes_blocks(cls_set)
-    blocklist.extend(msg_blocks)
-    return blocklist
 
 
 if __name__ == "__main__":

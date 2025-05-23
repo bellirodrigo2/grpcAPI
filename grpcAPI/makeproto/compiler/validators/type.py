@@ -2,19 +2,18 @@ import inspect
 from enum import Enum
 from typing import Any, Callable, List, Optional, get_args, get_origin
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
+from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
 from grpcAPI.makeproto.protoblock import Block, Field, Method
 from grpcAPI.types import (
     DEFAULT_PRIMITIVES,
-    BaseProto,
+    BaseMessage,
     Context,
     allowed_map_key,
+    if_stream_get_type,
     is_BaseMessage,
 )
-from grpcAPI.types.message import BaseMessage
 from grpcAPI.types.types import BaseField
-from grpcAPI.utils import is_asyncgen
 
 DEFAULT_EXTRA_ARGS = [Context]
 
@@ -114,8 +113,7 @@ class TypeValidator(CompilerPass):
             report.report_error(
                 CompileErrorCode.METHOD_INVALID_RESPONSE_TYPE, location=method.name
             )
-        origin = get_origin(method.response_type)
-        if is_asyncgen(origin):
+        if if_stream_get_type(method.response_type):
             if not is_async_func(method.method_func):
                 report.report_error(
                     code=CompileErrorCode.METHOD_RETURN_STREAM_IS_NOT_ASYNC_GENERATOR,

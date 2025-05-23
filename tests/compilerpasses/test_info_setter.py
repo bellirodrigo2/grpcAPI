@@ -107,5 +107,5 @@ class TestInfoSetter(unittest.TestCase):
         self.block.reserveds = [1, 4, range(5, 9), "foo", "bar", range(12, 45)]
         self.reservedsetter.execute([self.block], self.context)
         reserveds = self.block.render_dict["reserveds"]
-        self.assertIn("foo,bar", reserveds)
+        self.assertIn('"foo","bar"', reserveds)
         self.assertIn("1, 4, 5 to 8, 12 to 44", reserveds)

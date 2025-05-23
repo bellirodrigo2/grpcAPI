@@ -17,6 +17,8 @@ __all__ = [
     "ImportsSetter",
     "ReservedSetter",
     "ReservedValidator",
+    "BlockStructureValidator",
+    "OneOfValidator",
 ]
 
 from grpcAPI.makeproto.compiler.compiler import CompilerContext, CompilerPass
@@ -30,10 +32,12 @@ from grpcAPI.makeproto.compiler.setters.info import (
 )
 from grpcAPI.makeproto.compiler.setters.name import NameSetter
 from grpcAPI.makeproto.compiler.setters.type import TypeSetter
+from grpcAPI.makeproto.compiler.validators.blockstructure import BlockStructureValidator
 from grpcAPI.makeproto.compiler.validators.imports import ImportsValidator
 from grpcAPI.makeproto.compiler.validators.index import IndexValidator
 from grpcAPI.makeproto.compiler.validators.info import (
     DescriptionValidator,
+    OneOfValidator,
     OptionsValidator,
     ReservedValidator,
 )

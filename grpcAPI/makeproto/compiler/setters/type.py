@@ -3,8 +3,7 @@ from typing import Any, Tuple, get_args, get_origin
 from grpcAPI.makeproto.compiler.compiler import CompilerPass
 from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
 from grpcAPI.makeproto.protoblock import Block, EnumField, Field, Method
-from grpcAPI.types import DEFAULT_PRIMITIVES, BaseProto
-from grpcAPI.utils import is_Annotated, is_asyncgen
+from grpcAPI.types import DEFAULT_PRIMITIVES, BaseProto, if_stream_get_type
 
 
 def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
@@ -29,9 +28,6 @@ def get_type_str(bt: type[Any], block_package: str) -> str:
     origin = get_origin(bt)
     args = get_args(bt)
 
-    if is_Annotated(origin):
-        return get_type_str(args[0], block_package)
-
     if origin is list:
         type_str = get_base_type_str(args[0], block_package)
         return f"repeated {type_str}"
@@ -46,12 +42,9 @@ def get_type_str(bt: type[Any], block_package: str) -> str:
 
 
 def get_func_arg_info(tgt: type[Any]) -> Tuple[str, bool]:
-    origin = get_origin(tgt)
-    args = get_args(tgt)
-    if is_Annotated(origin):
-        return get_func_arg_info(args[0])
-    if is_asyncgen(origin):
-        return args[0].__name__, True
+    argtype = if_stream_get_type(tgt)
+    if argtype is not None:
+        return argtype.__name__, True
     return tgt.__name__, False
 
 

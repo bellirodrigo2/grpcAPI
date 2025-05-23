@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Annotated
 
 from grpcAPI.makeproto.makeblock import (
-    MethodPack,
     make_enumblock,
     make_method,
     make_msgblock,
@@ -90,7 +89,7 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
             servicename="IntegrationService",
             protofile="integration.proto",
             package="integrationpkg",
-            methods=[MethodPack(perform_action, "", {})],
+            methods=[(perform_action, "", {})],
             ignore_instance=[],
             description="Service for integration test",
             options={"deprecated": False},
@@ -120,7 +119,7 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
             servicename="IntegrationService",
             protofile="integration.proto",
             package="integrationpkg",
-            methods=[MethodPack(perform_action, "", {})],
+            methods=[(perform_action, "", {})],
             ignore_instance=[],
             description="Service for integration test",
             options={},

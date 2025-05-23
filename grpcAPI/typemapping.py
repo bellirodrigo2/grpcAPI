@@ -16,9 +16,18 @@ from typing import (
     get_type_hints,
 )
 
-from grpcAPI.utils import is_Annotated
+from typing_extensions import Annotated as typing_extensions_Annotated
+
+try:
+    from typing import Annotated as typing_Annotated
+except ImportError:
+    typing_Annotated = None
 
 T = TypeVar("T")
+
+
+def is_Annotated(origin: type[Any]) -> bool:
+    return origin in (typing_extensions_Annotated, typing_Annotated)
 
 
 @dataclass

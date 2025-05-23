@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import asdict, dataclass
-from typing import Any, Callable, Dict, List, Optional, Union
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from grpcAPI.makeproto.protoblock import (
     Block,
@@ -39,7 +40,7 @@ def make_msgblock(cls: type[BaseMessage]) -> Block:
         options=options,
         number=0,
         reserveds=reserveds,
-        render_dict={},
+        render_dict={"block_type": "message"},
     )
 
     fields: List[Node] = []
@@ -81,7 +82,7 @@ def make_msgblock(cls: type[BaseMessage]) -> Block:
             description="",
             options={},
             reserveds=[],
-            render_dict={},
+            render_dict={"block_type": "oneof"},
         )
         fields.append(ootemp)
 
@@ -104,7 +105,7 @@ def make_enumblock(enum: type[BaseMessage]) -> Block:
         description=description,
         options=options,
         reserveds=reserveds,
-        render_dict={},
+        render_dict={"block_type": "enum"},
     )
 
     fields: List[Field] = []
@@ -125,6 +126,16 @@ def make_enumblock(enum: type[BaseMessage]) -> Block:
     enum_block.fields = fields
 
     return enum_block
+
+
+def make_cls_block(cls: type[Union[BaseMessage, Enum]]) -> Block:
+    if issubclass(cls, Enum):
+        return make_enumblock(cls)
+    elif issubclass(cls, BaseMessage):
+        return make_msgblock(cls)
+    raise TypeError(
+        f'Mapping Class "{cls.__name__}" is not BaseMessage or Enum: "{type(cls)}"'
+    )
 
 
 def make_method(
@@ -155,18 +166,11 @@ def make_method(
     )
 
 
-@dataclass
-class MethodPack:
-    method: Callable[..., Any]
-    description: str
-    options: ProtoOption
-
-
 def make_service(
     servicename: str,
     protofile: str,
     package: Union[str, _NoPackage],
-    methods: List[MethodPack],
+    methods: List[Tuple[Callable[..., Any], str, ProtoOption]],
     ignore_instance: List[type[Any]],
     description: str,
     options: ProtoOption,
@@ -181,13 +185,11 @@ def make_service(
         block=None,
         options=options,
         description=description,
-        render_dict={},
+        render_dict={"block_type": "service"},
         reserveds=[],
     )
     method_list = [
-        make_method(
-            method.method, ignore_instance, service, method.description, method.options
-        )
+        make_method(method[0], ignore_instance, service, method[1], method[2])
         for method in methods
     ]
     service.fields = method_list

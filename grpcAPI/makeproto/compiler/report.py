@@ -192,10 +192,11 @@ class CompileErrorCode(Enum):
 
     # E999 - Outros
     SETTER_PASS_ERROR = (
-        "E999",
+        "E901",
         "Setter Error",
         "Error during set step. This is a system error",
     )
+    RUNTIME_POSSIBLE_ERROR = ("E902", "Possible runtime error", "")
 
     @property
     def code(self) -> str:

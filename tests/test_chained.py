@@ -1,10 +1,11 @@
 import unittest
 from enum import Enum
-from typing import Any, Callable, Dict, List, Set, Union
+from typing import Any, Callable, Dict, Iterable, List, Set, Union
 
 from typing_extensions import Annotated
 
-from grpcAPI.makeproto.maptoblock import map_classes_blocks, map_service_classes
+from grpcAPI.compile import map_service_classes
+from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
 from grpcAPI.makeproto.protoblock import Block, EnumBlock, MessageBlock
 from grpcAPI.types import (
     BaseMessage,
@@ -16,6 +17,21 @@ from grpcAPI.types import (
     Stream,
     String,
 )
+
+
+def map_classes_blocks(clss: Iterable[type[Union[BaseMessage, Enum]]]) -> List[Block]:
+    all_blocks: Dict[str, Block] = {}
+    for cls in clss:
+        if issubclass(cls, Enum):
+            name = cls.__name__
+            if name not in all_blocks:
+                all_blocks[name] = make_enumblock(cls)
+        elif issubclass(cls, BaseMessage):
+            name = cls.__name__
+            if name not in all_blocks:
+                all_blocks[name] = make_msgblock(cls)
+
+    return list(all_blocks.values())
 
 
 class ProtoMessage(BaseMessage):

@@ -1,19 +1,22 @@
 {% extends "description.j2" %}
 {% block content %}
-{{ template.block }} {{ template.name }} {
-  {% for key, val in (options or {}).items() %}
-  option {{ (key, val) | format_option }};
+{{ block_type }} {{ name }} {
+  {% for opt in options %}
+  option {{ opt }};
   {% endfor %}
 
-  {% if reserved_index %}
-reserved {{ reserved_index }};
+  {% if reserveds[0] %}
+  reserved {{ reserveds[0] }};
   {% endif %}
-  {% if reserved_keys %}
-reserved {{ reserved_keys }};
+
+  {% if reserveds[1] %}
+  reserved {{ reserveds[1] }};
   {% endif %}
-  
+
 {% block fields %}
 {% for field in fields %}
   {{ field }}
 {% endfor %}
-{% endblock %}}{% endblock %}
+{% endblock %}
+}
+{% endblock %}

@@ -1,7 +1,7 @@
-from typing import Any, List, Optional, Tuple, Union, get_args, get_origin
+from typing import Any, List, Optional, Tuple, Union
 
 from grpcAPI.types.base import BaseProto, ProtoOption
-from grpcAPI.utils import is_Annotated, is_asyncgen
+from grpcAPI.types.method import if_stream_get_type
 
 
 class _NoPackage:
@@ -61,12 +61,8 @@ def is_BaseMessage(tgt: type[Any]) -> bool:
 
 
 def get_BaseMessage(tgt: type[Any]) -> Optional[type[Any]]:
-    origin = get_origin(tgt)
-    if is_Annotated(origin):
-        return get_BaseMessage(get_args(tgt)[0])
-    bt = tgt
-    if is_asyncgen(origin):
-        bt = get_args(tgt)[0]
+    basetype = if_stream_get_type(tgt)
+    bt = basetype or tgt
     if not isinstance(bt, type):
         return None
     if issubclass(bt, BaseMessage):

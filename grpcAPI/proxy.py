@@ -282,3 +282,15 @@ def bind_proxy(
         return constructor
 
     tgtcls._wrapped_kwargs = set_constructor
+
+
+class IteratorProxy:
+    def __init__(self, aioreq_iter: Any) -> None:
+        self._aiter = aioreq_iter
+
+    def __aiter__(self) -> "IteratorProxy":
+        return self
+
+    async def __anext__(self) -> Any:
+        raw = await self._aiter.__anext__()
+        return self.make_proxy(raw)

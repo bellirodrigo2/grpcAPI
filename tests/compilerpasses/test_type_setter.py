@@ -131,7 +131,7 @@ class TestTypeSetter(unittest.TestCase):
         self.setter.execute([self.block], self.context)
         self.assertEqual(len(self.context), 1)
         # validator should pick this error - no attribute 'prototype'
-        self.assertTrue(any(msg == "E999" for msg in list_ctx_error_code(self.context)))
+        self.assertTrue(any(msg == "E901" for msg in list_ctx_error_code(self.context)))
 
     def test_method_types_unary(self) -> None:
         make_method(

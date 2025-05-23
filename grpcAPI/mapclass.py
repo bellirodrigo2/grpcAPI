@@ -21,13 +21,6 @@ from grpcAPI.utils import is_Annotated
 T = TypeVar("T")
 
 
-def resolve_annotation(hint: Any) -> tuple[type, Optional[tuple[Any]]]:
-    if is_Annotated(get_origin(hint)):
-        base, *extras = get_args(hint)
-        return base, tuple(extras)
-    return hint, None
-
-
 @dataclass
 class FuncArg:
     name: str
@@ -121,10 +114,13 @@ def field_factory(
     )
 
     has_default, default = resolve_default(obj)
-    argtype = hint
-    if argtype is None and bt_default_fallback:
+    if hint is not inspect._empty:
+        argtype = hint
+    elif bt_default_fallback:
         argtype = type(default) if default not in (NO_DEFAULT, None) else None
-
+    else:
+        argtype = None
+    # daqui pra baixo
     funcarg = make_funcarg(
         name=obj.name,
         tgttype=argtype,
@@ -132,9 +128,6 @@ def field_factory(
         default=default,
         has_default=has_default,
     )
-    # funcarg.default = default
-    # funcarg.has_default = has_default
-
     return funcarg
 
 
@@ -145,7 +138,13 @@ def make_funcarg(
     default: Any = None,
     has_default: bool = False,
 ) -> FuncArg:
-    basetype, extras = resolve_annotation(annotation or tgttype)
+
+    basetype = tgttype
+    extras = None
+
+    if annotation is not None and is_Annotated(get_origin(annotation)):
+        basetype, *extras_ = get_args(annotation)
+        extras = tuple(extras_)
     return FuncArg(
         name=name,
         argtype=tgttype,
@@ -243,7 +242,11 @@ def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]
         annotation: type = hints.get(name, param.annotation)
         arg = field_factory(param, annotation)
         funcargs.append(arg)
-
     return_type = map_return_type(func)
 
     return funcargs, return_type
+
+
+def get_func_args(func: Callable[..., Any]) -> Sequence[FuncArg]:
+    funcargs, _ = map_func_args(func)
+    return funcargs

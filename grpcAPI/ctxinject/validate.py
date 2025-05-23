@@ -10,14 +10,13 @@ from typing import (
     get_type_hints,
 )
 
-from ctxinject.mapfunction import FuncArg, get_func_args
-from ctxinject.model import (
-    DependsInject,
-    Injectable,
-    ModelFieldInject,
+from grpcAPI.ctxinject.exceptions import (
+    InvalidInjectableDefinition,
+    InvalidModelFieldType,
+    UnInjectableError,
 )
-
-from ctxinject.exceptions import InvalidInjectableDefinition, InvalidModelFieldType, UnInjectableError
+from grpcAPI.ctxinject.model import DependsInject, Injectable, ModelFieldInject
+from grpcAPI.mapclass import FuncArg, get_func_args
 
 
 def check_all_typed(

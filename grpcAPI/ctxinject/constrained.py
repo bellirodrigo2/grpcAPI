@@ -17,7 +17,8 @@ from uuid import UUID
 
 from dateutil.parser import parse
 
-from ctxinject.exceptions import ValidationError
+from grpcAPI.ctxinject.exceptions import ValidationError
+
 
 def ConstrainedStr(
     value: str,

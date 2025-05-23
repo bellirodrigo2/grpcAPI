@@ -68,7 +68,9 @@ class _NoDefault:
 NO_DEFAULT = _NoDefault()
 
 
-def get_safe_type_hints(obj: Any) -> dict[str, Any]:
+def get_safe_type_hints(
+    obj: Any, localns: Optional[dict[str, Any]] = None
+) -> dict[str, Any]:
     """
     Get type hints, including ForwardRef for Self
     """
@@ -84,8 +86,7 @@ def get_safe_type_hints(obj: Any) -> dict[str, Any]:
 
     if cls and inspect.isclass(cls):
         globalns[cls.__name__] = cls
-
-    return get_type_hints(obj, globalns=globalns, include_extras=True)
+    return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=True)
 
 
 def resolve_class_default(param: Parameter) -> tuple[bool, Any]:
@@ -165,11 +166,15 @@ def map_class_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncAr
         return map_model_fields(cls, bt_default_fallback)
 
 
-def map_init_field(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
+def map_init_field(
+    cls: type,
+    bt_default_fallback: bool = True,
+    localns: Optional[dict[str, Any]] = None,
+) -> list[FuncArg]:
     init_method = getattr(cls, "__init__", None)
     if not init_method:
         raise ValueError("No __init__ defined for the class")
-    hints = get_safe_type_hints(init_method)
+    hints = get_safe_type_hints(init_method, localns)
     sig = signature(init_method)
     items = [(name, param) for name, param in sig.parameters.items() if name != "self"]
     return [
@@ -177,16 +182,24 @@ def map_init_field(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]
     ]
 
 
-def map_dataclass_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
-    hints = get_safe_type_hints(cls)
+def map_dataclass_fields(
+    cls: type,
+    bt_default_fallback: bool = True,
+    localns: Optional[dict[str, Any]] = None,
+) -> list[FuncArg]:
+    hints = get_safe_type_hints(cls, localns)
     items = [(field.name, field) for field in fields(cls)]
     return [
         field_factory(obj, hints.get(name), bt_default_fallback) for name, obj in items
     ]
 
 
-def map_model_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
-    hints = get_safe_type_hints(cls)
+def map_model_fields(
+    cls: type,
+    bt_default_fallback: bool = True,
+    localns: Optional[dict[str, Any]] = None,
+) -> list[FuncArg]:
+    hints = get_safe_type_hints(cls, localns)
     items = [
         (
             name,
@@ -203,9 +216,11 @@ def map_model_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncAr
     ]
 
 
-def map_return_type(func: Callable[..., Any]) -> FuncArg:
+def map_return_type(
+    func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
+) -> FuncArg:
     sig = inspect.signature(func)
-    hints = get_safe_type_hints(func)
+    hints = get_safe_type_hints(func, localns)
     raw_return_type = hints.get("return", sig.return_annotation)
 
     if raw_return_type is inspect.Signature.empty:
@@ -218,7 +233,9 @@ def map_return_type(func: Callable[..., Any]) -> FuncArg:
     )
 
 
-def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]:
+def map_func_args(
+    func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
+) -> Tuple[Sequence[FuncArg], FuncArg]:
     partial_args = {}
 
     if isinstance(func, partial):
@@ -226,7 +243,7 @@ def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]
         func = func.func
 
     sig = inspect.signature(func)
-    hints = get_safe_type_hints(func)
+    hints = get_safe_type_hints(func, localns)
 
     funcargs: list[FuncArg] = []
 
@@ -242,11 +259,13 @@ def map_func_args(func: Callable[..., Any]) -> Tuple[Sequence[FuncArg], FuncArg]
         annotation: type = hints.get(name, param.annotation)
         arg = field_factory(param, annotation)
         funcargs.append(arg)
-    return_type = map_return_type(func)
+    return_type = map_return_type(func, localns)
 
     return funcargs, return_type
 
 
-def get_func_args(func: Callable[..., Any]) -> Sequence[FuncArg]:
-    funcargs, _ = map_func_args(func)
+def get_func_args(
+    func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
+) -> Sequence[FuncArg]:
+    funcargs, _ = map_func_args(func, localns)
     return funcargs

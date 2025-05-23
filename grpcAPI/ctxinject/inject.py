@@ -2,15 +2,15 @@ import inspect
 from functools import partial
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Union
 
-from ctxinject.constrained import ValidationError
-from ctxinject.exceptions import UnresolvedInjectableError
-from ctxinject.mapfunction import FuncArg, get_func_args
-from ctxinject.model import (
+from grpcAPI.ctxinject.constrained import ValidationError
+from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
+from grpcAPI.ctxinject.model import (
     ArgsInjectable,
     CallableInjectable,
     ModelFieldInject,
     ModelMethodInject,
 )
+from grpcAPI.mapclass import FuncArg, get_func_args
 
 
 def resolve_by_name(context: Mapping[Union[str, type], Any], arg: str) -> Any:

@@ -25,7 +25,7 @@ from grpcAPI.ctxinject.validate import (
     check_single_injectable,
     func_signature_validation,
 )
-from grpcAPI.mapclass import get_func_args
+from grpcAPI.typemapping import get_func_args
 
 
 class MyEnum(Enum):

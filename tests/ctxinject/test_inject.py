@@ -10,7 +10,7 @@ from grpcAPI.ctxinject.model import (
     ModelFieldInject,
     ModelMethodInject,
 )
-from grpcAPI.mapclass import get_func_args
+from grpcAPI.typemapping import get_func_args
 
 
 class NoValidation(Injectable):

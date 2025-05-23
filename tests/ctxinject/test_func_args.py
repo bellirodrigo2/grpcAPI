@@ -1,16 +1,16 @@
 import unittest
 from typing import Annotated, Optional, Union
 
-from grpcAPI.mapclass import NO_DEFAULT, FuncArg, get_func_args
+from grpcAPI.typemapping import NO_DEFAULT, VarTypeInfo, get_func_args
 from tests.ctxinject.test_helpers import MyClass, funcsmap
 
 
-class TestFuncArgs(unittest.TestCase):
+class TestVarTypeInfos(unittest.TestCase):
     def setUp(self) -> None:
         self.funcsmap = funcsmap
 
     def test_istype_invalid_basetype(self) -> None:
-        arg = FuncArg("x", argtype=None, basetype="notatype", default=None)
+        arg = VarTypeInfo("x", argtype=None, basetype="notatype", default=None)
         self.assertFalse(arg.istype(int))
 
     def test_funcarg_mt(self) -> None:

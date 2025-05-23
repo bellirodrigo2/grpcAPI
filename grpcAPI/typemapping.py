@@ -22,7 +22,7 @@ T = TypeVar("T")
 
 
 @dataclass
-class FuncArg:
+class VarTypeInfo:
     name: str
     argtype: Optional[type[Any]]
     basetype: Optional[type[Any]]
@@ -107,7 +107,7 @@ def field_factory(
     obj: Union[Field[Any], Parameter],
     hint: Any,
     bt_default_fallback: bool = True,
-) -> FuncArg:
+) -> VarTypeInfo:
     resolve_default = (
         resolve_class_default
         if isinstance(obj, Parameter)
@@ -138,7 +138,7 @@ def make_funcarg(
     annotation: Optional[type[Any]] = None,
     default: Any = None,
     has_default: bool = False,
-) -> FuncArg:
+) -> VarTypeInfo:
 
     basetype = tgttype
     extras = None
@@ -146,7 +146,7 @@ def make_funcarg(
     if annotation is not None and is_Annotated(get_origin(annotation)):
         basetype, *extras_ = get_args(annotation)
         extras = tuple(extras_)
-    return FuncArg(
+    return VarTypeInfo(
         name=name,
         argtype=tgttype,
         basetype=basetype,
@@ -156,7 +156,7 @@ def make_funcarg(
     )
 
 
-def map_class_fields(cls: type, bt_default_fallback: bool = True) -> list[FuncArg]:
+def map_class_fields(cls: type, bt_default_fallback: bool = True) -> list[VarTypeInfo]:
     init_method = getattr(cls, "__init__", None)
     if is_dataclass(cls):
         return map_dataclass_fields(cls, bt_default_fallback)
@@ -170,7 +170,7 @@ def map_init_field(
     cls: type,
     bt_default_fallback: bool = True,
     localns: Optional[dict[str, Any]] = None,
-) -> list[FuncArg]:
+) -> list[VarTypeInfo]:
     init_method = getattr(cls, "__init__", None)
     if not init_method:
         raise ValueError("No __init__ defined for the class")
@@ -186,7 +186,7 @@ def map_dataclass_fields(
     cls: type,
     bt_default_fallback: bool = True,
     localns: Optional[dict[str, Any]] = None,
-) -> list[FuncArg]:
+) -> list[VarTypeInfo]:
     hints = get_safe_type_hints(cls, localns)
     items = [(field.name, field) for field in fields(cls)]
     return [
@@ -198,7 +198,7 @@ def map_model_fields(
     cls: type,
     bt_default_fallback: bool = True,
     localns: Optional[dict[str, Any]] = None,
-) -> list[FuncArg]:
+) -> list[VarTypeInfo]:
     hints = get_safe_type_hints(cls, localns)
     items = [
         (
@@ -218,7 +218,7 @@ def map_model_fields(
 
 def map_return_type(
     func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
-) -> FuncArg:
+) -> VarTypeInfo:
     sig = inspect.signature(func)
     hints = get_safe_type_hints(func, localns)
     raw_return_type = hints.get("return", sig.return_annotation)
@@ -235,7 +235,7 @@ def map_return_type(
 
 def map_func_args(
     func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
-) -> Tuple[Sequence[FuncArg], FuncArg]:
+) -> Tuple[Sequence[VarTypeInfo], VarTypeInfo]:
     partial_args = {}
 
     if isinstance(func, partial):
@@ -245,7 +245,7 @@ def map_func_args(
     sig = inspect.signature(func)
     hints = get_safe_type_hints(func, localns)
 
-    funcargs: list[FuncArg] = []
+    funcargs: list[VarTypeInfo] = []
 
     for name, param in sig.parameters.items():
         if name in partial_args:
@@ -266,6 +266,6 @@ def map_func_args(
 
 def get_func_args(
     func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
-) -> Sequence[FuncArg]:
+) -> Sequence[VarTypeInfo]:
     funcargs, _ = map_func_args(func, localns)
     return funcargs

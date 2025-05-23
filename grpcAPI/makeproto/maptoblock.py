@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
 from grpcAPI.makeproto.protoblock import Block
-from grpcAPI.mapclass import map_class_fields, map_func_args
+from grpcAPI.typemapping import map_class_fields, map_func_args
 from grpcAPI.types import BaseMessage, get_BaseMessage
 
 

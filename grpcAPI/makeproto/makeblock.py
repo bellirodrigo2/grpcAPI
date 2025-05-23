@@ -14,7 +14,7 @@ from grpcAPI.makeproto.protoblock import (
     OneOfField,
     ServiceBlock,
 )
-from grpcAPI.mapclass import FuncArg, map_func_args, map_model_fields
+from grpcAPI.typemapping import VarTypeInfo, map_func_args, map_model_fields
 from grpcAPI.types import (
     BaseMessage,
     Metadata,
@@ -137,7 +137,7 @@ def make_method(
 
     args, returntype = map_func_args(func)
 
-    def has_any(arg: FuncArg, ignore_instance: List[type[Any]]) -> bool:
+    def has_any(arg: VarTypeInfo, ignore_instance: List[type[Any]]) -> bool:
         return any(arg.hasinstance(bt) for bt in ignore_instance)
 
     req_types = [arg.basetype for arg in args if not has_any(arg, ignore_instance)]

@@ -16,11 +16,11 @@ from grpcAPI.ctxinject.exceptions import (
     UnInjectableError,
 )
 from grpcAPI.ctxinject.model import DependsInject, Injectable, ModelFieldInject
-from grpcAPI.mapclass import FuncArg, get_func_args
+from grpcAPI.typemapping import VarTypeInfo, get_func_args
 
 
 def check_all_typed(
-    args: Sequence[FuncArg],
+    args: Sequence[VarTypeInfo],
 ) -> None:
     for arg in args:
         if arg.basetype is None:
@@ -28,11 +28,11 @@ def check_all_typed(
 
 
 def check_all_injectables(
-    args: Sequence[FuncArg],
+    args: Sequence[VarTypeInfo],
     modeltype: Iterable[type[Any]],
 ) -> None:
 
-    def is_injectable(arg: FuncArg, modeltype: Iterable[type[Any]]) -> bool:
+    def is_injectable(arg: VarTypeInfo, modeltype: Iterable[type[Any]]) -> bool:
         if arg.hasinstance(Injectable):
             return True
         for model in modeltype:
@@ -46,7 +46,7 @@ def check_all_injectables(
 
 
 def check_modefield_types(
-    args: Sequence[FuncArg],
+    args: Sequence[VarTypeInfo],
 ) -> None:
     for arg in args:
         modelfield_inj = arg.getinstance(ModelFieldInject)
@@ -62,7 +62,7 @@ def check_modefield_types(
 
 
 def check_depends_types(
-    args: Sequence[FuncArg], tgttype: type[DependsInject] = DependsInject
+    args: Sequence[VarTypeInfo], tgttype: type[DependsInject] = DependsInject
 ) -> None:
 
     deps: list[tuple[str, Optional[type[Any]], Any]] = [
@@ -92,7 +92,7 @@ def check_depends_types(
             )
 
 
-def check_single_injectable(args: Sequence[FuncArg]) -> None:
+def check_single_injectable(args: Sequence[VarTypeInfo]) -> None:
     for arg in args:
         if arg.extras is not None:
             injectables = [x for x in arg.extras if isinstance(x, Injectable)]
@@ -107,7 +107,7 @@ def func_signature_validation(
     modeltype: Iterable[type[Any]],
 ) -> None:
 
-    args: Sequence[FuncArg] = get_func_args(func)
+    args: Sequence[VarTypeInfo] = get_func_args(func)
 
     check_all_typed(args)
 

@@ -10,7 +10,7 @@ from grpcAPI.ctxinject.model import (
     ModelFieldInject,
     ModelMethodInject,
 )
-from grpcAPI.mapclass import FuncArg, get_func_args
+from grpcAPI.typemapping import VarTypeInfo, get_func_args
 
 
 def resolve_by_name(context: Mapping[Union[str, type], Any], arg: str) -> Any:
@@ -54,7 +54,7 @@ def wrap_validate(
 
 
 def map_ctx(
-    args: Iterable[FuncArg],
+    args: Iterable[VarTypeInfo],
     context: Mapping[Union[str, type], Any],
     allow_incomplete: bool,
     validate: bool = True,
@@ -122,7 +122,7 @@ def resolve_mapped_ctx(
 
 
 def resolve_ctx(
-    args: Iterable[FuncArg],
+    args: Iterable[VarTypeInfo],
     context: Mapping[Union[str, type], Any],
     allow_incomplete: bool,
     validate: bool = True,

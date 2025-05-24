@@ -1,5 +1,6 @@
+from collections import defaultdict
 from enum import Enum
-from typing import Any, Callable, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from grpcAPI.app import App, Module
 from grpcAPI.makeproto import ModuleCompilerPack, ServiceCompilerPack
@@ -9,9 +10,9 @@ from grpcAPI.types import BaseMessage, _NoPackage, get_BaseMessage
 
 def make_compiler_entry(
     app: App, ignore_instance: List[type[Any]]
-) -> List[ModuleCompilerPack]:
+) -> Dict[str, List[ModuleCompilerPack]]:
 
-    compilerpacks: List[ModuleCompilerPack] = []
+    compilerpacks: Dict[str, List[ModuleCompilerPack]] = defaultdict(list)
     for package in app._packages.values():
         for module in package:
             objects = map_module_cls(module)
@@ -26,7 +27,7 @@ def make_compiler_entry(
                 options=module.options,
                 ignore_instance=ignore_instance,
             )
-            compilerpacks.append(modulecompilerpack)
+            compilerpacks[package.packname].append(modulecompilerpack)
     return compilerpacks
 
 

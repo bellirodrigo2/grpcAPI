@@ -36,8 +36,8 @@ class TestModulePackage(unittest.TestCase):
         pack = Package("pack1")
         mod1 = pack.Module("mod1")
 
-        self.assertEqual(mod1.modname, "mod1")
-        self.assertEqual(mod1.packname, "pack1")
+        self.assertEqual(mod1.name, "mod1")
+        self.assertEqual(mod1.package, "pack1")
         self.assertIs(pack._modules["mod1"], mod1)
 
         with self.assertRaises(ValueError):
@@ -85,11 +85,11 @@ class TestModulePackage(unittest.TestCase):
 
         # Verifica se o método foi registrado
         self.assertTrue(
-            any(sp.servname == "test_service" for sp in mod._services),
-            "ServicePack with servname 'test_service' not found",
+            any(sp.name == "test_service" for sp in mod._services),
+            "ServicePack with name 'test_service' not found",
         )
 
-        service_pack = next(sp for sp in mod._services if sp.servname == "test_service")
+        service_pack = next(sp for sp in mod._services if sp.name == "test_service")
         method_obj = service_pack.methods[0]
 
         self.assertEqual(method_obj.description, "Test service description")
@@ -111,7 +111,7 @@ class TestModulePackage(unittest.TestCase):
         def func2():
             return 2
 
-        matching = [sp for sp in mod._services if sp.servname == "duplicate_service"]
+        matching = [sp for sp in mod._services if sp.name == "duplicate_service"]
         self.assertEqual(len(matching), 2, "Should allow duplicate service names")
 
         all_methods = [m for sp in matching for m in sp.methods]
@@ -129,7 +129,7 @@ class TestModulePackage(unittest.TestCase):
         def method2() -> str:
             return "two"
 
-        sp = next(sp for sp in mod._services if sp.servname == "multi_method_service")
+        sp = next(sp for sp in mod._services if sp.name == "multi_method_service")
         self.assertEqual(len(sp.methods), 2)
         self.assertEqual(sp.methods[0].method(), "one")
         self.assertEqual(sp.methods[1].method(), "two")
@@ -166,7 +166,7 @@ class TestModulePackage(unittest.TestCase):
         def simple_method() -> str:
             return "ok"
 
-        sp = next(sp for sp in mod._services if sp.servname == "simple_service")
+        sp = next(sp for sp in mod._services if sp.name == "simple_service")
         self.assertEqual(sp.description, "")
         self.assertEqual(sp.options, {})
         self.assertEqual(sp.methods[0].method(), "ok")

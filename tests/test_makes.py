@@ -2,6 +2,7 @@ import unittest
 from enum import Enum
 from typing import Annotated, Dict, List, Optional, Union
 
+from grpcAPI.app import MethodPack, ServicePack
 from grpcAPI.makeproto.makeblock import (
     make_enumblock,
     make_method,
@@ -231,19 +232,19 @@ class TestMakeMethodService(unittest.TestCase):
         self.assertEqual(method.request_type[0], ReqMessage)
 
     def test_make_service_basic(self) -> None:
-        my_method_p = (my_method, "", {})
-        another_method_p = (another_method, "", {})
-        ignored_method_p = (ignored_method, "", {})
+        my_method_p = MethodPack(my_method, "", {})
+        another_method_p = MethodPack(another_method, "", {})
+        ignored_method_p = MethodPack(ignored_method, "", {})
         methods = [my_method_p, another_method_p, ignored_method_p]
-        service = make_service(
-            servicename="TestService",
-            protofile="test.proto",
-            package="testpkg",
-            methods=methods,
-            ignore_instance=[Dummy],
+        pack = ServicePack(
+            name="TestService",
             description="Test service",
             options={"deprecated": False},
+            module="test.proto",
+            package="testpkg",
+            methods=methods,
         )
+        service = make_service(pack, [Dummy])
 
         self.assertEqual(service.name, "TestService")
         self.assertEqual(service.protofile, "test.proto")
@@ -261,15 +262,15 @@ class TestMakeMethodService(unittest.TestCase):
                 self.assertEqual(len(method.request_type), 1)
 
     def test_make_service_empty(self) -> None:
-        service = make_service(
-            servicename="EmptyService",
-            protofile="empty.proto",
-            package="emptypkg",
-            methods=[],
-            ignore_instance=[],
+        pack = ServicePack(
+            name="EmptyService",
             description="Empty service",
             options={},
+            module="empty.proto",
+            package="emptypkg",
+            methods=[],
         )
+        service = make_service(pack, [])
         self.assertEqual(service.name, "EmptyService")
         self.assertEqual(len(service.fields), 0)
 

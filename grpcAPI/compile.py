@@ -1,9 +1,7 @@
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Set, Tuple, Union
 
 from grpcAPI.app import App
-from grpcAPI.compileutils import make_compiler_entry, make_modules_set
-from grpcAPI.makeproto import compile_packs
-from grpcAPI.makeproto.compiler import (
+from grpcAPI.makeproto import (
     BlockNameValidator,
     BlockStructureValidator,
     CustomPass,
@@ -22,8 +20,11 @@ from grpcAPI.makeproto.compiler import (
     ReservedValidator,
     TypeSetter,
     TypeValidator,
+    compile_packs,
 )
 from grpcAPI.types import Context
+from grpcAPI.types.interfaces import IModule
+from grpcAPI.types.message import _NoPackage
 
 settings: Dict[str, Any] = {}
 
@@ -73,10 +74,22 @@ setters = [
 ]
 
 
+def make_modules_set(
+    packs: Dict[str, List[IModule]],
+) -> Set[Tuple[Union[_NoPackage, str], str]]:
+    global_modules: Set[Tuple[Union[_NoPackage, str], str]] = set()
+    for modulelist in packs.values():
+        for module in modulelist:
+            global_modules.add((module.package, module.name))
+    return global_modules
+
+
 def compile(app: App, ignore_instance: List[type[Any]]) -> None:
 
-    compilerpacks = make_compiler_entry(app, ignore_instance)
+    compilerpacks = {
+        package.packname: package.modules for package in app._packages.values()
+    }
     global_modules = make_modules_set(compilerpacks)
     importsvalidator = ImportsValidator(packset=global_modules)
     validators.append(importsvalidator)
-    compile_packs(compilerpacks, settings, [validators, setters])
+    compile_packs(compilerpacks, settings, [validators, setters], ignore_instance: List[type[Any]])

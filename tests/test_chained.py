@@ -1,12 +1,11 @@
 import unittest
-from enum import Enum
 from typing import Any, Callable, Dict, Iterable, List, Union
 
 from typing_extensions import Annotated
 
-from grpcAPI.compileutils import map_service_classes
 from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
 from grpcAPI.makeproto.protoblock import Block, EnumBlock, MessageBlock
+from grpcAPI.typemapping import map_service_classes
 from grpcAPI.types import (
     BaseMessage,
     Context,
@@ -17,12 +16,15 @@ from grpcAPI.types import (
     Stream,
     String,
 )
+from grpcAPI.types.message import BaseEnum
 
 
-def map_classes_blocks(clss: Iterable[type[Union[BaseMessage, Enum]]]) -> List[Block]:
+def map_classes_blocks(
+    clss: Iterable[type[Union[BaseMessage, BaseEnum]]],
+) -> List[Block]:
     all_blocks: Dict[str, Block] = {}
     for cls in clss:
-        if issubclass(cls, Enum):
+        if issubclass(cls, BaseEnum):
             name = cls.__name__
             if name not in all_blocks:
                 all_blocks[name] = make_enumblock(cls)
@@ -70,7 +72,7 @@ class Code(ProtoMessage):
     me: dict[str, "Enum2"]
 
 
-class ProductArea(Enum):
+class ProductArea(BaseEnum):
     @classmethod
     def protofile(cls) -> str:
         return "teste"
@@ -84,7 +86,7 @@ class ProductArea(Enum):
     Area3 = 2
 
 
-class Enum2(Enum):
+class Enum2(BaseEnum):
     @classmethod
     def protofile(cls) -> str:
         return "teste"

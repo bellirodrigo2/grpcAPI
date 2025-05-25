@@ -27,11 +27,7 @@ __all__ = [
 
 from grpcAPI.makeproto.compiler import CompilerContext, CompilerPass
 from grpcAPI.makeproto.report import CompileErrorCode
-from grpcAPI.makeproto.runcompiler import (
-    ModuleCompilerPack,
-    ServiceCompilerPack,
-    compile_packs,
-)
+from grpcAPI.makeproto.runcompiler import compile_packs
 from grpcAPI.makeproto.setters.imports import ImportsSetter
 from grpcAPI.makeproto.setters.index import IndexSetter
 from grpcAPI.makeproto.setters.info import (

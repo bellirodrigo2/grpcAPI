@@ -1,9 +1,11 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Union
 
 from grpcAPI.proto_proxy import ProtoProxy
+from grpcAPI.typemapping import map_service_classes
 from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption, _NoPackage
+from grpcAPI.types.interfaces import IMethod, IModule, IService
 from grpcAPI.types.message import BaseEnum
 
 
@@ -28,37 +30,50 @@ class ProtoModel(BaseMessage, ProtoProxy):
 
 
 @dataclass
-class MethodPack:
+class MethodPack(IMethod):
     method: Callable[..., Any]
     description: str
     options: ProtoOption
 
 
 @dataclass
-class ServicePack:
-    servname: str
-    modname: str
-    packname: Union[str, _NoPackage]
-    methods: List[MethodPack]
+class ServicePack(IService):
+    name: str
+    module: str
+    package: Union[str, _NoPackage]
+    methods: List[IMethod]
     description: str
     options: ProtoOption
 
 
 @dataclass(frozen=True)
-class Module:
-    modname: str
-    packname: Union[_NoPackage, str] = field(default=NO_PACKAGE)
+class Module(IModule):
+    name: str
+    package: Union[_NoPackage, str] = field(default=NO_PACKAGE)
 
     description: str = field(default="")
     options: ProtoOption = field(default_factory=ProtoOption)
-    _services: List[ServicePack] = field(default_factory=list[ServicePack])
+    _services: List[IService] = field(default_factory=list[IService])
     _model: type[BaseMessage] = ProtoModel
 
     def __post_init__(self) -> None:
-        proto_cls = create_proto_model(self._model, self.modname, self.packname)
+        proto_cls = create_proto_model(self._model, self.name, self.package)
         object.__setattr__(self, "_proto_model", proto_cls)
-        proto_enum = create_proto_model(BaseEnum, self.modname, self.packname)
+        proto_enum = create_proto_model(BaseEnum, self.name, self.package)
         object.__setattr__(self, "_proto_enum", proto_enum)
+
+    @property
+    def services(self) -> List[IService]:
+        return self._services
+
+    @property
+    def objects(self) -> Set[type[Union[BaseMessage, BaseEnum]]]:
+        all_methods: List[Callable[..., Any]] = [
+            method_pack.method
+            for service_pack in self._services
+            for method_pack in service_pack.methods
+        ]
+        return map_service_classes(all_methods)
 
     @property
     def ProtoModel(self) -> type[BaseMessage]:
@@ -68,8 +83,8 @@ class Module:
     def ProtoEnum(self) -> type[Enum]:
         return self._proto_enum  # type: ignore
 
-    def __iter__(self) -> Iterator[ServicePack]:
-        return iter(self._services)
+    # def __iter__(self) -> Iterator[IService]:
+    # return iter(self._services)
 
     def Service(
         self,
@@ -79,9 +94,9 @@ class Module:
     ) -> Callable[..., Callable[[Callable[..., Any]], Callable[..., Any]]]:
 
         servicepack = ServicePack(
-            servname=servicename,
-            modname=self.modname,
-            packname=self.packname,
+            name=servicename,
+            module=self.name,
+            package=self.package,
             methods=[],
             description=description,
             options=options or ProtoOption(),
@@ -109,18 +124,22 @@ class Module:
 class Package:
 
     packname: str
-    _modules: Dict[str, Module] = field(default_factory=dict[str, Module])
+    _modules: Dict[str, IModule] = field(default_factory=dict[str, IModule])
 
-    def __iter__(self) -> Iterator[Module]:
-        return iter(self._modules.values())
+    # def __iter__(self) -> Iterator[IModule]:
+    # return iter(self._modules.values())
+
+    @property
+    def modules(self) -> List[IModule]:
+        return list(self._modules.values())
 
     def Module(self, modname: str) -> Module:
-        module = Module(modname=modname, packname=self.packname)
+        module = Module(name=modname, package=self.packname)
         self._add_module(module)
         return module
 
-    def _add_module(self, module: Module) -> None:
-        modname = module.modname
+    def _add_module(self, module: IModule) -> None:
+        modname = module.name
         modules = self._modules
         if modname in modules:
             raise ValueError(
@@ -144,9 +163,9 @@ class App:
         thispackages[packname] = package
 
     def add_module(self, module: Module) -> None:
-        package = self._packages.get(module.packname)
+        package = self._packages.get(module.name)
         if package is None:
-            raise ValueError(f"Package '{module.packname}' not found in App.")
+            raise ValueError(f"Package '{module.name}' not found in App.")
         package._add_module(module)
 
 

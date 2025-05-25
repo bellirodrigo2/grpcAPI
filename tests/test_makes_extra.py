@@ -2,6 +2,7 @@ import unittest
 from enum import Enum
 from typing import Annotated
 
+from grpcAPI.app import MethodPack, ServicePack
 from grpcAPI.makeproto.makeblock import (
     make_enumblock,
     make_method,
@@ -85,15 +86,16 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
         self.assertIs(method.response_type, Response)
 
     def test_service(self) -> None:
-        service = make_service(
-            servicename="IntegrationService",
-            protofile="integration.proto",
-            package="integrationpkg",
-            methods=[(perform_action, "", {})],
-            ignore_instance=[],
+        method = MethodPack(perform_action, "", {})
+        pack = ServicePack(
+            name="IntegrationService",
             description="Service for integration test",
             options={"deprecated": False},
+            module="integration.proto",
+            package="integrationpkg",
+            methods=[method],
         )
+        service = make_service(pack, [])
         self.assertEqual(service.name, "IntegrationService")
         self.assertEqual(service.protofile, "integration.proto")
         self.assertEqual(len(service.fields), 1)
@@ -115,15 +117,16 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
         method = make_method(perform_action, ignore_instance=[])
 
         # Service
-        service = make_service(
-            servicename="IntegrationService",
-            protofile="integration.proto",
-            package="integrationpkg",
-            methods=[(perform_action, "", {})],
-            ignore_instance=[],
+        func = MethodPack(perform_action, "", {})
+        pack = ServicePack(
+            name="IntegrationService",
             description="Service for integration test",
             options={},
+            module="integration.proto",
+            package="integrationpkg",
+            methods=[func],
         )
+        service = make_service(pack, [])
 
         # Assert all connected
         self.assertEqual(enum_block.package, req_block.package)

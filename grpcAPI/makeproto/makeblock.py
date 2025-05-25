@@ -24,6 +24,7 @@ from grpcAPI.types import (
     _NoPackage,
     get_headers,
 )
+from grpcAPI.types.interfaces import IService
 
 
 def make_msgblock(cls: type[BaseMessage]) -> Block:
@@ -167,30 +168,31 @@ def make_method(
 
 
 def make_service(
-    servicename: str,
-    protofile: str,
-    package: Union[str, _NoPackage],
-    methods: List[Tuple[Callable[..., Any], str, ProtoOption]],
+    service: IService,
     ignore_instance: List[type[Any]],
-    description: str,
-    options: ProtoOption,
 ) -> ServiceBlock:
 
-    service = ServiceBlock(
-        name=servicename,
-        protofile=protofile,
-        package=package,
+    servblock = ServiceBlock(
+        name=service.name,
+        protofile=service.module,
+        package=service.package,
         fields=[],
         number=0,
         block=None,
-        options=options,
-        description=description,
+        options=service.options,
+        description=service.description,
         render_dict={"block_type": "service"},
         reserveds=[],
     )
     method_list = [
-        make_method(method[0], ignore_instance, service, method[1], method[2])
-        for method in methods
+        make_method(
+            method.method,
+            ignore_instance,
+            servblock,
+            method.description,
+            method.options,
+        )
+        for method in service.methods
     ]
-    service.fields = method_list
-    return service
+    servblock.fields = method_list
+    return servblock

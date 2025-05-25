@@ -1,7 +1,7 @@
 import unittest
 
-from grpcAPI.makeproto.compiler import CompilerContext, ImportsValidator
-from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
+from grpcAPI.makeproto import CompilerContext, ImportsValidator
+from grpcAPI.makeproto.compiler import list_ctx_error_code
 from grpcAPI.types import BaseMessage
 from tests.compilerpasses.test_helpers import make_field, make_message_block
 
@@ -24,7 +24,7 @@ class TestImportsValidator(unittest.TestCase):
 
         self.packset = {("testpkg", "testfile")}
         self.ctx = CompilerContext(state={"_packages": self.packset})
-        self.validator = ImportsValidator()
+        self.validator = ImportsValidator(key="_packages")
 
     def test_valid_import(self) -> None:
         self.validator.execute([self.block], self.ctx)

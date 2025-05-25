@@ -1,9 +1,9 @@
 import re
 from typing import Optional, Set
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
+from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, OneOfBlock
+from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
 
 VALID_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 

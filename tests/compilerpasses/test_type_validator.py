@@ -1,15 +1,20 @@
 import unittest
-from enum import Enum
 from pathlib import Path
 from typing import Dict, List
 
-from grpcAPI.makeproto.compiler import CompilerContext, TypeValidator
-from grpcAPI.makeproto.compiler.compiler import (
-    list_ctx_error_code,
-    list_ctx_error_messages,
+from grpcAPI.makeproto import CompilerContext, TypeValidator
+from grpcAPI.makeproto.compiler import list_ctx_error_code, list_ctx_error_messages
+from grpcAPI.types import (
+    DEFAULT_PRIMITIVES,
+    BaseEnum,
+    BaseMessage,
+    Bytes,
+    Stream,
+    String,
 )
-from grpcAPI.types import DEFAULT_PRIMITIVES, BaseMessage, Bytes, Stream, String
 from tests.compilerpasses.test_helpers import (
+    make_enum_block,
+    make_enumfield,
     make_field,
     make_message_block,
     make_method,
@@ -17,7 +22,7 @@ from tests.compilerpasses.test_helpers import (
 )
 
 
-class LabeledEnum(Enum):
+class LabeledEnum(BaseEnum):
 
     @classmethod
     def protofile(cls) -> str:
@@ -28,7 +33,7 @@ class LabeledEnum(Enum):
         return "bar"
 
 
-class LabeledObject(Enum):
+class LabeledObject(BaseMessage):
 
     @classmethod
     def protofile(cls) -> str:
@@ -39,13 +44,9 @@ class LabeledObject(Enum):
         return "bar"
 
 
-class NonLabeledEnum(Enum):
+class NonLabeledEnum(BaseEnum):
+    # no protofile defined
     pass
-
-
-class NonCallableEnum(Enum):
-    protofile = "hello"
-    package = 1
 
 
 class NotAllowed:
@@ -98,17 +99,7 @@ class TestTypeValidator(unittest.TestCase):
         self.validator.execute([self.block], self.context)
         self.assertEqual(len(self.context), 1)
         self.assertIn(
-            'Enum type has no callable "protofile" or "package"',
-            list_ctx_error_messages(self.context)[0],
-        )
-        self.assertTrue(all(msg == "E621" for msg in list_ctx_error_code(self.context)))
-
-    def test_field_non_callable_enum_type(self) -> None:
-        make_field("field1", block=self.block, ftype=NonCallableEnum)
-        self.validator.execute([self.block], self.context)
-        self.assertEqual(len(self.context), 1)
-        self.assertIn(
-            'Enum type has no callable "protofile" or "package"',
+            "Message or Enum class ",
             list_ctx_error_messages(self.context)[0],
         )
         self.assertTrue(all(msg == "E621" for msg in list_ctx_error_code(self.context)))
@@ -298,6 +289,13 @@ class TestTypeValidator(unittest.TestCase):
         self.validator.execute([self.service], self.context)
         self.assertEqual(len(self.context), 1)
         self.assertTrue(any(msg == "E805" for msg in list_ctx_error_code(self.context)))
+
+    def test_enum_block(self) -> None:
+        enumblock = make_enum_block("enum1")
+        make_enumfield("VALID", block=enumblock, number=0)
+        make_enumfield("INVALID", block=enumblock, number=1)
+        self.validator.execute([enumblock], self.context)
+        self.assertEqual(len(self.context), 0)
 
 
 if __name__ == "__main__":

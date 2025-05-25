@@ -1,8 +1,8 @@
 from typing import Optional, Set
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode
+from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, is_enum
+from grpcAPI.makeproto.report import CompileErrorCode
 
 min_enum = -2147483647
 max_enum = 2147483647

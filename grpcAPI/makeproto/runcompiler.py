@@ -1,10 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Set, Tuple, Union
 
-from grpcAPI.makeproto.compiler.compiler import CompilerContext, CompilerPass
+from grpcAPI.makeproto.compiler import CompilerContext, CompilerPass
 from grpcAPI.makeproto.makeblock import make_cls_block, make_service
 from grpcAPI.makeproto.protoblock import Block
+from grpcAPI.makeproto.render.render import render_block, render_protofile
 from grpcAPI.types import BaseMessage, ProtoOption, _NoPackage
 
 
@@ -54,10 +55,39 @@ def make_execution_list(
         name=compilerpacks[0].package,  # transformar NO_PACKAGE para str ??????
         # ADICIONAR AQUI UM TEMPLATE POR MODULE, PARA OS SETTERS USAREM
         # LISTA DE DESCRIPTION E OPTIONS POR MODULE
-        state={},  # {"globalpacks": global_modules},
+        state={},
         settings=settings,
     )
     return (blocks, ctx)
+
+
+@dataclass
+class ModuleTemplate:
+    package: str
+    imports: List[str] = field(default_factory=list[str])
+    options: List[str] = field(default_factory=list[str])
+    fields: List[str] = field(default_factory=list[str])
+    blocks: List[Block] = field(default_factory=list[Block])
+    version: int = 3
+
+    def render(self) -> str:
+
+        for block in self.blocks:
+            render_dict = block.get_render_dict()
+            block_str = self.render_block(render_dict)
+            self.fields.append(block_str)
+
+        del self.blocks
+
+        return self.render_protofile(asdict(self))
+
+    @property
+    def render_block(self) -> Callable[[Dict[str, Any]], str]:
+        return render_block
+
+    @property
+    def render_protofile(Self) -> Callable[[Dict[str, Any]], str]:
+        return render_protofile
 
 
 def compile_packs(
@@ -65,9 +95,19 @@ def compile_packs(
     settings: Dict[str, Any],
     passes: List[List[CompilerPass]],
 ) -> None:
-    # global_modules = [(mcp.package, mcp.protofile) for mcp in compilerpacks]
+    # VER SE PRECISA MESMO DE DICT
+    for packname, modules in compilerpacks.items():
+        state = {}
+        blocks: List[Block] = []
+        for module in modules:
+            # ADICIONAR IMPORTS E OPTIONS NOS SETTER AQUI NO MODULE
+            modtemplate = ModuleTemplate(package=packname)
+            state[module.protofile] = modtemplate
+            # CRIAR OS BLOCKS
+            # ADICIONAR A BLOCKS
 
-    for pack in compilerpacks.values():
+        ctx = CompilerContext(name=packname, settings=settings, state=state)
+
         execution_list = make_execution_list(pack, settings)
         for compilerpass in passes:
             run_compiler_passes(execution_list, compilerpass)

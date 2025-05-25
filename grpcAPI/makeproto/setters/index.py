@@ -1,8 +1,8 @@
 from typing import Optional, Set
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode
-from grpcAPI.makeproto.protoblock import Block, Field, Method, is_enum
+from grpcAPI.makeproto.compiler import CompilerPass
+from grpcAPI.makeproto.protoblock import Block, Field, is_enum
+from grpcAPI.makeproto.report import CompileErrorCode
 
 
 class IndexSetter(CompilerPass):
@@ -47,8 +47,7 @@ class IndexSetter(CompilerPass):
         return i
 
     def visit_field(self, field: Field) -> None:
-        if field.index is None:
-            render_dict = field.render_dict
+        if field.number is None:
             next_index = self.next
             field.number = next_index
-            render_dict["number"] = str(next_index)
+        field.render_dict["number"] = str(field.number)

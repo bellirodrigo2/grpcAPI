@@ -1,7 +1,6 @@
 from typing import Callable, Dict
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
+from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import (
     Block,
     EnumBlock,
@@ -9,6 +8,7 @@ from grpcAPI.makeproto.protoblock import (
     OneOfBlock,
     ServiceBlock,
 )
+from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
 
 
 def validate_service(block: Block, report: CompileReport) -> None: ...

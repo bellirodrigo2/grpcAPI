@@ -1,27 +1,30 @@
 from typing import Any, Tuple, get_args, get_origin
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
-from grpcAPI.makeproto.protoblock import Block, EnumField, Field, Method
+from grpcAPI.makeproto.compiler import CompilerPass
+from grpcAPI.makeproto.protoblock import Block, Field, Method
+from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
 from grpcAPI.types import DEFAULT_PRIMITIVES, BaseProto, if_stream_get_type
+from grpcAPI.types.message import BaseEnum, BaseMessage
+from grpcAPI.types.types import BaseField
 
 
 def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
 
-    pack = getattr(bt, "package", None)
+    if bt is None:
+        return ""
 
-    if pack is not None and callable(pack):
-        # covers basemessage and enum
-        if pack() == block_package:
+    if issubclass(bt, BaseMessage) or issubclass(bt, BaseEnum):
+        if bt.package() == block_package:
             return bt.prototype()
         else:
             return bt.qualified_prototype()
-    if hasattr(bt, "prototype"):
-        # covers basefield
+    if issubclass(bt, BaseField):
         return bt.prototype()
-    # covers allowed python types
-    return DEFAULT_PRIMITIVES.get(bt).prototype()  # type: ignore
-    # should be safe due to early validator pass
+
+    primitive = DEFAULT_PRIMITIVES.get(bt, None)  # type: ignore
+    if primitive is not None:
+        return primitive.prototype()
+    raise ValueError(f"{bt} object of type {type(bt)} cannot be resolved")
 
 
 def get_type_str(bt: type[Any], block_package: str) -> str:
@@ -37,7 +40,6 @@ def get_type_str(bt: type[Any], block_package: str) -> str:
         key_type_str = get_base_type_str(key_type, block_package)
         value_type_str = get_base_type_str(value_type, block_package)
         return f"map<{key_type_str}, {value_type_str}>"
-
     return get_base_type_str(bt, block_package)
 
 
@@ -58,10 +60,7 @@ class TypeSetter(CompilerPass):
         block = field.block
         try:
             render_dict = field.render_dict
-            if isinstance(field, EnumField):
-                type_str = ""
-            else:
-                type_str = get_type_str(field.ftype, block.package)
+            type_str = get_type_str(field.ftype, block.package)
             render_dict["ftype"] = type_str
         except Exception as e:
             report: CompileReport = self.ctx.get_report(field.block.name)

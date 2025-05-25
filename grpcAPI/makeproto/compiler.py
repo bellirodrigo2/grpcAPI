@@ -1,9 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from rich.console import Console
 
-from grpcAPI.makeproto.compiler.report import CompileReport
 from grpcAPI.makeproto.protoblock import Block, Field, Method, Visitor
+from grpcAPI.makeproto.report import CompileReport
 
 
 class CompilerContext:
@@ -11,15 +11,18 @@ class CompilerContext:
         self,
         name: str = "",
         settings: Optional[Dict[str, Any]] = None,
-        state: Optional[Dict[str, Any]] = None,
+        state: Optional[Dict[Union[str, object], Any]] = None,
     ):
         self.name = name
         self.settings: Dict[str, Any] = settings or {}
         self.reports: Dict[str, CompileReport] = {}
-        self.state = state or {}
+        self._state: Dict[Union[str, object], Any] = state or {}
 
     def __len__(self) -> int:
         return sum(len(r) for r in self.reports.values())
+
+    def get_state(self, key: str) -> Optional[Any]:
+        return self._state.get(key, None)
 
     def get_report(self, block_name: str) -> CompileReport:
         if block_name not in self.reports:

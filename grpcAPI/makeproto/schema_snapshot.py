@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from deepdiff import DeepDiff
-from makeproto.block_models import Block, ProtoBlocks
+from makeproto.protoblock import Block, ProtoBlocks
 
 
 def serialize_block(block: Block) -> Dict[str, Any]:

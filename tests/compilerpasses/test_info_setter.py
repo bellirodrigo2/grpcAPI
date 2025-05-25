@@ -1,8 +1,8 @@
 import textwrap
 import unittest
 
-from grpcAPI.makeproto.compiler import CompilerContext, OptionsSetter, ReservedSetter
-from grpcAPI.makeproto.compiler.setters.info import format_description
+from grpcAPI.makeproto import CompilerContext, OptionsSetter, ReservedSetter
+from grpcAPI.makeproto.setters.info import format_description
 from grpcAPI.types import EnumValue
 from tests.compilerpasses.test_helpers import (
     make_field,

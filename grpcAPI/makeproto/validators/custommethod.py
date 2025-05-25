@@ -1,8 +1,8 @@
 from typing import Any, Callable, List, Optional
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode
+from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Method
+from grpcAPI.makeproto.report import CompileErrorCode
 
 
 class CustomPass(CompilerPass):

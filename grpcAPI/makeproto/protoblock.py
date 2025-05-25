@@ -17,7 +17,7 @@ class Node:
     options: Dict[str, Union[bool, str]]
 
     block: Optional["Block"]
-    render_dict: Dict[str, str]
+    render_dict: Dict[str, Any]
 
     @property
     def index(self) -> Optional[int]:
@@ -26,6 +26,9 @@ class Node:
     @property
     def top_block(self) -> Optional["Block"]:
         return self.block
+
+    def get_render_dict(self) -> Dict[str, Any]:
+        return self.render_dict
 
     def accept(self, visitor: Visitor) -> None:
         raise NotImplementedError()
@@ -71,6 +74,8 @@ class Block(Node):
     protofile: str
     package: Union[str, object]
     fields: List[Node]
+    reserveds: List[Union[int, range, str]]
+    counter: int = 1
 
     def __len__(self) -> int:
         return len(self.fields)
@@ -78,12 +83,16 @@ class Block(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_block(self)
 
+    def get_render_dict(self) -> Dict[str, Any]:
+        fields = []
+        for field in self.fields:
+            fields.append(field.get_render_dict())
+        self.render_dict["fields"] = fields
+        return super().get_render_dict()
+
     @property
     def index(self) -> Optional[int]:
         return 0
-
-    reserveds: List[Union[int, range, str]]
-    counter: int = 1
 
     @property
     def raw_reserved_indexes(self) -> List[Union[range, int]]:
@@ -107,12 +116,16 @@ class Block(Node):
 
 @dataclass
 class MessageBlock(Block):
-    pass
+
+    def __post_init__(self) -> None:
+        self.render_dict["block_type"] = "message"
 
 
 @dataclass
 class EnumBlock(Block):
-    pass
+
+    def __post_init__(self) -> None:
+        self.render_dict["block_type"] = "enum"
 
 
 @dataclass
@@ -121,10 +134,15 @@ class OneOfBlock(Block):
     def index(self) -> Optional[int]:
         return min([f.index for f in self.fields if f.index is not None])
 
+    def __post_init__(self) -> None:
+        self.render_dict["block_type"] = "oneof"
+
 
 @dataclass
 class ServiceBlock(Block):
-    pass
+
+    def __post_init__(self) -> None:
+        self.render_dict["block_type"] = "service"
 
 
 def is_enum(item: Union[Block, Field]) -> bool:

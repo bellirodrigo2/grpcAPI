@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from grpcAPI.app import App, Module
 from grpcAPI.makeproto import ModuleCompilerPack, ServiceCompilerPack
@@ -29,6 +29,16 @@ def make_compiler_entry(
             )
             compilerpacks[package.packname].append(modulecompilerpack)
     return compilerpacks
+
+
+def make_modules_set(
+    packs: Dict[str, List[ModuleCompilerPack]],
+) -> Set[Tuple[Union[_NoPackage, str], str]]:
+    global_modules: Set[Tuple[Union[_NoPackage, str], str]] = set()
+    for modulelist in packs.values():
+        for module in modulelist:
+            global_modules.add((module.package, module.protofile))
+    return global_modules
 
 
 def map_module_cls(mod: Module) -> Set[type[Union[BaseMessage, Enum]]]:

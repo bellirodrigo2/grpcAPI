@@ -2,9 +2,9 @@
 # import "pack1/file2.proto";
 # import "pack2/file2.proto";
 
-from grpcAPI.makeproto.compiler.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
+from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, EnumField, Field
+from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
 from grpcAPI.types.types import DEFAULT_PRIMITIVES, BaseField
 
 

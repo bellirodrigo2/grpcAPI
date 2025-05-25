@@ -1,4 +1,0 @@
-{% extends "description.j2" %}
-{% block content %}
-{% if ftype %}{{ ftype }} {% endif %}{{ name }} = {{ number }}{% if options %} [{{ options | join(', ') }}]{% endif %};
-{% endblock %}

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 

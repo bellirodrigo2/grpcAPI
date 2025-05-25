@@ -1,10 +1,9 @@
 import inspect
-from enum import Enum
 from typing import Any, Callable, List, Optional, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass
-from grpcAPI.makeproto.compiler.report import CompileErrorCode, CompileReport
-from grpcAPI.makeproto.protoblock import Block, Field, Method
+from grpcAPI.makeproto.protoblock import Block, EnumField, Field, Method
+from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
 from grpcAPI.types import (
     DEFAULT_PRIMITIVES,
     BaseMessage,
@@ -13,6 +12,7 @@ from grpcAPI.types import (
     if_stream_get_type,
     is_BaseMessage,
 )
+from grpcAPI.types.message import BaseEnum
 from grpcAPI.types.types import BaseField
 
 DEFAULT_EXTRA_ARGS = [Context]
@@ -39,7 +39,12 @@ class TypeValidator(CompilerPass):
 
     def visit_field(self, field: Field) -> None:
         report = self.ctx.get_report(field.top_block.name)
-        error = self._check_arg(field.ftype, field.name)
+        error: Optional[str] = None
+        if isinstance(field, EnumField):
+            if field.ftype:
+                error = f"EnumField should have empty ftype. Found {field.ftype}"
+        else:
+            error = self._check_arg(field.ftype, field.name)
         if error:
             report.report_error(
                 code=CompileErrorCode.FIELD_TYPE_INVALID,
@@ -73,20 +78,14 @@ class TypeValidator(CompilerPass):
         if issubclass(bt, BaseField):  # se for mensagem protobuf pura
             return None
 
-        if issubclass(bt, BaseMessage):  # se for mensagem protobuf pura
+        if issubclass(bt, BaseMessage) or issubclass(
+            bt, BaseEnum
+        ):  # se for mensagem protobuf pura
             try:
                 bt.protofile()
                 return None
             except NotImplementedError:
-                return f"BaseMessage class {bt.__name__} does not implement protofile()"
-
-        if issubclass(bt, Enum):
-            file = getattr(bt, "protofile", None)
-            pack = getattr(bt, "package", None)
-            if callable(file) and callable(pack):
-                return None
-            else:
-                return 'Enum type has no callable "protofile" or "package"'
+                return f"Message or Enum class '{bt.__name__}' does not implement protofile()"
 
         if bt not in DEFAULT_PRIMITIVES:
             return f'Field "{name}" type is not allowed. Found {bt.__name__}'

@@ -1,15 +1,17 @@
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 from grpcAPI.app import App
-from grpcAPI.compileutils import make_compiler_entry
+from grpcAPI.compileutils import make_compiler_entry, make_modules_set
 from grpcAPI.makeproto import compile_packs
 from grpcAPI.makeproto.compiler import (
     BlockNameValidator,
     BlockStructureValidator,
+    CustomPass,
     DescriptionSetter,
     DescriptionValidator,
     FieldNameValidator,
     ImportsSetter,
+    ImportsValidator,
     IndexSetter,
     IndexValidator,
     NameSetter,
@@ -21,7 +23,6 @@ from grpcAPI.makeproto.compiler import (
     TypeSetter,
     TypeValidator,
 )
-from grpcAPI.makeproto.compiler.validators.custommethod import CustomPass
 from grpcAPI.types import Context
 
 settings: Dict[str, Any] = {}
@@ -39,9 +40,6 @@ ctxinjectpass = CustomPass(visitmethod=placeholder)
 # NAMESETTER
 # DEFAULT_CASE = NameTransformStrategy.NO_TRANSFORM
 # **** precisa de um de para
-
-# DA PRA PASSAR O SET DE (PACKAGE,PROTOFILE) em ImportsValidator
-# global_modules = [(mcp.package, mcp.protofile) for mcp in compilerpacks]
 
 # DescriptionSetter
 MAXCHAR_PER_LINE = 80
@@ -77,5 +75,8 @@ setters = [
 
 def compile(app: App, ignore_instance: List[type[Any]]) -> None:
 
-    compilerpack_list = make_compiler_entry(app, ignore_instance)
-    compile_packs(compilerpack_list, settings, [validators, setters])
+    compilerpacks = make_compiler_entry(app, ignore_instance)
+    global_modules = make_modules_set(compilerpacks)
+    importsvalidator = ImportsValidator(packset=global_modules)
+    validators.append(importsvalidator)
+    compile_packs(compilerpacks, settings, [validators, setters])

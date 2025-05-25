@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import Any, List, Optional, Tuple, Union
 
 from grpcAPI.types.base import BaseProto, ProtoOption
@@ -42,8 +43,7 @@ class Meta:
         return []
 
 
-class BaseMessage(BaseProto, Module, Meta):
-
+class SelfNamePrototype(BaseProto, Module):
     @classmethod
     def prototype(cls) -> str:
         return cls.__name__
@@ -54,6 +54,14 @@ class BaseMessage(BaseProto, Module, Meta):
         if isinstance(pack, _NoPackage):
             return cls.prototype()
         return f"{str(pack)}.{cls.prototype()}"
+
+
+class BaseMessage(SelfNamePrototype, Meta):
+    pass
+
+
+class BaseEnum(SelfNamePrototype, Meta, IntEnum):
+    pass
 
 
 def is_BaseMessage(tgt: type[Any]) -> bool:

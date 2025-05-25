@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from enum import Enum, IntEnum
+from enum import Enum
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 from grpcAPI.proto_proxy import ProtoProxy
 from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption, _NoPackage
+from grpcAPI.types.message import BaseEnum
 
 
 def create_proto_model(
@@ -56,7 +57,7 @@ class Module:
     def __post_init__(self) -> None:
         proto_cls = create_proto_model(self._model, self.modname, self.packname)
         object.__setattr__(self, "_proto_model", proto_cls)
-        proto_enum = create_proto_model(IntEnum, self.modname, self.packname)
+        proto_enum = create_proto_model(BaseEnum, self.modname, self.packname)
         object.__setattr__(self, "_proto_enum", proto_enum)
 
     @property

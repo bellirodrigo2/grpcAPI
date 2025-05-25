@@ -1,0 +1,21 @@
+{# protofile.j2 #}
+
+syntax = "proto{{ version if version else '3' }}";
+
+{%- for imp in imports %}
+import "{{ imp }}";
+{%- endfor %}
+
+{%- if package %}
+package {{ package }};
+{%- endif %}
+
+{%- from "macros.j2" import render_options, render_description %}
+
+{{ render_description(description) }}
+
+{{ render_options(options) }}
+
+{%- for block in blocks %}
+{{ block }}
+{%- endfor %}

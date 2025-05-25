@@ -1,7 +1,8 @@
 from typing import Union
 
-from grpcAPI.makeproto.compiler import CompileErrorCode, CompilerPass
+from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, Method, OneOfBlock, OneOfField
+from grpcAPI.makeproto.report import CompileErrorCode
 
 
 class OptionsValidator(CompilerPass):

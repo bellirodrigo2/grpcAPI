@@ -1,12 +1,12 @@
 import unittest
 
-from grpcAPI.makeproto.compiler import (
+from grpcAPI.makeproto import (
     CompilerContext,
     DescriptionValidator,
     OptionsValidator,
     ReservedValidator,
 )
-from grpcAPI.makeproto.compiler.compiler import list_ctx_error_code
+from grpcAPI.makeproto.compiler import list_ctx_error_code
 from tests.compilerpasses.test_helpers import (
     make_field,
     make_message_block,

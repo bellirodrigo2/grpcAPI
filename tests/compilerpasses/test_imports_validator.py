@@ -1,7 +1,7 @@
 import unittest
 
-from grpcAPI.makeproto import CompilerContext, ImportsValidator
-from grpcAPI.makeproto.compiler import list_ctx_error_code
+from grpcAPI.makeproto.compiler import CompilerContext, list_ctx_error_code
+from grpcAPI.makeproto.validators.imports import ImportsValidator
 from grpcAPI.types import BaseMessage
 from tests.compilerpasses.test_helpers import make_field, make_message_block
 

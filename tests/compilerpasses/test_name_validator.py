@@ -1,7 +1,7 @@
 import unittest
 
-from grpcAPI.makeproto import BlockNameValidator, CompilerContext, FieldNameValidator
-from grpcAPI.makeproto.compiler import list_ctx_error_code
+from grpcAPI.makeproto.compiler import CompilerContext, list_ctx_error_code
+from grpcAPI.makeproto.validators.name import BlockNameValidator, FieldNameValidator
 from tests.compilerpasses.test_helpers import (
     make_enum_block,
     make_enumfield,

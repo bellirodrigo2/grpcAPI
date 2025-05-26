@@ -1,9 +1,9 @@
-
 from typing import Any, Optional
 
 
 class ValidationError(Exception):
     pass
+
 
 class InvalidModelFieldType(Exception):
     """Raised when an model field injectable has the wrong type."""
@@ -15,6 +15,7 @@ class InvalidInjectableDefinition(Exception):
 
 class UnresolvedInjectableError(Exception):
     """Raised when a dependency cannot be resolved in the injection context."""
+
     ...
 
 

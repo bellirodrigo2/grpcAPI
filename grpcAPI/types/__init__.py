@@ -34,10 +34,11 @@ __all__ = [
     "IService",
     "IMethod",
     "IModule",
+    "IPackage",
 ]
 from grpcAPI.types.base import BaseProto, EnumValue, Metadata, OneOf, ProtoOption
 from grpcAPI.types.context import Context
-from grpcAPI.types.interfaces import IMethod, IModule, IService
+from grpcAPI.types.interfaces import IMethod, IModule, IPackage, IService
 from grpcAPI.types.message import (
     NO_PACKAGE,
     BaseEnum,

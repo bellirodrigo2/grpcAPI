@@ -1,7 +1,8 @@
 import unittest
 
-from grpcAPI.makeproto import CompilerContext, NameSetter
+from grpcAPI.makeproto.compiler import CompilerContext
 from grpcAPI.makeproto.setters.name import (
+    NameSetter,
     NameTransformStrategy,
     normalize_name,
     to_camel_case,
@@ -73,7 +74,7 @@ class TestNameSetter(unittest.TestCase):
     def test_visit_field_and_method_snake(self) -> None:
         field = make_field("FieldName", block=self.block)
         method = make_method("MethodName", block=self.block)
-        normalizer = NameSetter(NameTransformStrategy.SNAKE_CASE)
+        normalizer = NameSetter("snake_case")
         normalizer.execute([self.block], self.context)
         block_dict = self.block.render_dict
         field_dict = field.render_dict
@@ -87,7 +88,7 @@ class TestNameSetter(unittest.TestCase):
         block = make_message_block("block_name")
         field1 = make_field("field_one", block=block)
         field2 = make_field("field_two", block=block)
-        normalizer = NameSetter(strategy=NameTransformStrategy.CAMEL_CASE)
+        normalizer = NameSetter(strategy="camel_case")
         normalizer.execute([block], self.context)
 
         field1_dict = field1.render_dict

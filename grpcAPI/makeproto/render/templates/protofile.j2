@@ -1,21 +1,23 @@
 {# protofile.j2 #}
-
+{%- from "macros.j2" import render_options, render_description -%}
+// {{ modulename }}
+{% if description %}
+{{ render_description(description) }}
+{% endif -%}
 syntax = "proto{{ version if version else '3' }}";
-
+{% if imports %}
 {%- for imp in imports %}
 import "{{ imp }}";
 {%- endfor %}
+{% endif -%}
 
 {%- if package %}
 package {{ package }};
-{%- endif %}
+{% endif %}
 
-{%- from "macros.j2" import render_options, render_description %}
-
-{{ render_description(description) }}
-
+{%- if options %}
 {{ render_options(options) }}
-
-{%- for block in blocks %}
-{{ block }}
+{% endif -%}
+{%- for field in fields %}
+{{ field }}
 {%- endfor %}

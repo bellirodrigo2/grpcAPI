@@ -1,7 +1,11 @@
 import unittest
 
-from grpcAPI.makeproto import CompilerContext, IndexValidator
-from grpcAPI.makeproto.compiler import list_ctx_error_code, list_ctx_error_messages
+from grpcAPI.makeproto.compiler import (
+    CompilerContext,
+    list_ctx_error_code,
+    list_ctx_error_messages,
+)
+from grpcAPI.makeproto.validators.index import IndexValidator
 from tests.compilerpasses.test_helpers import (
     make_enum_block,
     make_enumfield,

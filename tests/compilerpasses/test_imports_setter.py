@@ -1,6 +1,7 @@
 import unittest
 
-from grpcAPI.makeproto import CompilerContext, ImportsSetter
+from grpcAPI.makeproto.compiler import CompilerContext
+from grpcAPI.makeproto.setters.imports import ImportsSetter
 from grpcAPI.types import BaseMessage, Int32
 from tests.compilerpasses.test_helpers import make_field, make_message_block
 

@@ -2,8 +2,12 @@ import unittest
 from pathlib import Path
 from typing import Dict, List
 
-from grpcAPI.makeproto import CompilerContext, TypeValidator
-from grpcAPI.makeproto.compiler import list_ctx_error_code, list_ctx_error_messages
+from grpcAPI.makeproto.compiler import (
+    CompilerContext,
+    list_ctx_error_code,
+    list_ctx_error_messages,
+)
+from grpcAPI.makeproto.validators.type import TypeValidator
 from grpcAPI.types import (
     DEFAULT_PRIMITIVES,
     BaseEnum,

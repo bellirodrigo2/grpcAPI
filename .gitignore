@@ -17,7 +17,7 @@ __pycache__/
 
 # Poetry specific files
 # poetry.lock
-
+*.egg-info
 # Virtual environments
 .env
 .env/

@@ -2,7 +2,8 @@ import unittest
 from pprint import pprint
 from typing import Dict, List, Union
 
-from grpcAPI.makeproto import CompilerContext, TypeSetter
+from grpcAPI.makeproto.compiler import CompilerContext
+from grpcAPI.makeproto.setters.type import TypeSetter
 from grpcAPI.types import (
     NO_PACKAGE,
     BaseEnum,

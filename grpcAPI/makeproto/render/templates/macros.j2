@@ -1,38 +1,41 @@
 {# macros.j2 #}
 
 {% macro render_description(description) -%}
-    {%- if description %}
-    // {{ description }}
-    {%- endif %}
+{%- if description %}
+  // {{ description }}
+{%- endif -%}
 {%- endmacro %}
 
 {% macro render_options(options) -%}
-    {%- for opt in options %}
-    option {{ opt }};
-    {%- endfor %}
+{%- if options %}
+{% for opt in options %}
+  option {{ opt }};
+{% endfor %}
+{%- endif %}
 {%- endmacro %}
 
+
 {% macro render_reserved(reserveds) -%}
-    {%- if reserveds[0] %}
-    reserved {{ reserveds[0] }};
-    {%- endif %}
-    {%- if reserveds[1] %}
-    reserved {{ reserveds[1] }};
-    {%- endif %}
+{%- if reserveds[0] %}
+  reserved {{ reserveds[0] }};
+{% endif %}
+{% if reserveds[1] %}
+  reserved {{ reserveds[1] }};
+{%- endif %}
 {%- endmacro %}
 
 {% macro render_field(field) -%}
-{{ render_description(field.description) }}
-{%- if field.ftype %}{{ field.ftype }} {% endif %}{{ field.name }} = {{ field.number }}
-{%- if field.options %} [{{ field.options | join(', ') }}]{% endif %};
+  {{ render_description(field.description) }}
+  {%- if field.ftype %}{{ field.ftype }} {% endif %}{{ field.name }} = {{ field.number }}
+  {%- if field.options %} [{{ field.options | join(', ') }}]{% endif %};
 {%- endmacro %}
 
 {% macro render_method(method) -%}
-{{ render_description(method.description) }}
-rpc {{ method.name }}({% if method.request_stream %}stream {% endif %}{{ method.request_type }})
-returns ({% if method.response_stream %}stream {% endif %}{{ method.response_type }}) {
+  {{ render_description(method.description) }}
+  rpc {{ method.name }}({% if method.request_stream %}stream {% endif %}{{ method.request_type }})returns ({% if method.response_stream %}stream {% endif %}{{ method.response_type }}){% if method.options and method.options|length > 0 %} {
 {{ render_options(method.options) }}
-}
+  }{% else %};
+  {% endif %}
 {%- endmacro %}
 
 {% macro render_block(block) -%}
@@ -40,24 +43,23 @@ returns ({% if method.response_stream %}stream {% endif %}{{ method.response_typ
 {{ block.block_type }} {{ block.name }} {
 {{ render_options(block.options) }}
 {{ render_reserved(block.reserveds) }}
-
-    {%- if block.block_type == 'service' %}
-        {%- for method in block.fields %}
-        {{ render_method(method) }}
-        {%- endfor %}
-    {%- else %}
-        {%- for field in block.fields %}
-            {%- if field.block_type == 'oneof' %}
-    {{ render_description(field.description) }}
-    oneof {{ field.name }} {
-                {%- for subfield in field.fields %}
-        {{ render_field(subfield) }}
-                {%- endfor %}
-    }
-            {%- else %}
-    {{ render_field(field) }}
-            {%- endif %}
-        {%- endfor %}
-    {%- endif %}
+{%- if block.block_type == 'service' %}
+  {%- for method in block.fields %}
+{{ render_method(method) }}
+  {%- endfor %}
+{% else %}
+  {% for field in block.fields %}
+    {% if field.block_type == 'oneof' %}
+  {{ render_description(field.description) }}
+  oneof {{ field.name }} {
+    {% for subfield in field.fields %}
+{{ render_field(subfield) }}
+    {% endfor %}
+  }
+    {% else %}
+{{ render_field(field) }}
+    {% endif %}
+  {% endfor %}
+{% endif %}
 }
 {%- endmacro %}

@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Union
 from grpcAPI.proto_proxy import ProtoProxy
 from grpcAPI.typemapping import map_service_classes
 from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption, _NoPackage
-from grpcAPI.types.interfaces import IMethod, IModule, IService
+from grpcAPI.types.interfaces import IMethod, IModule, IPackage, IService
 from grpcAPI.types.message import BaseEnum
 
 
@@ -121,20 +121,17 @@ class Module(IModule):
 
 
 @dataclass(frozen=True)
-class Package:
+class Package(IPackage):
 
-    packname: str
+    name: Union[_NoPackage, str]
     _modules: Dict[str, IModule] = field(default_factory=dict[str, IModule])
-
-    # def __iter__(self) -> Iterator[IModule]:
-    # return iter(self._modules.values())
 
     @property
     def modules(self) -> List[IModule]:
         return list(self._modules.values())
 
     def Module(self, modname: str) -> Module:
-        module = Module(name=modname, package=self.packname)
+        module = Module(name=modname, package=self.name)
         self._add_module(module)
         return module
 
@@ -143,7 +140,7 @@ class Package:
         modules = self._modules
         if modname in modules:
             raise ValueError(
-                f"Module '{modname}' already exists in package '{self.packname}'."
+                f"Module '{modname}' already exists in package '{self.name}'."
             )
         modules[modname] = module
 
@@ -151,21 +148,27 @@ class Package:
 @dataclass(frozen=True)
 class App:
 
-    _packages: Dict[Union[_NoPackage, str], Package] = field(
-        default_factory=dict[Union[_NoPackage, str], Package]
+    _packages: Dict[Union[_NoPackage, str], IPackage] = field(
+        default_factory=dict[Union[_NoPackage, str], IPackage]
     )
+
+    @property
+    def packages(self) -> List[IPackage]:
+        return list(self._packages.values())
 
     def add_package(self, package: Package) -> None:
         thispackages = self._packages
-        packname = package.packname
+        packname = package.name
         if packname in thispackages:
             raise ValueError(f"Package '{packname}' already exists.")
         thispackages[packname] = package
 
     def add_module(self, module: Module) -> None:
-        package = self._packages.get(module.name)
+        package = self._packages.get(module.package)
         if package is None:
-            raise ValueError(f"Package '{module.name}' not found in App.")
+            newpack = Package(module.package)
+            self.add_package(newpack)
+            package = newpack
         package._add_module(module)
 
 

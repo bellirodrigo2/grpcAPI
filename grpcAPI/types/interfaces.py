@@ -29,3 +29,10 @@ class IModule(Protocol):
 
     @property
     def objects(self) -> Set[type[Union[BaseMessage, BaseEnum]]]: ...
+
+
+class IPackage(Protocol):
+    name: Union[_NoPackage, str]
+
+    @property
+    def modules(self) -> List[IModule]: ...

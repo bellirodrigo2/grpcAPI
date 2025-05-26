@@ -1,0 +1,5 @@
+version = 3
+maxchar_per_line = 80
+always_format = true
+name_case = "snake_case"
+output_dir = "grpcAPI/proto"

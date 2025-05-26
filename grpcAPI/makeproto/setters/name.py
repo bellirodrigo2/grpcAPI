@@ -53,17 +53,35 @@ def normalize_name(name: str, strategy: NameTransformStrategy) -> str:
     return transform(name)
 
 
-DEFAULT_CASE = NameTransformStrategy.NO_TRANSFORM
+def set_name_case_strategy(strategy: str) -> NameTransformStrategy:
+    strategy = (
+        strategy.strip().replace(" ", "").replace("_", "").replace("-", "").lower()
+    )
+    # if strategy == "snakecase":
+    if "snake" in strategy:
+        return NameTransformStrategy.SNAKE_CASE
+    # if strategy == "camelcase":
+    if "camel" in strategy:
+        return NameTransformStrategy.CAMEL_CASE
+    # if strategy == "pascalcase":
+    if "pascal" in strategy:
+        return NameTransformStrategy.PASCAL_CASE
+    return NameTransformStrategy.NO_TRANSFORM
+
+
+DEFAULT_CASE = "no_transform"
 
 
 class NameSetter(CompilerPass):
-    def __init__(self, strategy: NameTransformStrategy = DEFAULT_CASE):
+    def __init__(self, strategy: str = DEFAULT_CASE) -> None:
         super().__init__()
-        self.strategy = strategy
+        self.strategy = set_name_case_strategy(strategy)
 
     def set_default(self) -> None:
         settings = self.ctx.settings
-        self.strategy = settings.get("name_case", self.strategy)
+        strategy = settings.get("name_case", None)
+        if strategy is not None:
+            self.strategy = set_name_case_strategy(strategy)
 
     def visit_block(self, block: Block) -> None:
         render_dict = block.render_dict

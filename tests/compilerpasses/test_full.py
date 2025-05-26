@@ -1,15 +1,11 @@
 import unittest
 from enum import Enum
-from pprint import pprint
 from typing import List
 
-from grpcAPI.makeproto import (
-    CompilerContext,
-    CompilerPass,
-    IndexSetter,
-    NameSetter,
-    TypeSetter,
-)
+from grpcAPI.makeproto.compiler import CompilerContext, CompilerPass
+from grpcAPI.makeproto.setters.index import IndexSetter
+from grpcAPI.makeproto.setters.name import NameSetter
+from grpcAPI.makeproto.setters.type import TypeSetter
 from grpcAPI.types.message import BaseMessage
 from tests.compilerpasses.test_helpers import (
     make_field,

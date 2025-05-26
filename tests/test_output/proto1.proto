@@ -1,0 +1,28 @@
+// proto1
+  // TesteFile
+syntax = "proto3";
+package pack1;
+
+enum Status {
+
+ACTIVE = 0;
+INACTIVE = 1;
+}
+message Person {
+
+  reserved "name";
+  reserved 12 to 16;int32 id = 1;
+string email = 2;
+  
+  oneof contact {
+string phone = 3;
+string address = 4;
+  }
+}
+service UserService {
+
+
+  rpc GetPerson(Person)returns (Person);
+
+  rpc ListPersons(stream Person)returns (stream Person);
+}

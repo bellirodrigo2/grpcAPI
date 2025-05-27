@@ -24,8 +24,8 @@ class IndexSetter(CompilerPass):
                 self.reserveds.add(item.index)
 
     def visit_block(self, block: Block) -> None:
-        if is_enum(block):
-            return
+        # if is_enum(block):
+        # return
         self.reserveds.update(block.reserved_indexes)
         self._get_used(block)
         try:

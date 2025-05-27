@@ -130,8 +130,18 @@ class Package(IPackage):
     def modules(self) -> List[IModule]:
         return list(self._modules.values())
 
-    def Module(self, modname: str) -> Module:
-        module = Module(name=modname, package=self.name)
+    def Module(
+        self,
+        modname: str,
+        description: str = "",
+        options: Optional[Dict[str, Any]] = None,
+    ) -> Module:
+        module = Module(
+            name=modname,
+            package=self.name,
+            description=description,
+            options=options or ProtoOption(),
+        )
         self._add_module(module)
         return module
 

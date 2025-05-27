@@ -43,11 +43,11 @@ def get_type_str(bt: type[Any], block_package: str) -> str:
     return get_base_type_str(bt, block_package)
 
 
-def get_func_arg_info(tgt: type[Any]) -> Tuple[str, bool]:
+def get_func_arg_info(tgt: type[Any]) -> Tuple[type[Any], bool]:
     argtype = if_stream_get_type(tgt)
     if argtype is not None:
-        return argtype.__name__, True
-    return tgt.__name__, False
+        return argtype, True
+    return tgt, False
 
 
 class TypeSetter(CompilerPass):
@@ -74,10 +74,12 @@ class TypeSetter(CompilerPass):
         try:
             render_dict = method.render_dict
             request_type, request_stream = get_func_arg_info(method.request_type[0])
-            render_dict["request_type"] = request_type
+            request_str = get_type_str(request_type, method.block.package)
+            render_dict["request_type"] = request_str
             render_dict["request_stream"] = request_stream
             response_type, response_stream = get_func_arg_info(method.response_type)
-            render_dict["response_type"] = response_type
+            response_str = get_type_str(response_type, method.block.package)
+            render_dict["response_type"] = response_str
             render_dict["response_stream"] = response_stream
         except Exception as e:
             report: CompileReport = self.ctx.get_report(method.block.name)

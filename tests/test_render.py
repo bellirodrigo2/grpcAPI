@@ -1,4 +1,11 @@
+import os
+import shutil
+import unittest
+from pathlib import Path
 from typing import Any, Dict
+
+from grpcAPI.makeproto.protoc_compiler import compile
+from grpcAPI.makeproto.render.render import BaseModuleTemplate
 
 message_block: Dict[str, Any] = {
     "block_type": "message",
@@ -60,13 +67,6 @@ service_block: Dict[str, Any] = {
     ],
 }
 
-import shutil
-import unittest
-from pathlib import Path
-
-from grpcAPI.makeproto.protoc_compiler import compile
-from grpcAPI.makeproto.render.render import BaseModuleTemplate
-
 
 class TestRender(unittest.TestCase):
     def setUp(self) -> None:
@@ -74,20 +74,20 @@ class TestRender(unittest.TestCase):
             modulename="proto1",
             package="pack1",
             version=3,
-            description="TesteFile",
+            description="//TesteFile",
             options={},
             # imports=["google/protobuf/timestamp.proto"],
             imports=[],
             fields=[],
         )
-        self.output_dir = Path("./tests/test_output")
+        self.output_dir = Path("./tests/test_render")
         self.output_dir.mkdir(exist_ok=True)
         self.proto_path = self.output_dir / "proto1.proto"
 
     def tearDown(self) -> None:
-        # if self.output_dir.exists():
-        # shutil.rmtree(self.output_dir)
-        pass
+        if self.output_dir.exists():
+            shutil.rmtree(self.output_dir)
+        # pass
 
     def test_str(self) -> None:
         self.proto_template.add_field(enum_block)
@@ -97,6 +97,8 @@ class TestRender(unittest.TestCase):
 
         with open(self.proto_path, "w", encoding="utf-8") as f:
             f.write(rendered)
+            f.flush()
+            os.fsync(f.fileno())
 
         result = compile(
             tgt_folder=str(self.output_dir),

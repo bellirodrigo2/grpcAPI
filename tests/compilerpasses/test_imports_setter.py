@@ -26,6 +26,11 @@ class TopMessage(BaseMessage):
         return "testfile"
 
 
+class MockModule:
+    def __init__(self) -> None:
+        self.imports = set()
+
+
 class TestImportsSetter(unittest.TestCase):
     def setUp(self) -> None:
         self.block = make_message_block(name="TestBlock")
@@ -35,15 +40,14 @@ class TestImportsSetter(unittest.TestCase):
         make_field(name="test_field", ftype=DummyMessage, block=self.block)
         make_field(name="test_field2", ftype=str, block=self.block)
         make_field(name="test_field3", ftype=Int32, block=self.block)
-
-        self.ctx = CompilerContext()
+        self.ctx = CompilerContext(state={self.block.protofile: MockModule()})
         self.setter = ImportsSetter()
 
     def test_imports_set(self) -> None:
         self.setter.execute([self.block], self.ctx)
-        imports = self.block.render_dict.get("imports", [])
+        imports = self.ctx.get_state(self.block.protofile).imports
         self.assertEqual(len(imports), 1)
-        expected_import = "otherpkg/otherfile"
+        expected_import = "otherpkg/otherfile.proto"
         self.assertIn(expected_import, imports)
 
     # def test_no_duplicate_imports(self) -> None:

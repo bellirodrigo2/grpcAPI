@@ -73,7 +73,7 @@ def get_BaseMessage(tgt: type[Any]) -> Optional[type[Any]]:
     bt = basetype or tgt
     if not isinstance(bt, type):
         return None
-    if issubclass(bt, BaseMessage):
+    if issubclass(bt, BaseMessage) or issubclass(bt, BaseEnum):
         return bt
     return None
 

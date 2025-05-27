@@ -1,0 +1,13 @@
+// mod2
+  // Module2
+syntax = "proto3";
+import "pack1/mod1.proto";
+package pack2;
+  // User Services
+service user_service {
+
+  // Make New User
+  rpc newuser(pack1.UserInput) returns (pack1.User);
+  // get a list of users
+  rpc getusers(pack1.UserNames) returns (pack1.UserList);
+}

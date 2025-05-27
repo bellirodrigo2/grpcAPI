@@ -8,10 +8,10 @@ syntax = "proto{{ version if version else '3' }}";
 {% if imports %}
 {%- for imp in imports %}
 import "{{ imp }}";
-{%- endfor %}
+{% endfor %}
 {% endif -%}
 
-{%- if package %}
+{% if package %}
 package {{ package }};
 {% endif %}
 

@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -42,23 +43,14 @@ class CompilationError(Exception):
 
 @dataclass
 class ModuleTemplate(BaseModuleTemplate):
-    blocks: List[Block]
+    def __init__(self, blocks: List[Block], **kwargs: Any):
+        super().__init__(**kwargs)
+        self.blocks = blocks
 
     def render(self) -> str:
         for block in self.blocks:
             self.add_field(block.get_render_dict())
-        del self.blocks
         return super().render()
-
-
-def module_to_list_block(
-    module: IModule, ignore_instance: List[type[Any]]
-) -> List[Block]:
-    blocks = [make_cls_block(bt) for bt in module.objects]
-    serviceblocks = [
-        make_service(service, ignore_instance) for service in module.services
-    ]
-    return blocks + serviceblocks
 
 
 def run_compiler_passes(
@@ -124,34 +116,48 @@ def make_imports_validator(
     return ImportsValidator(packset=global_modules)
 
 
-def compile_packs(
+def extract_cls_blocks(
+    packlist: List[IPackage],
+) -> Dict[Tuple[Union[str, _NoPackage], str], List[Block]]:
+
+    block_dict: Dict[Tuple[Union[str, _NoPackage], str], List[Block]] = defaultdict(
+        list
+    )
+    for package in packlist:
+        for module in package.modules:
+            blocks = [make_cls_block(bt) for bt in module.objects]
+            for block in blocks:
+                block_dict[(block.package, block.protofile)].append(block)
+    return block_dict
+
+
+def make_execution_list(
     packlist: List[IPackage],
     settings: Dict[str, Any],
-    version_mode: str,
     ignore_instance: List[type[Any]],
-) -> None:
-
-    imports_validator = make_imports_validator(packlist)
-    validators = make_validators(settings)
-    validators.append(imports_validator)
-
-    VERSION = settings.get("version", 3)
-
-    executionlist: List[Tuple[List[Block], CompilerContext]] = []
-    allmodules: List[ModuleTemplate] = []
+    version: int = 3,
+) -> Tuple[List[ModuleTemplate], List[Tuple[List[Block], CompilerContext]]]:
+    executionlist = []
+    allmodules = []
+    cls_blocks_dict = extract_cls_blocks(packlist)
     for package in packlist:
         state: Dict[str, ModuleTemplate] = {}
-        blocks: List[Block] = []
+        blocks = []
         for module in package.modules:
-            modblocks = module_to_list_block(module, ignore_instance)
+            # modblocks = module_to_list_block(module, ignore_instance)
+            service_blocks = [
+                make_service(service, ignore_instance) for service in module.services
+            ]
+            cls_blocks = cls_blocks_dict.get((package.name, module.name), [])
+            modblocks = cls_blocks + service_blocks
             module_template = ModuleTemplate(
                 modulename=module.name,
-                version=VERSION,
+                version=version,
                 package=package.name,
                 blocks=modblocks,
                 description=module.description or "",
                 fields=[],
-                imports=[],
+                imports=set([]),
                 options=[],
             )
             state[module.name] = module_template
@@ -159,11 +165,56 @@ def compile_packs(
             blocks.extend(modblocks)
         ctx = CompilerContext(name=package.name, settings=settings, state=state)
         executionlist.append((blocks, ctx))
+    return allmodules, executionlist
+
+
+def make_protos(
+    packlist: List[IPackage],
+    settings: Dict[str, Any],
+    ignore_instance: List[type[Any]],
+) -> Optional[List[ModuleTemplate]]:
+
+    imports_validator = make_imports_validator(packlist)
+    validators = make_validators(settings)
+    validators.append(imports_validator)
+
+    VERSION = settings.get("version", 3)
+
+    allmodules, executionlist = make_execution_list(
+        packlist,
+        settings,
+        ignore_instance,
+        version=VERSION,
+    )
 
     setters = make_setters(settings)
     passes: List[List[CompilerPass]] = [validators, setters]
-    for compilerpass in passes:
-        run_compiler_passes(executionlist, compilerpass)
+
+    try:
+        for compilerpass in passes:
+            run_compiler_passes(executionlist, compilerpass)
+    except CompilationError as e:
+        for ctx in e.contexts:
+            if ctx.has_errors():
+                ctx.show()
+        return
+    return allmodules
+
+
+def compile_packs(
+    packlist: List[IPackage],
+    settings: Dict[str, Any],
+    version_mode: str,
+    ignore_instance: List[type[Any]],
+) -> None:
+
+    allmodules = make_protos(
+        packlist,
+        settings,
+        ignore_instance,
+    )
+    if allmodules is None:
+        return
 
     if version_mode == "lint":
         print("[LINT] Compilation passed successfully. No files written.")

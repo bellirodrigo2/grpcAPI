@@ -44,6 +44,9 @@ class OptionsSetter(CompilerPass):
 def format_description(text: str, max_chars: int, always_format: bool) -> str:
     text = text.strip()
 
+    if not text:
+        return ""
+
     if not always_format:
         if text.startswith("//"):
             return text
@@ -83,6 +86,8 @@ class DescriptionSetter(CompilerPass):
         return format_description(text, self.maxcharlines, self.always_format)
 
     def visit_block(self, block: Block) -> None:
+        module = self.ctx.get_state(block.protofile)
+        module.description = self._format(module.description)
         description = self._format(block.description)
         block.render_dict["description"] = description
         for field in block.fields:

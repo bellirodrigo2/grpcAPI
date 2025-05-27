@@ -1,0 +1,29 @@
+// mod1
+  // Module1
+syntax = "proto3";
+package pack1;
+
+message User {
+
+string name = 1;
+UserCode code = 2;
+string id = 3;
+}
+message UserNames {
+
+repeated string names = 1;
+}
+enum UserCode {
+
+VALID = 0;
+INVALID = 1;
+}
+message UserList {
+
+repeated User users = 1;
+}
+message UserInput {
+
+string name = 1;
+UserCode code = 2;
+}

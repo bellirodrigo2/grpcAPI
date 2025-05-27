@@ -1,0 +1,83 @@
+import os
+import shutil
+import unittest
+from pathlib import Path
+from typing import List
+
+from grpcAPI.app import App, Package
+from grpcAPI.makeproto.main import make_protos
+from grpcAPI.makeproto.protoc_compiler import compile
+
+
+class TestApp(unittest.TestCase):
+    def setUp(self) -> None:
+        app = App()
+
+        pack1 = Package("pack1")
+        pack2 = Package("pack2")
+
+        mod1 = pack1.Module("mod1", description="Module1")
+        mod2 = pack2.Module("mod2", description="Module2")
+
+        class UserCode(mod1.ProtoEnum):
+            VALID = 0
+            INVALID = 1
+
+        class UserInput(mod1.ProtoModel):
+            name: str
+            code: UserCode
+
+        class User(UserInput):
+            id: str
+
+        class UserNames(mod1.ProtoModel):
+            names: List[str]
+
+        class UserList(mod1.ProtoModel):
+            users: List[User]
+
+        user_service = mod2.Service("user_service", description="User Services")
+
+        @user_service(description="Make New User")
+        def newuser(input: UserInput) -> User: ...
+
+        @user_service(description="get a list of users")
+        def getusers(input: UserNames) -> UserList: ...
+
+        app.add_package(pack1)
+        app.add_package(pack2)
+
+        self.app = app
+        self.output_dir = Path("./tests/test_compile_proto")
+        self.output_dir.mkdir(exist_ok=True)
+
+    def tearDown(self) -> None:
+        if self.output_dir.exists():
+            # shutil.rmtree(self.output_dir)
+            pass
+
+    def test_compile_proto(self) -> None:
+        protos = make_protos(self.app.packages, {}, [])
+        for template in protos:
+            rendered = template.render()
+            foldername = (
+                template.package if isinstance(template.package, str) else "NO_PACKAGE"
+            )
+            outdir = self.output_dir / foldername
+            outdir.mkdir(exist_ok=True)
+            filename = f"{template.modulename}.proto"
+            proto_path = outdir / filename
+            with open(proto_path, "w", encoding="utf-8") as f:
+                f.write(rendered)
+                f.flush()
+                os.fsync(f.fileno())
+            result = compile(
+                tgt_folder=str(self.output_dir),
+                protofile=f"{foldername}/{filename}",
+                output_dir=str(self.output_dir),
+            )
+            self.assertTrue(result, "Falha na compilação")
+
+
+if __name__ == "__main__":
+    unittest.main()

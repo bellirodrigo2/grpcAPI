@@ -2,13 +2,20 @@
 # import "pack1/file2.proto";
 # import "pack2/file2.proto";
 
-from typing import Optional, Set, Tuple, Union
+from typing import Any, Optional, Set, Tuple, Union, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, EnumField, Field
 from grpcAPI.makeproto.report import CompileErrorCode
 from grpcAPI.types import DEFAULT_PRIMITIVES, _NoPackage
 from grpcAPI.types.types import BaseField
+
+
+def get_type(bt: type[Any]) -> type[Any]:
+
+    if get_origin(bt) in {list, dict}:
+        return get_args(bt)[0]
+    return bt
 
 
 class ImportsValidator(CompilerPass):
@@ -37,7 +44,7 @@ class ImportsValidator(CompilerPass):
     def visit_field(self, field: Field) -> None:
         if isinstance(field, EnumField):
             return
-        ftype = field.ftype
+        ftype = get_type(field.ftype)
         if ftype in DEFAULT_PRIMITIVES or isinstance(ftype, BaseField):
             return
         # BaseMessage or Enum (guaranteed by type validator)

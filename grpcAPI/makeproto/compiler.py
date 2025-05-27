@@ -21,6 +21,9 @@ class CompilerContext:
     def __len__(self) -> int:
         return sum(len(r) for r in self.reports.values())
 
+    def has_errors(self) -> bool:
+        return any(not report.is_valid() for report in self.reports.values())
+
     def get_state(self, key: str) -> Optional[Any]:
         return self._state.get(key, None)
 

@@ -1,0 +1,56 @@
+{
+  "file": {
+    "java_package": "string",
+    "java_outer_classname": "string",
+    "java_multiple_files": "boolean",
+    "java_generate_equals_and_hash": "boolean",
+    "java_string_check_utf8": "boolean",
+    "optimize_for": {
+      "type": "enum",
+      "values": ["SPEED", "CODE_SIZE", "LITE_RUNTIME"]
+    },
+    "go_package": "string",
+    "cc_generic_services": "boolean",
+    "java_generic_services": "boolean",
+    "py_generic_services": "boolean",
+    "deprecated": "boolean",
+    "cc_enable_arenas": "boolean",
+    "objc_class_prefix": "string",
+    "csharp_namespace": "string",
+    "php_namespace": "string",
+    "php_metadata_namespace": "string",
+    "ruby_package": "string"
+  },
+  "message": {
+    "deprecated": "boolean",
+    "map_entry": "boolean"
+  },
+  "field": {
+    "deprecated": "boolean",
+    "packed": "boolean",
+    "ctype": {
+      "type": "enum",
+      "values": ["STRING", "CORD", "STRING_PIECE"]
+    },
+    "jstype": {
+      "type": "enum",
+      "values": ["JS_NORMAL", "JS_STRING", "JS_NUMBER"]
+    },
+    "lazy": "boolean",
+    "weak": "boolean"
+  },
+  "enum": {
+    "allow_alias": "boolean",
+    "deprecated": "boolean"
+  },
+  "service": {
+    "deprecated": "boolean"
+  },
+  "method": {
+    "deprecated": "boolean",
+    "idempotency_level": {
+      "type": "enum",
+      "values": ["IDEMPOTENCY_UNKNOWN", "NO_SIDE_EFFECTS", "IDEMPOTENT"]
+    }
+  }
+}

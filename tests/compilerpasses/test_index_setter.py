@@ -150,8 +150,8 @@ class TestIndexSetter(unittest.TestCase):
 
     def test_field_index_enum_block(self) -> None:
         enumblock = make_enum_block("eblock")
-        make_enumfield("e1", enumblock, number=None)
-        make_enumfield("e1", enumblock, number=None)
+        make_enumfield("e1", enumblock, number=0)
+        make_enumfield("e1", enumblock, number=1)
         self.setter.execute([enumblock], self.context)
         self.assertEqual(len(self.context), 0)
-        self.assertEqual([e.index for e in enumblock.fields], [None, None])
+        self.assertEqual([e.index for e in enumblock.fields], [0, 1])

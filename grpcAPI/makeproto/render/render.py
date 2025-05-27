@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Set
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -22,7 +22,7 @@ class BaseModuleTemplate:
     modulename: str
     version: int
     package: str
-    imports: List[str]
+    imports: Set[str]
     description: str
     options: List[str]
     fields: List[str]

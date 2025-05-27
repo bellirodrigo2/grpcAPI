@@ -298,7 +298,7 @@ def cls_map(
     if issubclass(tgt, BaseEnum) or issubclass(tgt, BaseMessage):
         visited.add(tgt)
 
-        args = map_class_fields(tgt, False)
+        args = map_model_fields(tgt, False)
 
         for arg in args:
             if arg.istype(BaseMessage):
@@ -316,6 +316,7 @@ def map_service_classes(
 
     for method in methods:
         funcargs, return_type = map_func_args(method)
+
         for arg in funcargs:
             base = get_BaseMessage(arg.basetype)
             if base:
@@ -323,7 +324,6 @@ def map_service_classes(
         base = get_BaseMessage(return_type.basetype)
         if base:
             all_types.add(base)
-
     classes: Set[type[Union[BaseMessage, BaseEnum]]] = set()
     for typ in all_types:
         clss = cls_map(typ)

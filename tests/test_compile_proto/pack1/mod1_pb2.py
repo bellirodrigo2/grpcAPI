@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10pack1/mod1.proto\x12\x05pack1\"O\n\tUserNames\x12\x12\n\x08\x65mployee\x18\x01 \x01(\tH\x00\x12\x11\n\x07student\x18\x03 \x01(\tH\x00\x12\r\n\x05names\x18\x02 \x03(\tB\x0c\n\noccupation\"T\n\tUserInput\x12(\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0f.pack1.UserCodeR\tuser_code\x12\x0b\n\x03\x61ge\x18\x02 \x01(\x03\x12\x10\n\x04name\x18\x04 \x01(\tB\x02\x18\x01\"5\n\x08UserList\x12\x1a\n\x05users\x18\x01 \x03(\x0b\x32\x0b.pack1.User\x12\r\n\x05index\x18\x0c \x01(\x05\"[\n\x04User\x12(\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0f.pack1.UserCodeR\tuser_code\x12\x0b\n\x03\x61ge\x18\x02 \x01(\x03\x12\n\n\x02id\x18\x03 \x01(\t\x12\x10\n\x04name\x18\x04 \x01(\tB\x02\x18\x01*;\n\x08UserCode\x12\n\n\x06\x41\x43TIVE\x10\x00\x12\x15\n\x08NOTFOUND\x10\x89\xfe\xff\xff\xff\xff\xff\xff\xff\x01\x12\x0c\n\x08INACTIVE\x10\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10pack1/mod1.proto\x12\x05pack1\"5\n\x08UserList\x12\x1a\n\x05users\x18\x01 \x03(\x0b\x32\x0b.pack1.User\x12\r\n\x05index\x18\x0c \x01(\x05\"T\n\tUserInput\x12(\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0f.pack1.UserCodeR\tuser_code\x12\x0b\n\x03\x61ge\x18\x02 \x01(\x03\x12\x10\n\x04name\x18\x04 \x01(\tB\x02\x18\x01\"O\n\tUserNames\x12\x12\n\x08\x65mployee\x18\x01 \x01(\tH\x00\x12\x11\n\x07student\x18\x03 \x01(\tH\x00\x12\r\n\x05names\x18\x02 \x03(\tB\x0c\n\noccupation\"[\n\x04User\x12(\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0f.pack1.UserCodeR\tuser_code\x12\x0b\n\x03\x61ge\x18\x02 \x01(\x03\x12\n\n\x02id\x18\x03 \x01(\t\x12\x10\n\x04name\x18\x04 \x01(\tB\x02\x18\x01*;\n\x08UserCode\x12\n\n\x06\x41\x43TIVE\x10\x00\x12\x15\n\x08NOTFOUND\x10\x89\xfe\xff\xff\xff\xff\xff\xff\xff\x01\x12\x0c\n\x08INACTIVE\x10\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,12 +37,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_USER'].fields_by_name['name']._serialized_options = b'\030\001'
   _globals['_USERCODE']._serialized_start=342
   _globals['_USERCODE']._serialized_end=401
-  _globals['_USERNAMES']._serialized_start=27
-  _globals['_USERNAMES']._serialized_end=106
-  _globals['_USERINPUT']._serialized_start=108
-  _globals['_USERINPUT']._serialized_end=192
-  _globals['_USERLIST']._serialized_start=194
-  _globals['_USERLIST']._serialized_end=247
+  _globals['_USERLIST']._serialized_start=27
+  _globals['_USERLIST']._serialized_end=80
+  _globals['_USERINPUT']._serialized_start=82
+  _globals['_USERINPUT']._serialized_end=166
+  _globals['_USERNAMES']._serialized_start=168
+  _globals['_USERNAMES']._serialized_end=247
   _globals['_USER']._serialized_start=249
   _globals['_USER']._serialized_end=340
 # @@protoc_insertion_point(module_scope)

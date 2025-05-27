@@ -1,13 +1,17 @@
-// mod1
+// moçd1
   // Module1
 
 syntax = "proto3";
 package pack1;
 
-message UserList {
+message User {
 
-repeated User users = 1;
-int32 index = 12;
+UserCode code = 1 [json_name = "user_code"];
+  // user´s age
+int64 age = 2;
+string id = 3;
+  // user name
+string name = 4 [deprecated = true];
 }
 enum UserCode {
 
@@ -23,6 +27,11 @@ int64 age = 2;
   // user name
 string name = 4 [deprecated = true];
 }
+message UserList {
+
+repeated User users = 1;
+int32 index = 12;
+}
 message UserNames {
 
   
@@ -33,13 +42,4 @@ string employee = 1;
 string student = 3;
   }
 repeated string names = 2;
-}
-message User {
-
-UserCode code = 1 [json_name = "user_code"];
-  // user´s age
-int64 age = 2;
-string id = 3;
-  // user name
-string name = 4 [deprecated = true];
 }

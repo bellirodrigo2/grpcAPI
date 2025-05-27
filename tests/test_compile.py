@@ -10,16 +10,17 @@ from grpcAPI.makeproto.protoc_compiler import compile
 from grpcAPI.types.base import Metadata, OneOf
 from grpcAPI.types.types import Int32, String
 
+app = App()
+
+pack1 = Package("pack1")
+pack2 = Package("pack2")
+
+mod1 = pack1.Module("mod1", description="Module1")
+mod2 = pack2.Module("mod2", description="Module2")
+
 
 class TestApp(unittest.TestCase):
     def setUp(self) -> None:
-        app = App()
-
-        pack1 = Package("pack1")
-        pack2 = Package("pack2")
-
-        mod1 = pack1.Module("mod1", description="Module1")
-        mod2 = pack2.Module("mod2", description="Module2")
 
         class UserCode(mod1.ProtoEnum):
             NOTFOUND = -247

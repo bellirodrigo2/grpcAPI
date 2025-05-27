@@ -2,11 +2,13 @@ import os
 import shutil
 import unittest
 from pathlib import Path
-from typing import List
+from typing import Annotated, List
 
 from grpcAPI.app import App, Package
 from grpcAPI.makeproto.main import make_protos
 from grpcAPI.makeproto.protoc_compiler import compile
+from grpcAPI.types.base import Metadata, OneOf
+from grpcAPI.types.types import Int32, String
 
 
 class TestApp(unittest.TestCase):
@@ -20,21 +22,33 @@ class TestApp(unittest.TestCase):
         mod2 = pack2.Module("mod2", description="Module2")
 
         class UserCode(mod1.ProtoEnum):
-            VALID = 0
-            INVALID = 1
+            NOTFOUND = -247
+            ACTIVE = 0
+            INACTIVE = 1
 
         class UserInput(mod1.ProtoModel):
-            name: str
-            code: UserCode
+            name: Annotated[
+                str,
+                Metadata(
+                    description="user name", options={"deprecated": True}, index=4
+                ),
+            ]
+            code: UserCode = Metadata(options={"json_name": "user_code"})
+            age: int = Metadata(description="user´s age")
 
         class User(UserInput):
             id: str
 
         class UserNames(mod1.ProtoModel):
-            names: List[str]
+            names: List[String]
+            student: str = OneOf(key="occupation", description="The school´s name")
+            employee: str = OneOf(
+                key="occupation", description="The employer´s name", index=1
+            )
 
         class UserList(mod1.ProtoModel):
             users: List[User]
+            index: Annotated[Int32, Metadata(index=12)]
 
         user_service = mod2.Service("user_service", description="User Services")
 

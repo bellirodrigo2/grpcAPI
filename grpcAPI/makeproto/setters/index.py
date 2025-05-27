@@ -1,7 +1,7 @@
 from typing import Optional, Set
 
 from grpcAPI.makeproto.compiler import CompilerPass
-from grpcAPI.makeproto.protoblock import Block, Field, is_enum
+from grpcAPI.makeproto.protoblock import Block, EnumBlock, Field, is_enum
 from grpcAPI.makeproto.report import CompileErrorCode
 
 
@@ -31,7 +31,8 @@ class IndexSetter(CompilerPass):
         try:
             for field in block.fields:
                 field.accept(self)
-            block.fields.sort(key=lambda x: x.index)
+            block.fields.sort(key=lambda x: (x.index != 0, x.index))
+
         except Exception as e:
             report = self.ctx.get_report(block.name)
             report.report_error(

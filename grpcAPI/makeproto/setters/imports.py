@@ -34,7 +34,7 @@ class ImportsSetter(CompilerPass):
         self, ftype: type[Any], block_package: str, block_protofile: str
     ) -> Optional[str]:
 
-        if ftype in DEFAULT_PRIMITIVES or isinstance(ftype, BaseField):
+        if ftype in DEFAULT_PRIMITIVES or issubclass(ftype, BaseField):
             return None
         ftype_pack = ftype.package()
         ftype_proto = ftype.protofile()

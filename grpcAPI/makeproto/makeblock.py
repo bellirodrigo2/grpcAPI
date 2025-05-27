@@ -71,8 +71,6 @@ def make_msgblock(cls: type[BaseMessage]) -> Block:
             fields.append(field)
 
     for k, v in oneofs.items():
-        # How to pick description and reserveds from oneof ?
-        # If implemented, the main block reserved has got to accumulate those
         ootemp = OneOfBlock(
             protofile=protofile,
             package=package,
@@ -85,6 +83,8 @@ def make_msgblock(cls: type[BaseMessage]) -> Block:
             reserveds=[],
             render_dict={"block_type": "oneof"},
         )
+        for field in v:
+            field.block = ootemp
         fields.append(ootemp)
 
     block.fields = fields

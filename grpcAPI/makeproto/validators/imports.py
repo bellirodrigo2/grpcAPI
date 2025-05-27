@@ -45,7 +45,7 @@ class ImportsValidator(CompilerPass):
         if isinstance(field, EnumField):
             return
         ftype = get_type(field.ftype)
-        if ftype in DEFAULT_PRIMITIVES or isinstance(ftype, BaseField):
+        if ftype in DEFAULT_PRIMITIVES or issubclass(ftype, BaseField):
             return
         # BaseMessage or Enum (guaranteed by type validator)
         ftype_pack = ftype.package()

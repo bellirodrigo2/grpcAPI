@@ -172,7 +172,7 @@ def make_protos(
     packlist: List[IPackage],
     settings: Dict[str, Any],
     ignore_instance: List[type[Any]],
-) -> Optional[List[ModuleTemplate]]:
+) -> Optional[Dict[str, Dict[str, str]]]:
 
     imports_validator = make_imports_validator(packlist)
     validators = make_validators(settings)
@@ -197,95 +197,12 @@ def make_protos(
         for ctx in e.contexts:
             if ctx.has_errors():
                 ctx.show()
-        return
-    return allmodules
-
-
-def compile_packs(
-    packlist: List[IPackage],
-    settings: Dict[str, Any],
-    version_mode: str,
-    ignore_instance: List[type[Any]],
-) -> None:
-
-    allmodules = make_protos(
-        packlist,
-        settings,
-        ignore_instance,
-    )
-    if allmodules is None:
-        return
-
-    if version_mode == "lint":
-        print("[LINT] Compilation passed successfully. No files written.")
-        return
-
-    output_dir = Path(settings.get("output_dir", "grpcAPI/proto"))
-    output_subdir = determine_output_subdir(output_dir, mode=version_mode)
-
-    if output_subdir is not None:
-        write_modules_to_files(allmodules, output_subdir)
-
-
-def write_modules_to_files(
-    modules: List[ModuleTemplate],
-    output_dir: Path,
-) -> None:
-    for module in modules:
-        package_path = output_dir / module.package
-        package_path.mkdir(parents=True, exist_ok=True)
-
-        filename = f"{module.modulename}.proto"
-        file_path = package_path / filename
-
-        proto_text = module.render()
-
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(proto_text)
-
-        print(f"Wrote proto file: {file_path}")
-
-
-def determine_output_subdir(
-    output_dir: Path,
-    mode: str = "new",
-) -> Optional[Path]:
-    if mode == "new":
-        versions = []
-        for child in output_dir.iterdir():
-            if child.is_dir() and re.match(r"^V\d+$", child.name):
-                version_num = int(child.name[1:])
-                versions.append(version_num)
-        next_version = max(versions, default=0) + 1
-        target_dir = output_dir / f"V{next_version}"
-        print(f"[INFO] Creating new version directory: {target_dir}")
-
-    elif mode == "overwrite":
-        versions = []
-        for child in output_dir.iterdir():
-            if child.is_dir() and re.match(r"^V\d+$", child.name):
-                version_num = int(child.name[1:])
-                versions.append(version_num)
-        if not versions:
-            raise ValueError("No existing version found to overwrite.")
-        last_version = max(versions)
-        target_dir = output_dir / f"V{last_version}"
-        print(f"[INFO] Overwriting last version directory: {target_dir}")
-
-    elif mode == "draft":
-        target_dir = output_dir / "draft"
-        print(f"[INFO] Using draft directory: {target_dir}")
-
-    elif mode == "temporary":
-        target_dir = output_dir / "tmp"
-        print(f"[INFO] Using temporary directory: {target_dir}")
-
-    elif mode == "lint":
-        print(f"[INFO] Lint mode: no files will be written.")
         return None
 
-    else:
-        raise ValueError(f"Unknown mode: {mode}")
+    proto_files: Dict[str, Dict[str, str]] = defaultdict(dict)
+    for template in allmodules:
+        rendered = template.render()
+        package = template.package if isinstance(template.package, str) else "NOPCKG"
+        proto_files[package][template.modulename] = rendered
 
-    target_dir.mkdir(parents=True, exist_ok=True)
-    return target_dir
+    return proto_files

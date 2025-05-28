@@ -1,5 +1,5 @@
 __all__ = [
-    "compile_packs",
+    "make_protos",
 ]
 
-from grpcAPI.makeproto.main import compile_packs
+from grpcAPI.makeproto.main import make_protos

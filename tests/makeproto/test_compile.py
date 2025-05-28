@@ -68,30 +68,29 @@ class TestApp(unittest.TestCase):
 
     def tearDown(self) -> None:
         if self.output_dir.exists():
-            # shutil.rmtree(self.output_dir)
-            pass
+            shutil.rmtree(self.output_dir)
+            # pass
 
     def test_compile_proto(self) -> None:
         protos = make_protos(self.app.packages, {}, [])
-        for template in protos:
-            rendered = template.render()
-            foldername = (
-                template.package if isinstance(template.package, str) else "NO_PACKAGE"
-            )
-            outdir = self.output_dir / foldername
+        if protos is None:
+            raise
+        for package, module_dict in protos.items():
+            outdir = self.output_dir / package
             outdir.mkdir(exist_ok=True)
-            filename = f"{template.modulename}.proto"
-            proto_path = outdir / filename
-            with open(proto_path, "w", encoding="utf-8") as f:
-                f.write(rendered)
-                f.flush()
-                os.fsync(f.fileno())
-            result = compile(
-                tgt_folder=str(self.output_dir),
-                protofile=f"{foldername}/{filename}",
-                output_dir=str(self.output_dir),
-            )
-            self.assertTrue(result, "Falha na compilação")
+            for modulename, proto_str in module_dict.items():
+                filename = f"{modulename}.proto"
+                proto_path = outdir / filename
+                with open(proto_path, "w", encoding="utf-8") as f:
+                    f.write(proto_str)
+                    f.flush()
+                    os.fsync(f.fileno())
+                result = compile(
+                    tgt_folder=str(self.output_dir),
+                    protofile=f"{package}/{filename}",
+                    output_dir=str(self.output_dir),
+                )
+                self.assertTrue(result, "Falha na compilação")
 
 
 if __name__ == "__main__":

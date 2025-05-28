@@ -6,7 +6,7 @@ from grpcAPI.makeproto.validators.info import (
     OptionsValidator,
     ReservedValidator,
 )
-from tests.compilerpasses.test_helpers import (
+from tests.makeproto.test_helpers import (
     make_field,
     make_message_block,
     make_method,

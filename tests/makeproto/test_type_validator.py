@@ -16,7 +16,7 @@ from grpcAPI.types import (
     Stream,
     String,
 )
-from tests.compilerpasses.test_helpers import (
+from tests.makeproto.test_helpers import (
     make_enum_block,
     make_enumfield,
     make_field,

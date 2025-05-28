@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import toml
 
-from grpcAPI.commands.compile import compile_app
+from grpcAPI.commands.compile import compile_proto
 
 # from grpcAPI.commands.run import run_app
 
@@ -70,7 +70,7 @@ def main() -> None:
         app_path = args.app_path
         version = args.version
 
-        compile_app(app_path, version, settings)
+        compile_proto(app_path, version, settings)
 
     elif args.command == run_cmd:
         app_path = args.app_path

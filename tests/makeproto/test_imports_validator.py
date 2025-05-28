@@ -3,7 +3,7 @@ import unittest
 from grpcAPI.makeproto.compiler import CompilerContext, list_ctx_error_code
 from grpcAPI.makeproto.validators.imports import ImportsValidator
 from grpcAPI.types import BaseMessage
-from tests.compilerpasses.test_helpers import make_field, make_message_block
+from tests.makeproto.test_helpers import make_field, make_message_block
 
 
 class DummyMessage(BaseMessage):

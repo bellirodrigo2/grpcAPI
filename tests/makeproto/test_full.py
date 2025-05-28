@@ -7,7 +7,7 @@ from grpcAPI.makeproto.setters.index import IndexSetter
 from grpcAPI.makeproto.setters.name import NameSetter
 from grpcAPI.makeproto.setters.type import TypeSetter
 from grpcAPI.types.message import BaseMessage
-from tests.compilerpasses.test_helpers import (
+from tests.makeproto.test_helpers import (
     make_field,
     make_message_block,
     make_oneof_block,

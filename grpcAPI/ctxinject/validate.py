@@ -15,7 +15,12 @@ from grpcAPI.ctxinject.exceptions import (
     InvalidModelFieldType,
     UnInjectableError,
 )
-from grpcAPI.ctxinject.model import DependsInject, Injectable, ModelFieldInject
+from grpcAPI.ctxinject.model import (
+    DependsInject,
+    Injectable,
+    ModelFieldInject,
+    ModelMethodInject,
+)
 from grpcAPI.typemapping import VarTypeInfo, get_func_args
 
 
@@ -50,6 +55,8 @@ def check_modefield_types(
 ) -> None:
     for arg in args:
         modelfield_inj = arg.getinstance(ModelFieldInject)
+        if modelfield_inj is None:
+            modelfield_inj = arg.getinstance(ModelMethodInject)
         if modelfield_inj is not None:
             if not isinstance(modelfield_inj.model, type):  # type: ignore
                 raise InvalidInjectableDefinition(

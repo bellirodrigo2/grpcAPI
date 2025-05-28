@@ -10,7 +10,7 @@ from grpcAPI.makeproto.protoc_compiler import compile
 from grpcAPI.types.base import Metadata, OneOf
 from grpcAPI.types.types import Int32, String
 
-app = App()
+app = App("test")
 
 pack1 = Package("pack1")
 pack2 = Package("pack2")
@@ -37,8 +37,10 @@ class TestApp(unittest.TestCase):
             code: UserCode = Metadata(options={"json_name": "user_code"})
             age: int = Metadata(description="user´s age")
 
+        id_desc = "this is a long description that should be formatted, because it has more than 80 characteres"
+
         class User(UserInput):
-            id: str
+            id: str = Metadata(description=id_desc)
 
         class UserNames(mod1.ProtoModel):
             names: List[String]

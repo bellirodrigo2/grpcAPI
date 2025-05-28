@@ -59,7 +59,11 @@ class ClassSchema(ISchema[Dict[str, Any]]):
     cls: type[Union[BaseMessage, BaseEnum]]
 
     def serialize(self) -> Dict[str, Any]:
-        return {}
+        return {
+            "module": self.cls.__module__,
+            "qualname": self.cls.__qualname__,
+            "fields": [],
+        }
 
     def hash(self) -> str:
         return ""

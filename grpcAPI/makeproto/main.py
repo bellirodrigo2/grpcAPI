@@ -50,7 +50,10 @@ class ModuleTemplate(BaseModuleTemplate):
     def render(self) -> str:
         for block in self.blocks:
             self.add_field(block.get_render_dict())
-        return super().render()
+        str_file = super().render()
+        str_file = re.sub(r"^[ \t]*\n", "", str_file, flags=re.MULTILINE)
+        # str_file = str_file.replace("\n\n", "\n").replace("\n ", "\n")
+        return str_file
 
 
 def run_compiler_passes(

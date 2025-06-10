@@ -7,10 +7,14 @@ def schema_file_name(word: str) -> str:
     return f"schema.v{word}.json"
 
 
+schema_folder = "schema"
+
+
 def get_current_snapshot_version(
     base_path: Path,
 ) -> int:
-    existing = list(base_path.glob(schema_file_name("*")))
+    schema_dir = base_path / schema_folder
+    existing = list(schema_dir.glob(schema_file_name("*")))
     versions = [f.stem.split(".v")[-1] for f in existing if ".v" in f.stem]
     versions_int = [int(v) for v in versions if v.isdigit()]
     return max(versions_int, default=0)
@@ -35,7 +39,7 @@ def get_current_version(
 
     if current_snapshot != current_folder:
         raise ValueError(
-            "Snapshot version and folder version do not match. Please ensure they are synchronized."
+            f"Snapshot version and folder version do not match. Please ensure they are synchronized. {current_snapshot} vs {current_folder}"
         )
     return current_snapshot
 
@@ -72,7 +76,7 @@ def get_folder_path(version: Union[int, str]) -> str:
 
 def get_snapshot_path(version: Union[int, str]) -> Tuple[str, str]:
     snapshot_file = schema_file_name(str(version))
-    return "schema", snapshot_file
+    return schema_folder, snapshot_file
 
 
 def get_version_paths(base_path: Path, mode: str) -> Tuple[str, Tuple[str, str]]:

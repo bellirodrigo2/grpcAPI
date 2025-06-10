@@ -48,11 +48,6 @@ def get_next_version(
     return next_version
 
 
-def get_folder_path(base_path: Path, version: Union[int, str]) -> Path:
-    version = version if isinstance(version, str) else f"V{version}"
-    return base_path / version
-
-
 def define_version_mode(base_path: Path, mode: str) -> Union[str, int]:
 
     if mode == "new":
@@ -70,12 +65,31 @@ def define_version_mode(base_path: Path, mode: str) -> Union[str, int]:
     return version
 
 
-def get_version_paths(base_path: Path, mode: str) -> Tuple[Path, str]:
+def get_folder_path(version: Union[int, str]) -> str:
+    version = version if isinstance(version, str) else f"V{version}"
+    return version
+
+
+def get_snapshot_path(version: Union[int, str]) -> Tuple[str, str]:
+    snapshot_file = schema_file_name(str(version))
+    return "schema", snapshot_file
+
+
+def get_version_paths(base_path: Path, mode: str) -> Tuple[str, Tuple[str, str]]:
 
     version = define_version_mode(base_path, mode)
 
-    target_dir = get_folder_path(base_path, version)
+    target_dir = get_folder_path(version)
 
-    snapshot_path = schema_file_name(str(version))
+    if (base_path / target_dir).exists() and mode == "new":
+        raise FileExistsError(
+            f"Directory {target_dir} already exists. Use 'overwrite' mode to replace it."
+        )
 
-    return target_dir, snapshot_path
+    schema_folder, schema_file = get_snapshot_path(version)
+    snapshot_path = base_path / schema_folder / schema_file
+    if snapshot_path.exists() and mode == "new":
+        raise FileExistsError(
+            f"Snapshot file {snapshot_path} already exists. Use 'overwrite' mode to replace it."
+        )
+    return target_dir, (schema_folder, schema_file)

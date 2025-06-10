@@ -1,46 +1,61 @@
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
+from typing import Iterator, List, Tuple
 
 
-def create_temp_dir(base_path: Path) -> Path:
+@dataclass
+class WritePackage:
+    parent_dir: str
+    clear_parent: bool
+    contents: List[Tuple[str, str]]  # List of (content, path)
+
+    def __iter__(self) -> Iterator[Tuple[str, str]]:
+        full_path = [
+            (content, f"{self.parent_dir}/{path_str}")
+            for content, path_str in self.contents
+        ]
+        return iter(full_path)
+
+
+def write_atomic(base_path: Path, content_path: List[WritePackage]) -> None:
+
     temp_dir = base_path / "temp"
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    return temp_dir
-
-
-def write_atomic(base_path: Path, content_path: List[Tuple[str, str]]) -> None:
-    temp_dir = create_temp_dir(base_path)
-
     try:
-        # Escreve tudo na pasta temp
-        for content, path_str in content_path:
-            path = temp_dir / path_str
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(content)
+        temp_dir.mkdir(parents=True, exist_ok=True)
 
-        # Se chegou aqui, escreve tudo ok, vamos mover para o destino
+        for package in content_path:
+            for content, rel_path in package:
+                temp_path: Path = temp_dir / rel_path
+                temp_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(temp_path, "w", encoding="utf-8") as f:
+                    f.write(content)
 
-        # Remove tudo que existe em base_path, exceto a pasta temp
-        for child in base_path.iterdir():
-            if child == temp_dir:
-                continue
-            if child.is_dir():
-                shutil.rmtree(child)
-            else:
-                child.unlink()
+        for package in content_path:
+            target_dir: Path = base_path / package.parent_dir
+            temp_subdir: Path = temp_dir / package.parent_dir
 
-        # Agora move os arquivos da temp para base_path
-        for item in temp_dir.iterdir():
-            target = base_path / item.name
-            shutil.move(str(item), str(target))
+            if package.clear_parent and target_dir.exists():
+                shutil.rmtree(target_dir)
 
-        # Por fim, remove a pasta temp vazia
-        temp_dir.rmdir()
+            target_dir.mkdir(parents=True, exist_ok=True)
 
-    except Exception as e:
-        # Se deu erro, tenta limpar a pasta temp para não deixar lixo
-        if temp_dir.exists():
-            shutil.rmtree(temp_dir)
+            for temp_file in temp_subdir.rglob("*"):
+                if temp_file.is_file():
+                    relative_path: Path = temp_file.relative_to(temp_subdir)
+                    final_path: Path = target_dir / relative_path
+                    final_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(temp_file), str(final_path))
+
+    except OSError as e:
         raise e
+
+    finally:
+        if temp_dir.exists():
+            try:
+                if temp_dir.is_dir():
+                    shutil.rmtree(temp_dir)
+                else:
+                    temp_dir.unlink()
+            except Exception:
+                pass

@@ -6,7 +6,13 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, get_args
 
 from typing_extensions import get_origin
 
-from grpcAPI.persutil import ISchema, create_snapshot, get_version_paths, write_atomic
+from grpcAPI.persutil import (
+    ISchema,
+    WritePackage,
+    create_snapshot,
+    get_version_paths,
+    write_atomic,
+)
 from grpcAPI.typemapping import map_model_fields
 from grpcAPI.types import BaseEnum, BaseMessage, IModule, IPackage, OneOf
 
@@ -170,9 +176,7 @@ def create_app_schema(packages: List[IPackage]) -> str:
     return json.dumps(schema, indent=2, sort_keys=True)
 
 
-def make_path_content_list(
-    modules: Dict[str, Dict[str, str]],
-) -> List[Tuple[str, str]]:
+def make_path_content_list(modules: Dict[str, Dict[str, str]]) -> List[Tuple[str, str]]:
 
     all_modules: Set[Tuple[str, str]] = set()
 
@@ -190,11 +194,22 @@ def persist_protos(
     packs_list: List[IPackage],
 ) -> None:
 
-    output_subdir, snapshot_file = get_version_paths(output_dir, mode=version_mode)
+    output_subdir, (schema_dir, schema_file) = get_version_paths(
+        output_dir, version_mode
+    )
 
-    to_write = make_path_content_list(protos_dict)
+    protos_file = make_path_content_list(protos_dict)
+    protos_write_pack = WritePackage(
+        parent_dir=output_subdir,
+        clear_parent=True,
+        contents=protos_file,
+    )
 
     schema = create_app_schema(packs_list)
-    to_write.append((schema, f"schema/{snapshot_file}"))
+    schema_write_pack = WritePackage(
+        parent_dir=schema_dir,
+        clear_parent=False,
+        contents=[(schema, schema_file)],
+    )
 
-    write_atomic(output_subdir, to_write)
+    write_atomic(output_dir, [protos_write_pack, schema_write_pack])

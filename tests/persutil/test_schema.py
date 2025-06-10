@@ -4,8 +4,7 @@ import unittest
 from pathlib import Path
 from typing import Any, Dict
 
-from grpcAPI.persutil import ISchema, create_snapshot
-from grpcAPI.persutil.schema import validate_snapshot
+from grpcAPI.persutil import ISchema, create_snapshot, validate_snapshot
 
 
 class DummySchema(ISchema[Dict[str, Any]]):

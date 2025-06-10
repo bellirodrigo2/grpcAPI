@@ -35,7 +35,7 @@ def get_args_compile(
     parser.add_argument("app_path", help="Path to the app file")
     parser.add_argument(
         "--version",
-        choices=["new", "overwrite", "draft", "temporary", "lint"],
+        choices=["new", "overwrite", "draft", "lint"],
         default="new",
         help="Versioning mode: new (new version), overwrite (last version), draft, temporary or lint only.",
     )

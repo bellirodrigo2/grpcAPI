@@ -158,7 +158,8 @@ class Package(IPackage):
 @dataclass(frozen=True)
 class App:
 
-    name: str
+    name: Optional[str] = None
+    version: Optional[int] = None
     _packages: Dict[Union[_NoPackage, str], IPackage] = field(
         default_factory=dict[Union[_NoPackage, str], IPackage]
     )

@@ -145,6 +145,7 @@ def make_execution_list(
     cls_blocks_dict = extract_cls_blocks(packlist)
     for package in packlist:
         state: Dict[str, ModuleTemplate] = {}
+        # ADICIONAR OS FILE LEVEL REPORT AQUI
         blocks = []
         for module in package.modules:
             # modblocks = module_to_list_block(module, ignore_instance)

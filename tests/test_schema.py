@@ -4,12 +4,8 @@ import unittest
 from pathlib import Path
 from typing import Any, Dict
 
-from grpcAPI.schema import (
-    ISchema,
-    save_snapshot,
-    save_snapshot_versioned,
-    validate_snapshot,
-)
+from grpcAPI.persutil import ISchema, create_snapshot
+from grpcAPI.persutil.schema import validate_snapshot
 
 
 class DummySchema(ISchema[Dict[str, Any]]):
@@ -47,43 +43,27 @@ class TestSnapshotUtils(unittest.TestCase):
         self.assertEqual(len(hash_val), 64)  # SHA256 hex length
 
     def test_save_snapshot(self) -> None:
-        snapshot_path = self.base_path / "snapshot.json"
-        save_snapshot(self.schema, snapshot_path)
+        schema = create_snapshot(self.schema)
 
-        self.assertTrue(snapshot_path.exists())
+        self.assertIn("hash", schema)
+        self.assertIn("schema", schema)
 
-        with snapshot_path.open() as f:
-            saved = json.load(f)
+        self.assertEqual(schema["schema"], self.data)
 
-        self.assertIn("hash", saved)
-        self.assertIn("schema", saved)
-        self.assertEqual(saved["schema"], self.data)
-
-    def test_save_snapshot_versioned(self) -> None:
-        versioned_path = save_snapshot_versioned(
-            self.schema, self.base_path, new_version=True
-        )
-
-        self.assertTrue(versioned_path.exists())
-        self.assertRegex(versioned_path.name, r"model_snapshot\.v\d+\.json")
-
-    def test_validate_snapshot_success(self) -> None:
-        snapshot_path = self.base_path / "snapshot.json"
-        save_snapshot(self.schema, snapshot_path)
+        schema = create_snapshot(self.schema)
 
         try:
-            validate_snapshot(self.schema, snapshot_path)
+            validate_snapshot(self.schema, schema)
         except RuntimeError:
             self.fail("validate_snapshot raised RuntimeError unexpectedly!")
 
     def test_validate_snapshot_failure(self) -> None:
-        snapshot_path = self.base_path / "snapshot.json"
-        save_snapshot(self.schema, snapshot_path)
+        schema = create_snapshot(self.schema)
 
         altered_schema = DummySchema({"field": "new_value", "number": 123})
 
         with self.assertRaises(RuntimeError) as context:
-            validate_snapshot(altered_schema, snapshot_path)
+            validate_snapshot(altered_schema, schema)
 
         self.assertIn(
             "Model does not match the compiled schema snapshot.", str(context.exception)

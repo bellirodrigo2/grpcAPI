@@ -4,17 +4,19 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Union
 
 from grpcAPI.ctxinject.constrained import ValidationError
 from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
-from grpcAPI.ctxinject.model import (
-    ArgsInjectable,
-    CallableInjectable,
-    ModelFieldInject,
-    ModelMethodInject,
-)
+from grpcAPI.ctxinject.model import ArgsInjectable, CallableInjectable, ModelFieldInject
 from grpcAPI.typemapping import VarTypeInfo, get_func_args
 
 
 def resolve_by_name(context: Mapping[Union[str, type], Any], arg: str) -> Any:
     return context[arg]
+
+
+def resolve_from_model(
+    context: Mapping[Union[str, type], Any], model: type[Any], field: str
+) -> Any:
+    method = getattr(context[model], field)
+    return method() if callable(method) else method
 
 
 def resolve_by_modelfield(
@@ -70,23 +72,13 @@ def map_ctx(
         # by name
         if arg.name in context:
             value = partial(resolve_by_name, arg=arg.name)
-
         # by model field/method
         elif instance is not None:
             if isinstance(instance, ModelFieldInject):
                 tgtmodel = instance.model
                 tgt_field = instance.field or arg.name
                 if tgtmodel in context:
-                    value = partial(
-                        resolve_by_modelfield, model=tgtmodel, field=tgt_field
-                    )
-            elif isinstance(instance, ModelMethodInject):  # by model method
-                tgtmodel = instance.model
-                tgt_field = instance.method or arg.name
-                if tgtmodel in context:
-                    value = partial(
-                        resolve_by_modelmethod, model=tgtmodel, field=tgt_field
-                    )
+                    value = partial(resolve_from_model, model=tgtmodel, field=tgt_field)
         # by type
         if value is None and bt is not None and bt in context:
             value = partial(resolve_by_type, bt=bt)

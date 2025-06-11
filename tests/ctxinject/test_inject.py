@@ -4,12 +4,7 @@ from typing import Annotated, Any, Union
 
 from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
 from grpcAPI.ctxinject.inject import inject_args
-from grpcAPI.ctxinject.model import (
-    ArgsInjectable,
-    Injectable,
-    ModelFieldInject,
-    ModelMethodInject,
-)
+from grpcAPI.ctxinject.model import ArgsInjectable, Injectable, ModelFieldInject
 from grpcAPI.typemapping import get_func_args
 
 
@@ -62,8 +57,8 @@ def injfunc(
 
 def injfunc_method(
     x: Annotated[str, ArgsInjectable(...)],
-    y: str = ModelMethodInject(model=MyModelMethod, method="get_value"),  # type: ignore
-    z: str = ModelMethodInject(model=MyModelMethod, method="other_method"),  # type: ignore
+    y: str = ModelFieldInject(model=MyModelMethod, field="get_value"),  # type: ignore
+    z: str = ModelFieldInject(model=MyModelMethod, field="other_method"),  # type: ignore
 ) -> tuple[str, str, str]:
     return x, y, z
 

@@ -17,43 +17,6 @@ from grpcAPI.typemapping import map_model_fields
 from grpcAPI.types import BaseEnum, BaseMessage, IModule, IPackage, OneOf
 
 
-@dataclass
-class MethodSchema(ISchema[Dict[str, Any]]):
-    method: Callable[..., Any]
-    type_based: Dict[str, type[Any]]  # one, type
-    instance_based: Dict[str, Any]  # multiple, instance
-
-    def _get_type(self, btype: type[Any]) -> Tuple[Optional[str], str]:
-        # (field_name, qualified package name)
-        return ("", "")
-
-    def _get_instance(self, binst: type[Any]) -> Optional[str]:
-        # field_name or None
-        return None
-
-    def serialize(self) -> Dict[str, Any]:
-
-        # request = self._get_request()
-        # context = self._get_context()
-        # depends = self._get_depends()  # list
-        # fromrequest = self._get_fromrequest()  # list
-        # fromcontext = self._get_fromcontext()  # list
-        # response = self._get_response()
-
-        return {
-            "name": self.method.__name__,
-            "request": (False, {}),  # stream e classschema
-            "context": None,  # field or None
-            "depends": [],  # (name, type, signature)
-            "fromcontext": [],  # (name, field)
-            "fromrequest": [],  # (name, field)
-            "response": (False, {}),  # stream e classschema
-        }
-
-    def hash(self) -> str:
-        return ""
-
-
 def type_to_str(tp: type[Any]) -> str:
     origin = get_origin(tp)
     args = get_args(tp)
@@ -119,6 +82,43 @@ class ClassSchema(ISchema[Dict[str, Any]]):
         serial = self.serialize()
         json_str = json.dumps(serial, sort_keys=True)  # ordena chaves para consistência
         return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
+
+
+@dataclass
+class MethodSchema(ISchema[Dict[str, Any]]):
+    method: Callable[..., Any]
+    type_based: Dict[str, type[Any]]  # one, type
+    instance_based: Dict[str, Any]  # multiple, instance
+
+    def _get_type(self, btype: type[Any]) -> Tuple[Optional[str], str]:
+        # (field_name, qualified package name)
+        return ("", "")
+
+    def _get_instance(self, binst: type[Any]) -> Optional[str]:
+        # field_name or None
+        return None
+
+    def serialize(self) -> Dict[str, Any]:
+
+        # request = self._get_request()
+        # context = self._get_context()
+        # depends = self._get_depends()  # list
+        # fromrequest = self._get_fromrequest()  # list
+        # fromcontext = self._get_fromcontext()  # list
+        # response = self._get_response()
+
+        return {
+            "name": self.method.__name__,
+            "request": (False, {}),  # stream e classschema
+            "context": None,  # field or None
+            "depends": [],  # (name, type, signature)
+            "fromcontext": [],  # (name, field)
+            "fromrequest": [],  # (name, field)
+            "response": (False, {}),  # stream e classschema
+        }
+
+    def hash(self) -> str:
+        return ""
 
 
 @dataclass

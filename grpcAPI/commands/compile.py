@@ -1,20 +1,24 @@
 import importlib.util
+from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
 import toml
 
 from grpcAPI import App
+from grpcAPI.ctxinject.validate import func_signature_validation
 from grpcAPI.makeproto import make_protos
-
-# from grpcAPI.ctxinject.validate import func_signature_validation
 from grpcAPI.proto_schema import persist_protos
-from grpcAPI.types import Context
 
 
-# func_signature_validation
-# fazer partial com Context
-def placeholder(func: Callable[..., Any]) -> List[str]:
+def placeholder_validator(func: Callable[..., Any]) -> List[str]:
+    return []
+
+
+func_validator = partial(func_signature_validation)
+
+
+def placeholder_convert(args: List[type[Any]]) -> List[type[Any]]:
     return []
 
 
@@ -38,18 +42,18 @@ def compile_proto(
 
     std_settings: Dict[str, Any] = toml.load("./config.toml")
     app_settings: Dict[str, Any] = {
-        "custompass": placeholder,
-        "extra_args": [Context],
+        "custompass": placeholder_validator,
+        # "extra_args": [Context],  # alterar para transform_args
+        "convert_args": placeholder_convert,
+        # Depends, ModelMethodField para FromRequest e FromContext
+        "ignore_instance": [],
     }
 
     user_settings = user_settings or {}
-    settings = {**std_settings, **app_settings, **user_settings}
-
-    # Depends, ModelMethodField e ModelMethodInj para FromRequest e FromContext
-    ignore_instance = []
+    settings = {**std_settings, **user_settings, **app_settings}
 
     packs = app.packages
-    protos_dict = make_protos(packs, settings, ignore_instance)
+    protos_dict = make_protos(packs, settings)
     if protos_dict is None:
         # COMPILATION FAIL
         return

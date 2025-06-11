@@ -7,15 +7,12 @@ from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
 from grpcAPI.types import (
     DEFAULT_PRIMITIVES,
     BaseMessage,
-    Context,
     allowed_map_key,
     if_stream_get_type,
     is_BaseMessage,
 )
 from grpcAPI.types.message import BaseEnum
 from grpcAPI.types.types import BaseField
-
-DEFAULT_EXTRA_ARGS = [Context]
 
 
 def is_async_func(func: Callable[..., Any]) -> bool:
@@ -24,14 +21,19 @@ def is_async_func(func: Callable[..., Any]) -> bool:
 
 class TypeValidator(CompilerPass):
 
-    def __init__(self, extra_args: Optional[List[type[Any]]] = None) -> None:
+    def __init__(
+        self,
+        convert_args: Optional[Callable[[List[type[Any]]], List[type[Any]]]] = None,
+    ) -> None:
         super().__init__()
-        self.extra_args: Optional[List[type[Any]]] = extra_args
+        self.convert_args = convert_args
+        # self.extra_args: Optional[List[type[Any]]] = extra_args
 
     def set_default(self) -> None:
-        if self.extra_args is None:
+        # if self.extra_args is None:
+        if self.convert_args is None:
             settings = self.ctx.settings
-            self.extra_args = settings.get("extra_args", DEFAULT_EXTRA_ARGS)
+            self.convert_args = settings.get("convert_args", lambda x: x)
 
     def visit_block(self, block: Block) -> None:
         for field in block.fields:
@@ -101,7 +103,7 @@ class TypeValidator(CompilerPass):
             msg = "Method must define a request message."
         elif len(requests) > 1:
             msg = f"Only one request message allowed per method. Found {len(requests)}"
-        elif not is_BaseMessage(requests.pop()):
+        elif not is_BaseMessage(requests[0]):
             msg = invalid_req.description
         if msg is not None:
             report.report_error(code=invalid_req, location=name, override_msg=msg)
@@ -128,8 +130,7 @@ class TypeValidator(CompilerPass):
                 override_msg='Request type is "None"',
             )
         else:
-            extras = self.extra_args or []
-            requests = list(set(method.request_type) - set(extras))
+            requests = self.convert_args(method.request_type)
             self._check_requests(method.name, report, requests)
 
         if method.response_type is None:

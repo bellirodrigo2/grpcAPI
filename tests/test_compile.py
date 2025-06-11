@@ -74,7 +74,7 @@ class TestApp(unittest.TestCase):
             # pass
 
     def test_compile_proto(self) -> None:
-        protos = make_protos(self.app.packages, {}, [])
+        protos = make_protos(self.app.packages, {})
         if protos is None:
             raise
         for package, module_dict in protos.items():

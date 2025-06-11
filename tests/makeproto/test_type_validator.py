@@ -227,7 +227,10 @@ class TestTypeValidator(unittest.TestCase):
 
     def test_method_extra(self) -> None:
 
-        validator = TypeValidator(extra_args=[Path, bool])
+        def filter_args(args: List[type]) -> List[type]:
+            return [arg for arg in args if arg not in [Path, bool]]
+
+        validator = TypeValidator(convert_args=filter_args)
         make_method(
             "Method1",
             request_type=[BaseMessage, Path, bool],

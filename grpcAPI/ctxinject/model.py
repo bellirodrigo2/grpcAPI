@@ -38,13 +38,6 @@ class ModelFieldInject(ArgsInjectable):
         self.field = field
 
 
-class ModelMethodInject(ArgsInjectable):
-    def __init__(self, model: type[Any], method: Optional[str] = None, **meta: Any):
-        super().__init__(..., **meta)
-        self.model = model
-        self.method = method
-
-
 class CallableInjectable(Injectable, ICallableInjectable):
     def __init__(self, default: Callable[..., Any]):
         super().__init__(default)

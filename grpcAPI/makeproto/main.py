@@ -77,11 +77,11 @@ def make_validators(
     custompassmethod = settings.get("custompass", lambda x: [])
     custompass = CustomPass(visitmethod=custompassmethod)
 
-    EXTRA_ARGS = settings.get("extra_args", [])
+    CONVERT_ARGS = settings.get("convert_args", None)
 
     return [
         BlockStructureValidator(),
-        TypeValidator(EXTRA_ARGS),
+        TypeValidator(CONVERT_ARGS),
         BlockNameValidator(),
         FieldNameValidator(),
         IndexValidator(),
@@ -175,7 +175,7 @@ def make_execution_list(
 def make_protos(
     packlist: List[IPackage],
     settings: Dict[str, Any],
-    ignore_instance: List[type[Any]],
+    # ignore_instance: List[type[Any]],
 ) -> Optional[Dict[str, Dict[str, str]]]:
 
     imports_validator = make_imports_validator(packlist)
@@ -184,6 +184,7 @@ def make_protos(
 
     VERSION = settings.get("version", 3)
 
+    ignore_instance = settings.get("ignore_instance", [])
     allmodules, executionlist = make_execution_list(
         packlist,
         settings,

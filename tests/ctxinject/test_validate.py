@@ -1,4 +1,5 @@
 import unittest
+from collections.abc import AsyncIterator
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -90,16 +91,22 @@ class TestValidation(unittest.TestCase):
     def test_check_all_injectable(self) -> None:
         check_all_injectables(func1_args, [])
 
+        class MyPath(Path):
+            pass
+
         def func2_inner(
             arg1: Annotated[UUID, 123, ConstrArgInject(...)],
             arg2: Annotated[datetime, ConstrArgInject(...)],
             arg3: Path,
+            arg4: MyPath,
+            arg5: AsyncIterator[MyPath],
+            extra: AsyncIterator[Path],
             argn: datetime = ArgsInjectable(...),
             dep: Any = DependsInject(get_db),
         ) -> None:
             pass
 
-        check_all_injectables(get_func_args(func2_inner), [Path])
+        check_all_injectables(get_func_args(func2_inner), [Path], AsyncIterator)
 
         with self.assertRaises(UnInjectableError):
             check_all_injectables(get_func_args(func2_inner), [])
@@ -113,6 +120,21 @@ class TestValidation(unittest.TestCase):
 
         with self.assertRaises(InvalidModelFieldType):
             check_modefield_types(get_func_args(func))
+
+    def test_model_field_not_allowed(self) -> None:
+        class Model:
+            x: int
+
+        def func(x: Annotated[int, ModelFieldInject(model=Model)]) -> None:
+            pass
+
+        check_modefield_types(get_func_args(func), [Model])
+
+        with self.assertRaises(InvalidModelFieldType):
+            check_modefield_types(get_func_args(func), [])
+
+        with self.assertRaises(InvalidModelFieldType):
+            check_modefield_types(get_func_args(func), [str, int])
 
     def test_invalid_modelfield(self) -> None:
         def func(a: Annotated[str, ModelFieldInject(model=123)]) -> str:

@@ -1,4 +1,4 @@
-from typing import Any, Tuple, get_args, get_origin
+from typing import Any, Callable, List, Optional, Tuple, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, Method
@@ -52,6 +52,18 @@ def get_func_arg_info(tgt: type[Any]) -> Tuple[type[Any], bool]:
 
 class TypeSetter(CompilerPass):
 
+    def __init__(
+        self,
+        convert_args: Optional[Callable[[List[type[Any]]], List[type[Any]]]] = None,
+    ) -> None:
+        super().__init__()
+        self.convert_args = convert_args
+
+    def set_default(self) -> None:
+        if self.convert_args is None:
+            settings = self.ctx.settings
+            self.convert_args = settings.get("convert_args", lambda x: x)
+
     def visit_block(self, block: Block) -> None:
         for field in block.fields:
             field.accept(self)
@@ -73,7 +85,8 @@ class TypeSetter(CompilerPass):
     def visit_method(self, method: Method) -> None:
         try:
             render_dict = method.render_dict
-            request_type, request_stream = get_func_arg_info(method.request_type[0])
+            requests = self.convert_args(method.request_type)
+            request_type, request_stream = get_func_arg_info(requests[0])
             request_str = get_type_str(request_type, method.block.package)
             render_dict["request_type"] = request_str
             render_dict["request_stream"] = request_stream

@@ -8,14 +8,13 @@ import toml
 from grpcAPI import App
 from grpcAPI.ctxinject.validate import func_signature_validation
 from grpcAPI.makeproto import make_protos
+from grpcAPI.proto_proxy import ProtoProxy
 from grpcAPI.proto_schema import persist_protos
+from grpcAPI.types import Context, Stream
 
-
-def placeholder_validator(func: Callable[..., Any]) -> List[str]:
-    return []
-
-
-func_validator = partial(func_signature_validation)
+placeholder_validator = partial(
+    func_signature_validation, modeltype=[ProtoProxy, Context], generictype=Stream
+)
 
 
 def placeholder_convert(args: List[type[Any]]) -> List[type[Any]]:

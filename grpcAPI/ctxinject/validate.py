@@ -1,4 +1,3 @@
-from email import errors
 from typing import (
     Annotated,
     Any,

@@ -6,11 +6,6 @@ from pathlib import Path
 from typing import Annotated, Any
 from uuid import UUID
 
-from grpcAPI.ctxinject.exceptions import (
-    InvalidInjectableDefinition,
-    InvalidModelFieldType,
-    UnInjectableError,
-)
 from grpcAPI.ctxinject.model import (
     ArgsInjectable,
     ConstrArgInject,
@@ -84,12 +79,14 @@ def func6(x: str = Depends(dep)) -> None:
 class TestValidation(unittest.TestCase):
 
     def test_check_all_typed(self) -> None:
-        check_all_typed(func1_args)
-        with self.assertRaises(TypeError):
-            check_all_typed(get_func_args(func2))
+        errors = check_all_typed(func1_args)
+        self.assertEqual(errors, [])
+        errors = check_all_typed(get_func_args(func2))
+        self.assertEqual(errors, ['Arg "arg2" has no type definition'])
 
     def test_check_all_injectable(self) -> None:
-        check_all_injectables(func1_args, [])
+        errors = check_all_injectables(func1_args, [])
+        self.assertEqual(errors, [])
 
         class MyPath(Path):
             pass
@@ -106,10 +103,14 @@ class TestValidation(unittest.TestCase):
         ) -> None:
             pass
 
-        check_all_injectables(get_func_args(func2_inner), [Path], AsyncIterator)
+        errors = check_all_injectables(
+            get_func_args(func2_inner), [Path], AsyncIterator
+        )
+        self.assertEqual(errors, [])
 
-        with self.assertRaises(UnInjectableError):
-            check_all_injectables(get_func_args(func2_inner), [])
+        errors = check_all_injectables(get_func_args(func2_inner), [])
+        self.assertEqual(len(errors), 4)
+        self.assertTrue(all(["cannot be injected" in err for err in errors]))
 
     def test_model_field_type_mismatch(self) -> None:
         class Model:
@@ -118,8 +119,11 @@ class TestValidation(unittest.TestCase):
         def func(y: Annotated[int, ModelFieldInject(model=Model)]) -> None:
             pass
 
-        with self.assertRaises(InvalidModelFieldType):
-            check_modefield_types(get_func_args(func))
+        errors = check_modefield_types(get_func_args(func))
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(
+            all(["but types does not match. Expected" in err for err in errors])
+        )
 
     def test_model_field_not_allowed(self) -> None:
         class Model:
@@ -128,28 +132,45 @@ class TestValidation(unittest.TestCase):
         def func(x: Annotated[int, ModelFieldInject(model=Model)]) -> None:
             pass
 
-        check_modefield_types(get_func_args(func), [Model])
+        errors = check_modefield_types(get_func_args(func), [Model])
+        self.assertEqual(len(errors), 0)
 
-        with self.assertRaises(InvalidModelFieldType):
-            check_modefield_types(get_func_args(func), [])
-
-        with self.assertRaises(InvalidModelFieldType):
-            check_modefield_types(get_func_args(func), [str, int])
+        errors = check_modefield_types(get_func_args(func), [])
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(
+            all(
+                [
+                    "has ModelFieldInject but type is not allowed. Allowed:" in err
+                    for err in errors
+                ]
+            )
+        )
+        errors = check_modefield_types(get_func_args(func), [str, int])
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(
+            all(
+                [
+                    "has ModelFieldInject but type is not allowed. Allowed:" in err
+                    for err in errors
+                ]
+            )
+        )
 
     def test_invalid_modelfield(self) -> None:
         def func(a: Annotated[str, ModelFieldInject(model=123)]) -> str:
             return a
 
-        with self.assertRaises(InvalidInjectableDefinition):
-            check_modefield_types(get_func_args(func))
+        errors = check_modefield_types(get_func_args(func))
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(all([" field should be a type, but" in err for err in errors]))
 
     def test_depends_type(self) -> None:
-        # Check success case
-        check_depends_types(func1_args)
+        self.assertEqual(len(check_depends_types(func1_args)), 0)
 
         for f in [func3, func4, func5, func6]:
-            with self.assertRaises(TypeError):
-                check_depends_types(get_func_args(f))
+            errors = check_depends_types(get_func_args(f))
+            self.assertEqual(len(errors), 1)
+            self.assertTrue(all([err.startswith("Depends") for err in errors]))
 
     def test_multiple_injectables_error(self) -> None:
         class MyInject1(ArgsInjectable):
@@ -161,9 +182,9 @@ class TestValidation(unittest.TestCase):
         def func(x: Annotated[str, MyInject1(...), MyInject2(...)]) -> None:
             pass
 
-        with self.assertRaises(TypeError) as cm:
-            check_single_injectable(get_func_args(func))
-        self.assertIn("multiple injectables", str(cm.exception))
+        errors = check_single_injectable(get_func_args(func))
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(all(["has multiple injectables" in err for err in errors]))
 
     def test_func_signature_validation_success(self) -> None:
         def valid_func(
@@ -176,21 +197,22 @@ class TestValidation(unittest.TestCase):
             return None
 
         # Should pass without exception
-        func_signature_validation(valid_func, [])
+        self.assertEqual(len(func_signature_validation(valid_func, [])), 0)
 
     def test_func_signature_validation_untyped(self) -> None:
         def untyped_func(arg1, arg2: int) -> None:
             pass
 
-        with self.assertRaises(TypeError):
-            func_signature_validation(untyped_func, [])
+        errors = func_signature_validation(untyped_func, [])
+        self.assertEqual(len(errors), 3)
 
     def test_func_signature_validation_uninjectable(self) -> None:
         def uninjectable_func(arg1: Path) -> None:
             pass
 
-        with self.assertRaises(UnInjectableError):
-            func_signature_validation(uninjectable_func, [])
+        errors = func_signature_validation(uninjectable_func, [])
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(all(["cannot be injected" in err for err in errors]))
 
     def test_func_signature_validation_invalid_model(self) -> None:
         def invalid_model_field_func(
@@ -198,8 +220,9 @@ class TestValidation(unittest.TestCase):
         ) -> None:
             pass
 
-        with self.assertRaises(InvalidInjectableDefinition):
-            func_signature_validation(invalid_model_field_func, [])
+        errors = func_signature_validation(invalid_model_field_func, [])
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(all([" field should be a type, but" in err for err in errors]))
 
     def test_func_signature_validation_bad_depends(self) -> None:
         def get_dep():
@@ -208,8 +231,11 @@ class TestValidation(unittest.TestCase):
         def bad_dep_func(arg: Annotated[str, Depends(get_dep)]) -> None:
             pass
 
-        with self.assertRaises(TypeError):
-            func_signature_validation(bad_dep_func, [])
+        errors = func_signature_validation(bad_dep_func, [])
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(
+            all(["Depends Return should a be type, but " in err for err in errors])
+        )
 
     def test_func_signature_validation_conflicting_injectables(self) -> None:
         def bad_multiple_inject_func(
@@ -217,9 +243,6 @@ class TestValidation(unittest.TestCase):
         ) -> None:
             pass
 
-        with self.assertRaises(Exception):  # Ajuste conforme exceção real, se souber
-            func_signature_validation(bad_multiple_inject_func, [])
-
-
-if __name__ == "__main__":
-    unittest.main()
+        errors = func_signature_validation(bad_multiple_inject_func, [])
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(all(["has multiple injectables:" in err for err in errors]))

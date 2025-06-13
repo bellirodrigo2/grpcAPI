@@ -12,10 +12,14 @@ from typing import (
     Union,
 )
 
-from grpcAPI.ctxinject.constrained import ValidationError
-from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
 from grpcAPI.ctxinject.model import ArgsInjectable, CallableInjectable, ModelFieldInject
 from grpcAPI.typemapping import VarTypeInfo, get_func_args
+
+
+class UnresolvedInjectableError(Exception):
+    """Raised when a dependency cannot be resolved in the injection context."""
+
+    ...
 
 
 def resolve_by_name(context: Mapping[Union[str, type], Any], arg: str) -> Any:
@@ -48,7 +52,7 @@ def wrap_validate(
     value = func(context)
     validated = instance.validate(value, bt)
     if validated is None:
-        raise ValidationError(f"Validation for {name} returned None")
+        raise ValueError(f"Validation for {name} returned None")
     return validated
 
 

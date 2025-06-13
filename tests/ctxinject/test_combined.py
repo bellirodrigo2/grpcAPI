@@ -1,8 +1,7 @@
 import unittest
 from dataclasses import dataclass
 
-from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
-from grpcAPI.ctxinject.inject import resolve
+from grpcAPI.ctxinject.inject import UnresolvedInjectableError, resolve
 from grpcAPI.ctxinject.model import ArgsInjectable, DependsInject, ModelFieldInject
 
 

@@ -1,8 +1,11 @@
 import unittest
 from typing import Annotated, Any
 
-from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
-from grpcAPI.ctxinject.inject import inject_dependencies, resolve
+from grpcAPI.ctxinject.inject import (
+    UnresolvedInjectableError,
+    inject_dependencies,
+    resolve,
+)
 from grpcAPI.ctxinject.model import DependsInject
 
 

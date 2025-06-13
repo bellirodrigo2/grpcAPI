@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 
-from grpcAPI.types.base import ProtoOption
+from grpcAPI.types import ProtoOption
 
 
 class ProtoModule:

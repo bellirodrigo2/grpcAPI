@@ -2,8 +2,7 @@ import unittest
 from functools import partial
 from typing import Annotated, Any, List, Mapping, Union
 
-from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
-from grpcAPI.ctxinject.inject import inject_args
+from grpcAPI.ctxinject.inject import UnresolvedInjectableError, inject_args
 from grpcAPI.ctxinject.model import ArgsInjectable, Injectable, ModelFieldInject
 from grpcAPI.typemapping import VarTypeInfo, get_func_args
 

@@ -14,7 +14,6 @@ from grpcAPI.ctxinject.constrained import (
     ConstrainedUUID,
     constrained_factory,
 )
-from grpcAPI.ctxinject.exceptions import ValidationError
 from grpcAPI.ctxinject.inject import inject_args
 from grpcAPI.ctxinject.model import ConstrArgInject
 
@@ -55,29 +54,29 @@ class TestConstrained(unittest.TestCase):
         ConstrainedEnum(Enum2.FOO, Enum2)
 
     def test_constrained_fail(self) -> None:
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedStr("foobar", min_length=2, max_length=3)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedStr("FooBar", pattern=r"^[a-z]")
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedNumber(45, gt=2, lt=10, multiple_of=5)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedNumber(45, multiple_of=2)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedNumber(10.2, gt=2.7, lt=10.09, multiple_of=5.1)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedItems([1, 2, 3], [int], max_items=2)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedItems([1, 2, 3], [int], gt=3)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedItems(["1", "2", "3"], [str], min_items=1, max_items=2)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedItems(["1", "2", "3"], [str], min_length=2)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedItems(
                 {"foo": "b"}, [str, str], min_items=0, max_items=2, max_length=2
             )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedItems(
                 {"f": "bar"},
                 [str, str],
@@ -86,13 +85,13 @@ class TestConstrained(unittest.TestCase):
                 max_items=2,
                 max_length=2,
             )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedDatetime("2023-13-02")
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedUUID("Not A UUID")
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedEnum(Enum2.BAR, MyEnum)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedEnum(MyEnum.VALID, Enum2)
 
     def test_factory(self) -> None:
@@ -106,12 +105,12 @@ class TestConstrained(unittest.TestCase):
         self.assertEqual(constr_list.keywords["basetype"][0], str)
         constr_list(["foo", "bar"])
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             constr_list(["1", "2", "3"], min_length=2)
 
         constr_listint = constrained_factory(list[int])
         constr_listint([40, 45])
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             constr_listint([40, 45], gt=42)
 
         constr_dict = constrained_factory(dict[str, str])
@@ -120,7 +119,7 @@ class TestConstrained(unittest.TestCase):
         constr_enum = constrained_factory(MyEnum)
         constr_enum(MyEnum.INVALID)
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             constr_enum(0)
 
         constr_date = constrained_factory(datetime)
@@ -173,7 +172,7 @@ class TestConstrained(unittest.TestCase):
             "arg4": MyEnum.INVALID,
             "arg5": ["hello"],
         }
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             inject_args(self.func, ctx)
 
     def test_full_constrained_fail_datetime(self) -> None:
@@ -184,17 +183,17 @@ class TestConstrained(unittest.TestCase):
             "arg4": MyEnum.INVALID,
             "arg5": ["hello"],
         }
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             inject_args(self.func, ctx)
 
     def test_constrained_items_set_tuple(self) -> None:
         ConstrainedItems({1, 2}, [int], min_items=1, max_items=3, gt=0)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedItems((1, 2, 3, 4), [int], max_items=3)
 
     def test_constrained_datetime_custom_format(self) -> None:
         self.assertEqual(
             ConstrainedDatetime("2024-05-01", fmt="%Y-%m-%d"), datetime(2024, 5, 1)
         )
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValueError):
             ConstrainedDatetime("01/05/2024", fmt="%Y-%m-%d")

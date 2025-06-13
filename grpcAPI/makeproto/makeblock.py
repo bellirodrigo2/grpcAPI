@@ -15,16 +15,16 @@ from grpcAPI.makeproto.protoblock import (
     OneOfField,
     ServiceBlock,
 )
-from grpcAPI.typemapping import map_func_args, map_model_fields
+from grpcAPI.typemapping import get_func_args, map_model_fields, map_return_type
 from grpcAPI.types import (
     BaseMessage,
+    IService,
     Metadata,
     OneOf,
     ProtoOption,
     _NoPackage,
     get_headers,
 )
-from grpcAPI.types.interfaces import IService
 
 
 def make_msgblock(cls: type[BaseMessage]) -> Block:
@@ -139,16 +139,25 @@ def make_cls_block(cls: type[Union[BaseMessage, Enum]]) -> Block:
     )
 
 
+def get_args(
+    func: Callable[..., Any],
+) -> List[Optional[type[Any]]]:
+    args = get_func_args(func)
+    return [arg.basetype for arg in args]
+
+
 def make_method(
     func: Callable[..., Any],
     block: Optional[ServiceBlock] = None,
     description: str = "",
     options: Optional[ProtoOption] = None,
+    getargs: Optional[Callable[[Callable[..., Any]], List[Optional[type[Any]]]]] = None,
 ) -> Method:
 
-    args, returntype = map_func_args(func)
+    getargs = getargs or get_args
+    req_types = getargs(func)
 
-    req_types = [arg.basetype for arg in args]
+    returntype = map_return_type(func)
     return Method(
         name=func.__name__,
         request_type=req_types,
@@ -164,6 +173,7 @@ def make_method(
 
 def make_service(
     service: IService,
+    getargs: Optional[Callable[[Callable[..., Any]], List[Optional[type[Any]]]]] = None,
 ) -> ServiceBlock:
 
     servblock = ServiceBlock(
@@ -184,6 +194,7 @@ def make_service(
             servblock,
             method.description,
             method.options,
+            getargs or get_args,
         )
         for method in service.methods
     ]

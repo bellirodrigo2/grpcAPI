@@ -1,24 +1,13 @@
 import importlib.util
-from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 import toml
 
 from grpcAPI import App
-from grpcAPI.ctxinject.validate import func_signature_validation
 from grpcAPI.makeproto import make_protos
-from grpcAPI.proto_proxy import ProtoProxy
+from grpcAPI.proto_inject import extract_request, validate_injectable_function
 from grpcAPI.proto_schema import persist_protos
-from grpcAPI.types import Context, Stream
-
-placeholder_validator = partial(
-    func_signature_validation, modeltype=[ProtoProxy, Context], generictype=Stream
-)
-
-
-def placeholder_convert(args: List[type[Any]]) -> List[type[Any]]:
-    return []
 
 
 def load_app(app_path: str) -> None:
@@ -40,17 +29,14 @@ def compile_proto(
     app = App()
 
     std_settings: Dict[str, Any] = toml.load("./config.toml")
-    app_settings: Dict[str, Any] = {
-        "custompass": placeholder_validator,
-        "convert_args": placeholder_convert,
-        # Depends, ModelMethodField para FromRequest e FromContext
-    }
 
     user_settings = user_settings or {}
-    settings = {**std_settings, **user_settings, **app_settings}
+    settings = {**std_settings, **user_settings}
 
     packs = app.packages
-    protos_dict = make_protos(packs, settings)
+    protos_dict = make_protos(
+        packs, settings, validate_injectable_function, extract_request
+    )
     if protos_dict is None:
         # COMPILATION FAIL
         return

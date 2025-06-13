@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, List
+from typing import Annotated, Any
 from uuid import UUID
 
 from grpcAPI.ctxinject.model import (
@@ -167,11 +167,11 @@ class TestValidation(unittest.TestCase):
 
     def test_model_field_none(self) -> None:
 
-        def func_model_none(none_model: str = ModelFieldInject()) -> None:
+        def func_model_none(none_model: str = ModelFieldInject(None)) -> None:
             pass
 
         errors = check_modefield_types(get_func_args(func_model_none))
-        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(errors), 1)
 
     def test_depends_type(self) -> None:
         self.assertEqual(len(check_depends_types(func1_args)), 0)

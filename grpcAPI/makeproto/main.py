@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from grpcAPI.makeproto.compiler import CompilerContext, CompilerPass
 from grpcAPI.makeproto.makeblock import make_cls_block, make_service
@@ -70,17 +70,14 @@ def run_compiler_passes(
 
 
 def make_validators(
-    settings: Dict[str, Any],
+    custompassmethod: Callable[[Any], List[str]] = lambda x: [],
 ) -> List[CompilerPass]:
 
-    custompassmethod = settings.get("custompass", lambda x: [])
     custompass = CustomPass(visitmethod=custompassmethod)
-
-    CONVERT_ARGS = settings.get("convert_args", None)
 
     return [
         BlockStructureValidator(),
-        TypeValidator(CONVERT_ARGS),
+        TypeValidator(),
         BlockNameValidator(),
         FieldNameValidator(),
         IndexValidator(),
@@ -137,6 +134,7 @@ def make_execution_list(
     packlist: List[IPackage],
     settings: Dict[str, Any],
     version: int = 3,
+    getargs: Optional[Callable[[Callable[..., Any]], List[Optional[type[Any]]]]] = None,
 ) -> Tuple[List[ModuleTemplate], List[Tuple[List[Block], CompilerContext]]]:
     executionlist = []
     allmodules = []
@@ -146,7 +144,9 @@ def make_execution_list(
         # ADICIONAR OS FILE LEVEL REPORT AQUI
         blocks = []
         for module in package.modules:
-            service_blocks = [make_service(service) for service in module.services]
+            service_blocks = [
+                make_service(service, getargs) for service in module.services
+            ]
             cls_blocks = cls_blocks_dict.get((package.name, module.name), [])
             modblocks = cls_blocks + service_blocks
             module_template = ModuleTemplate(
@@ -170,18 +170,18 @@ def make_execution_list(
 def make_protos(
     packlist: List[IPackage],
     settings: Dict[str, Any],
+    custompassmethod: Callable[[Any], List[str]] = lambda x: [],
+    convert_arg: Optional[Callable[[Callable[..., Any]], List[type[Any]]]] = None,
 ) -> Optional[Dict[str, Dict[str, str]]]:
 
     imports_validator = make_imports_validator(packlist)
-    validators = make_validators(settings)
+    validators = make_validators(custompassmethod)
     validators.append(imports_validator)
 
     VERSION = settings.get("version", 3)
 
     allmodules, executionlist = make_execution_list(
-        packlist,
-        settings,
-        version=VERSION,
+        packlist, settings, version=VERSION, getargs=convert_arg
     )
 
     setters = make_setters(settings)

@@ -1,15 +1,10 @@
 import unittest
 from typing import Annotated, Any
 
-from grpcAPI.ctxinject.inject import (
-    UnresolvedInjectableError,
-    inject_dependencies,
-    resolve,
-)
+from grpcAPI.ctxinject.inject import UnresolvedInjectableError, inject_args
 from grpcAPI.ctxinject.model import DependsInject
 
 
-# Contexto básico e modelo fictício
 class DB:
     def __init__(self, url: str):
         self.url = url
@@ -24,12 +19,11 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         async def handler(db: DB = DependsInject(db_dep)) -> str:
             return db.url
 
-        result = await resolve(handler, context={}, overrides={})
+        resolved_func = await inject_args(handler, {})
+        result = await resolved_func()
         self.assertEqual(result, "sqlite://")
 
-    # @unittest.expectedFailure
     async def test_simple_dependency_extra_arg(self) -> None:
-        # Aqui espera erro UnresolvedInjectableError
         def db_dep() -> DB:
             return DB("sqlite://")
 
@@ -37,7 +31,7 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
             return db.url
 
         with self.assertRaises(UnresolvedInjectableError):
-            await resolve(handler, context={}, overrides={})
+            await inject_args(handler, context={}, overrides={}, allow_incomplete=False)
 
     async def test_simple_dependency_extra_arg_inject(self) -> None:
         def db_dep() -> DB:
@@ -46,7 +40,7 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         def handler(arg: str, db: DB = DependsInject(db_dep)) -> str:
             return db.url + arg
 
-        handler_resolved = await inject_dependencies(handler, context={}, overrides={})
+        handler_resolved = await inject_args(handler, context={})
         res = handler_resolved(arg="foobar")
         self.assertEqual(res, "sqlite://foobar")
 
@@ -60,7 +54,8 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         async def handler(db: DB = DependsInject(db_dep)) -> str:
             return db.url
 
-        result = await resolve(handler, context={}, overrides={})
+        resolved_func = await inject_args(handler, {})
+        result = await resolved_func()
         self.assertEqual(result, "sqlite://")
 
     async def test_mixed_sync_async(self) -> None:
@@ -70,7 +65,8 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         async def service(cfg: dict[str, str] = DependsInject(get_config)) -> str:
             return cfg["key"]
 
-        result = await resolve(service, context={}, overrides={})
+        resolved_func = await inject_args(service, {})
+        result = await resolved_func()
         self.assertEqual(result, "value")
 
     async def test_annotated_dependency(self) -> None:
@@ -80,7 +76,8 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         async def handler(db: Annotated[DB, DependsInject(db_dep)]) -> str:
             return db.url
 
-        result = await resolve(handler, context={}, overrides={})
+        resolved_func = await inject_args(handler, {})
+        result = await resolved_func()
         self.assertEqual(result, "sqlite://")
 
     async def test_annotated_with_extras_dependency(self) -> None:
@@ -93,7 +90,8 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         async def handler(db: Annotated[DB, DependsInject(db_dep)]) -> str:
             return db.url
 
-        result = await resolve(handler, context={}, overrides={})
+        resolved_func = await inject_args(handler, {})
+        result = await resolved_func()
         self.assertEqual(result, "sqlite://")
 
     async def test_mixed_annotated_and_default(self) -> None:
@@ -111,7 +109,8 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         ) -> str:
             return f"{url} with timeout {cfg['timeout']}"
 
-        result = await resolve(handler, context={}, overrides={})
+        resolved_func = await inject_args(handler, {})
+        result = await resolved_func()
         self.assertEqual(result, "sqlite:// with timeout 30s")
 
     async def test_deeply_nested_dependencies(self) -> None:
@@ -162,7 +161,8 @@ class TestCtxInject(unittest.IsolatedAsyncioTestCase):
         ) -> str:
             return f"{c.b.a.value}-{c.b.flag}-{c.config['retry']}-{x}"
 
-        result = await resolve(handler, context={}, overrides={})
+        resolved_func = await inject_args(handler, {})
+        result = await resolved_func()
         self.assertEqual(result, "deep-True-3-99")
 
 

@@ -1,7 +1,7 @@
 import unittest
 from dataclasses import dataclass
 
-from grpcAPI.ctxinject.inject import UnresolvedInjectableError, resolve
+from grpcAPI.ctxinject.inject import UnresolvedInjectableError, inject_args
 from grpcAPI.ctxinject.model import ArgsInjectable, DependsInject, ModelFieldInject
 
 
@@ -49,8 +49,9 @@ class TestCombinedInject(unittest.IsolatedAsyncioTestCase):
             User: "Alice",
             Settings: Settings(debug=True, timeout=30),
         }
-        result = await resolve(handler, context=context, overrides={})
-        self.assertEqual(result, "Alice|42|30|Alice-99-False|static")
+        resolved_func = await inject_args(handler, context, False)
+        result = await resolved_func()
+        self.assertEqual(result, "Alice|42|30|Alice-99-30-True|static")
 
     async def test_mixed_injectables_missing_ctx(self) -> None:
         context = {
@@ -60,4 +61,4 @@ class TestCombinedInject(unittest.IsolatedAsyncioTestCase):
             Settings: Settings(debug=True, timeout=30),
         }
         with self.assertRaises(UnresolvedInjectableError):
-            await resolve(handler, context=context, overrides={})
+            await inject_args(handler, context, allow_incomplete=False)

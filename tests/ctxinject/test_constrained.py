@@ -28,7 +28,7 @@ class Enum2(Enum):
     BAR = 1
 
 
-class TestConstrained(unittest.TestCase):
+class TestConstrained(unittest.IsolatedAsyncioTestCase):
 
     def test_constrained_ok(self) -> None:
         ConstrainedStr("foobar", min_length=2, max_length=10)
@@ -154,7 +154,7 @@ class TestConstrained(unittest.TestCase):
     ) -> None:
         return None
 
-    def test_full_constrained(self) -> None:
+    async def test_full_constrained(self) -> None:
         ctx: dict[str, Any] = {
             "arg1": "3cd4d94e-61e9-4c90-bd39-9207a1fb7227",
             "arg2": "22-12-07",
@@ -162,9 +162,9 @@ class TestConstrained(unittest.TestCase):
             "arg4": MyEnum.INVALID,
             "arg5": ["hello"],
         }
-        inject_args(self.func, ctx)
+        await inject_args(self.func, ctx)
 
-    def test_full_constrained_fail_uuid(self) -> None:
+    async def test_full_constrained_fail_uuid(self) -> None:
         ctx: dict[str, Any] = {
             "arg1": "NotUUID",
             "arg2": "22-12-07",
@@ -173,9 +173,9 @@ class TestConstrained(unittest.TestCase):
             "arg5": ["hello"],
         }
         with self.assertRaises(ValueError):
-            inject_args(self.func, ctx)
+            await inject_args(self.func, ctx)
 
-    def test_full_constrained_fail_datetime(self) -> None:
+    async def test_full_constrained_fail_datetime(self) -> None:
         ctx: dict[str, Any] = {
             "arg1": "3cd4d94e-61e9-4c90-bd39-9207a1fb7227",
             "arg2": "99-15-07",
@@ -184,7 +184,7 @@ class TestConstrained(unittest.TestCase):
             "arg5": ["hello"],
         }
         with self.assertRaises(ValueError):
-            inject_args(self.func, ctx)
+            await inject_args(self.func, ctx)
 
     def test_constrained_items_set_tuple(self) -> None:
         ConstrainedItems({1, 2}, [int], min_items=1, max_items=3, gt=0)

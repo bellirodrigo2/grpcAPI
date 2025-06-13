@@ -6,12 +6,12 @@ from grpcAPI.makeproto.protoblock import Block, EnumField, Field, Method
 from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
 from grpcAPI.types import (
     DEFAULT_PRIMITIVES,
+    BaseEnum,
     BaseMessage,
     allowed_map_key,
     if_stream_get_type,
     is_BaseMessage,
 )
-from grpcAPI.types.message import BaseEnum
 from grpcAPI.types.types import BaseField
 
 
@@ -21,17 +21,17 @@ def is_async_func(func: Callable[..., Any]) -> bool:
 
 class TypeValidator(CompilerPass):
 
-    def __init__(
-        self,
-        convert_args: Optional[Callable[[Callable[..., Any]], List[type[Any]]]] = None,
-    ) -> None:
-        super().__init__()
-        self.convert_args = convert_args
+    # def __init__(
+    #     self,
+    #     convert_args: Optional[Callable[[Callable[..., Any]], List[type[Any]]]] = None,
+    # ) -> None:
+    #     super().__init__()
+    #     self.convert_args = convert_args
 
-    def set_default(self) -> None:
-        if self.convert_args is None:
-            settings = self.ctx.settings
-            self.convert_args = settings.get("convert_args", None)
+    # def set_default(self) -> None:
+    #     if self.convert_args is None:
+    #         settings = self.ctx.settings
+    #         self.convert_args = settings.get("convert_args", None)
 
     def visit_block(self, block: Block) -> None:
         for field in block.fields:
@@ -109,8 +109,13 @@ class TypeValidator(CompilerPass):
     def _check_response(self, method: Method) -> None:
         report: CompileReport = self.ctx.get_report(method.block.name)
         if not is_BaseMessage(method.response_type):
+            override_msg = None
+            if method.response_type is None:
+                override_msg = "Response type is 'None'"
             report.report_error(
-                CompileErrorCode.METHOD_INVALID_RESPONSE_TYPE, location=method.name
+                CompileErrorCode.METHOD_INVALID_RESPONSE_TYPE,
+                location=method.name,
+                override_msg=override_msg,
             )
         if if_stream_get_type(method.response_type):
             if not is_async_func(method.method_func):
@@ -121,25 +126,7 @@ class TypeValidator(CompilerPass):
 
     def visit_method(self, method: Method) -> None:
         report: CompileReport = self.ctx.get_report(method.block.name)
-        if method.request_type is None:
-            report.report_error(
-                CompileErrorCode.METHOD_INVALID_REQUEST_TYPE,
-                location=method.name,
-                override_msg='Request type is "None"',
-            )
-        else:
-            if self.convert_args is None:
-                requests = method.request_type
-            else:
-                requests = self.convert_args(method.method_func)
-
-            self._check_requests(method.name, report, requests)
-
-        if method.response_type is None:
-            report.report_error(
-                CompileErrorCode.METHOD_INVALID_RESPONSE_TYPE,
-                location=method.name,
-                override_msg="Response type is 'None'",
-            )
-        else:
-            self._check_response(method)
+        # if self.convert_args is not None:
+        # method.request_type = self.convert_args(method.method_func)
+        self._check_requests(method.name, report, method.request_type)
+        self._check_response(method)

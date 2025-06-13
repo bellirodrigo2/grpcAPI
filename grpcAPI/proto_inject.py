@@ -1,9 +1,13 @@
-from typing import Any, Mapping, Optional, Sequence, Union
+from functools import partial
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Union
+from urllib import request
 
 from grpcAPI.ctxinject.model import ModelFieldInject
+from grpcAPI.ctxinject.validate import func_signature_validation
 from grpcAPI.proto_proxy import ProtoProxy
-from grpcAPI.typemapping import VarTypeInfo
-from grpcAPI.types.context import Context
+from grpcAPI.typemapping import VarTypeInfo, get_func_args
+from grpcAPI.types import Context
+from grpcAPI.types.method import Stream
 
 
 class FromContext(ModelFieldInject):
@@ -12,8 +16,7 @@ class FromContext(ModelFieldInject):
 
 
 class FromRequest(ModelFieldInject):
-    def __init__(self, field: Optional[str] = None, **meta: Any):
-        super().__init__(model=None, field=field, **meta)
+    pass
 
 
 def extract_request_model(
@@ -38,3 +41,26 @@ def extract_request_model(
             instance.model = req_type
 
     return args
+
+
+validate_injectable_function = partial(
+    func_signature_validation, modeltype=[ProtoProxy, Context], generictype=Stream
+)
+
+
+def extract_request(func: Callable[..., Any]) -> List[type]:
+    funcargs = get_func_args(func)
+    requests = set(
+        [
+            arg.basetype
+            for arg in funcargs
+            if arg.istype(ProtoProxy) and arg.basetype is not None
+        ]
+    )
+
+    for arg in funcargs:
+        instance = arg.getinstance(FromRequest)
+        if instance is not None:
+            requests.add(instance.model)
+
+    return list(requests)

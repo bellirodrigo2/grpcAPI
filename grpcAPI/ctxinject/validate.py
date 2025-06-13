@@ -69,8 +69,6 @@ def check_modefield_types(
     for arg in args[:]:
         modelfield_inj = arg.getinstance(ModelFieldInject)
         if modelfield_inj is not None:
-            if modelfield_inj.model is None:
-                continue
             if not isinstance(modelfield_inj.model, type):  # type: ignore
                 errors.append(
                     error_msg(

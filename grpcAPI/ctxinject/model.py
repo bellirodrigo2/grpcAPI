@@ -34,7 +34,7 @@ class ArgsInjectable(Injectable):
 class ModelFieldInject(ArgsInjectable):
     def __init__(
         self,
-        model: Optional[type[Any]] = None,
+        model: type[Any],
         field: Optional[str] = None,
         **meta: Any,
     ):

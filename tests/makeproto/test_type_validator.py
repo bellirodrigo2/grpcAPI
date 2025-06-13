@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Callable, Dict, List
 
 from grpcAPI.makeproto.compiler import (
     CompilerContext,
@@ -8,6 +8,7 @@ from grpcAPI.makeproto.compiler import (
     list_ctx_error_messages,
 )
 from grpcAPI.makeproto.validators.type import TypeValidator
+from grpcAPI.typemapping import map_func_args
 from grpcAPI.types import (
     DEFAULT_PRIMITIVES,
     BaseEnum,
@@ -227,16 +228,23 @@ class TestTypeValidator(unittest.TestCase):
 
     def test_method_extra(self) -> None:
 
-        def filter_args(args: List[type]) -> List[type]:
+        def filter_args(func: Callable[..., Any]) -> List[type]:
+
+            args_info, _ = map_func_args(func)
+            args = [arg.basetype for arg in args_info]
             return [arg for arg in args if arg not in [Path, bool]]
 
         validator = TypeValidator(convert_args=filter_args)
+
+        async def func_tgt(bm: BaseMessage, p: Path, b: bool) -> Stream[BaseMessage]:
+            yield None
+
         make_method(
             "Method1",
             request_type=[BaseMessage, Path, bool],
             block=self.service,
             response_type=Stream[BaseMessage],
-            method_func=agen,
+            method_func=func_tgt,
         )
         validator.execute([self.service], self.context)
         self.assertEqual(len(self.context), 0)

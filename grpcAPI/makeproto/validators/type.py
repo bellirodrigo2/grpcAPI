@@ -23,17 +23,15 @@ class TypeValidator(CompilerPass):
 
     def __init__(
         self,
-        convert_args: Optional[Callable[[List[type[Any]]], List[type[Any]]]] = None,
+        convert_args: Optional[Callable[[Callable[..., Any]], List[type[Any]]]] = None,
     ) -> None:
         super().__init__()
         self.convert_args = convert_args
-        # self.extra_args: Optional[List[type[Any]]] = extra_args
 
     def set_default(self) -> None:
-        # if self.extra_args is None:
         if self.convert_args is None:
             settings = self.ctx.settings
-            self.convert_args = settings.get("convert_args", lambda x: x)
+            self.convert_args = settings.get("convert_args", None)
 
     def visit_block(self, block: Block) -> None:
         for field in block.fields:
@@ -130,7 +128,11 @@ class TypeValidator(CompilerPass):
                 override_msg='Request type is "None"',
             )
         else:
-            requests = self.convert_args(method.request_type)
+            if self.convert_args is None:
+                requests = method.request_type
+            else:
+                requests = self.convert_args(method.method_func)
+
             self._check_requests(method.name, report, requests)
 
         if method.response_type is None:

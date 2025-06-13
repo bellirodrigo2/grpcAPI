@@ -130,8 +130,6 @@ class TestMakeBlocks(unittest.TestCase):
 
     def test_make_msgblock_fail(self) -> None:
         block = make_msgblock(Fail)
-        # Como a validação é separada, aqui não deve gerar exceção
-        # Só verificar se produziu o Block e seus fields
         self.assertEqual(block.name, "Fail")
         self.assertTrue(len(block.fields) >= 10)
 
@@ -169,11 +167,7 @@ class TestMakeBlocks(unittest.TestCase):
 
 
 import unittest
-from dataclasses import dataclass
 from typing import Annotated, Dict, List
-
-# Supondo importado:
-# make_method, make_service, BaseMessage, Metadata, ProtoOption, ServiceBlock, Method
 
 
 class ReqMessage(BaseMessage):
@@ -191,7 +185,6 @@ class AnotherReq(BaseMessage):
     q: Annotated[List[int], Metadata(description="lista q")]
 
 
-# Funções estilo FastAPI gRPC
 def my_method(
     req: Annotated[ReqMessage, Metadata(description="request metadata")],
 ) -> ResMessage: ...
@@ -203,16 +196,13 @@ def another_method(req: AnotherReq, extra: str) -> ResMessage: ...
 def simple_method(req: ReqMessage) -> ResMessage: ...
 
 
-class Dummy: ...
-
-
-def ignored_method(req: ReqMessage, internal: Dict = Dummy()) -> ResMessage: ...
+def ignored_method(req: ReqMessage) -> ResMessage: ...
 
 
 class TestMakeMethodService(unittest.TestCase):
 
     def test_make_method_basic(self) -> None:
-        method = make_method(my_method, ignore_instance=[])
+        method = make_method(my_method)
         self.assertEqual(method.name, "my_method")
         self.assertEqual(method.response_type, ResMessage)
         self.assertEqual(len(method.request_type), 1)
@@ -220,16 +210,13 @@ class TestMakeMethodService(unittest.TestCase):
         self.assertIs(method.method_func, my_method)
 
     def test_make_method_multiple_args(self) -> None:
-        method = make_method(another_method, ignore_instance=[])
+        method = make_method(
+            another_method,
+        )
         self.assertEqual(method.name, "another_method")
         self.assertEqual(len(method.request_type), 2)
         self.assertIn(AnotherReq, method.request_type)
         self.assertIn(str, method.request_type)
-
-    def test_make_method_with_ignore(self) -> None:
-        method = make_method(ignored_method, ignore_instance=[Dummy])
-        self.assertEqual(len(method.request_type), 1)  # internal ignorado
-        self.assertEqual(method.request_type[0], ReqMessage)
 
     def test_make_service_basic(self) -> None:
         my_method_p = MethodPack(my_method, "", {})
@@ -244,7 +231,7 @@ class TestMakeMethodService(unittest.TestCase):
             package="testpkg",
             methods=methods,
         )
-        service = make_service(pack, [Dummy])
+        service = make_service(pack)
 
         self.assertEqual(service.name, "TestService")
         self.assertEqual(service.protofile, "test.proto")
@@ -257,7 +244,6 @@ class TestMakeMethodService(unittest.TestCase):
             self.assertIsInstance(method, Method)
             self.assertIs(method.block, service)
             self.assertTrue(callable(method.method_func))
-            # Check ignore_instance worked for ignored_method
             if method.name == "ignored_method":
                 self.assertEqual(len(method.request_type), 1)
 
@@ -270,7 +256,7 @@ class TestMakeMethodService(unittest.TestCase):
             package="emptypkg",
             methods=[],
         )
-        service = make_service(pack, [])
+        service = make_service(pack)
         self.assertEqual(service.name, "EmptyService")
         self.assertEqual(len(service.fields), 0)
 

@@ -15,21 +15,27 @@ from grpcAPI.ctxinject.model import DependsInject, Injectable, ModelFieldInject
 from grpcAPI.typemapping import VarTypeInfo, get_func_args
 
 
+def error_msg(argname: str, msg: str) -> str:
+    return f'Argument "{argname}" error: {msg}'
+
+
 def check_all_typed(
-    args: Sequence[VarTypeInfo],
+    args: List[VarTypeInfo],
 ) -> List[str]:
     errors: List[str] = []
-    for arg in args:
+    for arg in args[:]:
         if arg.basetype is None:
-            errors.append(f'Arg "{arg.name}" has no type definition')
+            errors.append(error_msg(arg.name, f"has no type definition"))
+            args.remove(arg)
     return errors
 
 
 def check_all_injectables(
-    args: Sequence[VarTypeInfo],
+    args: List[VarTypeInfo],
     modeltype: Iterable[type[Any]],
     generictype: Optional[type[Any]] = None,
 ) -> List[str]:
+
     def is_injectable(arg: VarTypeInfo, modeltype: Iterable[type[Any]]) -> bool:
         if arg.hasinstance(Injectable):
             return True
@@ -46,35 +52,46 @@ def check_all_injectables(
         return False
 
     errors: List[str] = []
-    for arg in args:
+    for arg in args[:]:
         if not is_injectable(arg, modeltype):
-            # raise UnInjectableError(arg.name, arg.argtype)
             errors.append(
-                f"Argument '{arg.name}' of type '{arg.basetype}' cannot be injected."
+                error_msg(arg.name, f"of type '{arg.basetype}' cannot be injected.")
             )
+            args.remove(arg)
     return errors
 
 
 def check_modefield_types(
-    args: Sequence[VarTypeInfo],
+    args: List[VarTypeInfo],
     allowed_models: Optional[List[type[Any]]] = None,
 ) -> List[str]:
     errors: List[str] = []
-    for arg in args:
+    for arg in args[:]:
         modelfield_inj = arg.getinstance(ModelFieldInject)
         if modelfield_inj is not None:
+            if modelfield_inj.model is None:
+                continue
             if not isinstance(modelfield_inj.model, type):  # type: ignore
                 errors.append(
-                    f'ModelFieldInject "model" field should be a type, but "{modelfield_inj.model}" was found'
+                    error_msg(
+                        arg.name,
+                        f'ModelFieldInject "model" field should be a type, but "{modelfield_inj.model}" was found',
+                    )
                 )
+                args.remove(arg)
                 continue
             field_types = get_type_hints(modelfield_inj.model)
             field = modelfield_inj.field or arg.name
             argtype = field_types.get(field, None)
             if argtype is None or not arg.istype(argtype):
                 errors.append(
-                    f'Argument "{arg.name}" has ModelFieldInject, but types does not match. Expected {argtype}, but found {arg.argtype}'
+                    error_msg(
+                        arg.name,
+                        f"has ModelFieldInject, but types does not match. Expected {argtype}, but found {arg.argtype}",
+                    )
                 )
+                args.remove(arg)
+                continue
             if allowed_models is not None:
                 if len(allowed_models) == 0 or not any(
                     [
@@ -83,8 +100,12 @@ def check_modefield_types(
                     ]
                 ):
                     errors.append(
-                        f'Argument "{arg.name}" has ModelFieldInject but type is not allowed. Allowed: {[model.__name__ for model in allowed_models]}, Found: {arg.argtype}'
+                        error_msg(
+                            arg.name,
+                            f"has ModelFieldInject but type is not allowed. Allowed: {[model.__name__ for model in allowed_models]}, Found: {arg.argtype}",
+                        )
                     )
+                    args.remove(arg)
     return errors
 
 
@@ -101,37 +122,47 @@ def check_depends_types(
     for arg_name, dep_type, dep_func in deps:
 
         if not callable(dep_func):
-            errors.append(f"Depends value should be a callable. Found '{dep_func}'.")
+            errors.append(
+                error_msg(
+                    arg_name, f"Depends value should be a callable. Found '{dep_func}'."
+                )
+            )
             continue
 
         return_type = get_type_hints(dep_func).get("return")
         if get_origin(return_type) is Annotated:
             return_type = get_args(return_type)[0]
-        if return_type is None or not isinstance(return_type, type):
+        if return_type is None:
             errors.append(
-                f"Depends Return should a be type, but {return_type} was found."
+                error_msg(
+                    arg_name,
+                    f"Depends Return should a be type, but {return_type} was found.",
+                )
             )
-        elif dep_type is None or not isinstance(dep_type, type):  # type: ignore
+        elif not return_type == dep_type:
             errors.append(
-                f"Arg '{arg_name}' type from Depends should a be type, but {return_type} was found."
-            )
-        elif not issubclass(return_type, dep_type):
-            errors.append(
-                f"Depends function {dep_func} return type should be a subclass of {dep_type}, but {return_type} was found"
+                error_msg(
+                    arg_name,
+                    f'Depends function "{dep_func.__name__}" return type should be "{dep_type}", but "{return_type}" was found',
+                )
             )
     return errors
 
 
-def check_single_injectable(args: Sequence[VarTypeInfo]) -> List[str]:
+def check_single_injectable(args: List[VarTypeInfo]) -> List[str]:
 
     errors: List[str] = []
-    for arg in args:
+    for arg in args[:]:
         if arg.extras is not None:
             injectables = [x for x in arg.extras if isinstance(x, Injectable)]
             if len(injectables) > 1:
                 errors.append(
-                    f"Argument '{arg.name}' has multiple injectables: {[type(i).__name__ for i in injectables]}"
+                    error_msg(
+                        arg.name,
+                        f"has multiple injectables: {[type(i).__name__ for i in injectables]}",
+                    )
                 )
+                args.remove(arg)
     return errors
 
 
@@ -139,9 +170,12 @@ def func_signature_validation(
     func: Callable[..., Any],
     modeltype: List[type[Any]],
     generictype: Optional[type[Any]] = None,
+    bt_default_fallback: bool = True,
 ) -> List[str]:
 
-    args: Sequence[VarTypeInfo] = get_func_args(func)
+    args: Sequence[VarTypeInfo] = get_func_args(
+        func, bt_default_fallback=bt_default_fallback
+    )
     all_errors: List[str] = []
 
     typed_errors = check_all_typed(args)
@@ -152,8 +186,6 @@ def func_signature_validation(
 
     single_errors = check_single_injectable(args)
     all_errors.extend(single_errors)
-    if single_errors:
-        return all_errors
 
     model_errors = check_modefield_types(args, modeltype)
     all_errors.extend(model_errors)

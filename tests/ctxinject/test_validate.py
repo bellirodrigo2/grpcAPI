@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, List
 from uuid import UUID
 
 from grpcAPI.ctxinject.model import (
@@ -11,6 +11,7 @@ from grpcAPI.ctxinject.model import (
     ConstrArgInject,
     Depends,
     DependsInject,
+    Injectable,
     ModelFieldInject,
 )
 from grpcAPI.ctxinject.validate import (
@@ -82,7 +83,7 @@ class TestValidation(unittest.TestCase):
         errors = check_all_typed(func1_args)
         self.assertEqual(errors, [])
         errors = check_all_typed(get_func_args(func2))
-        self.assertEqual(errors, ['Arg "arg2" has no type definition'])
+        self.assertEqual(errors, ['Argument "arg2" error: has no type definition'])
 
     def test_check_all_injectable(self) -> None:
         errors = check_all_injectables(func1_args, [])
@@ -164,13 +165,21 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertTrue(all([" field should be a type, but" in err for err in errors]))
 
+    def test_model_field_none(self) -> None:
+
+        def func_model_none(none_model: str = ModelFieldInject()) -> None:
+            pass
+
+        errors = check_modefield_types(get_func_args(func_model_none))
+        self.assertEqual(len(errors), 0)
+
     def test_depends_type(self) -> None:
         self.assertEqual(len(check_depends_types(func1_args)), 0)
 
         for f in [func3, func4, func5, func6]:
             errors = check_depends_types(get_func_args(f))
             self.assertEqual(len(errors), 1)
-            self.assertTrue(all([err.startswith("Depends") for err in errors]))
+            self.assertTrue(all(["Depends" in err for err in errors]))
 
     def test_multiple_injectables_error(self) -> None:
         class MyInject1(ArgsInjectable):
@@ -204,7 +213,7 @@ class TestValidation(unittest.TestCase):
             pass
 
         errors = func_signature_validation(untyped_func, [])
-        self.assertEqual(len(errors), 3)
+        self.assertEqual(len(errors), 2)
 
     def test_func_signature_validation_uninjectable(self) -> None:
         def uninjectable_func(arg1: Path) -> None:
@@ -246,3 +255,35 @@ class TestValidation(unittest.TestCase):
         errors = func_signature_validation(bad_multiple_inject_func, [])
         self.assertEqual(len(errors), 1)
         self.assertTrue(all(["has multiple injectables:" in err for err in errors]))
+
+    def test_multiple_error(self) -> None:
+        class MyType:
+            def __init__(self, x: str) -> None:
+                self.x = x
+
+        def dep1() -> None:
+            pass
+
+        def dep2() -> int:
+            pass
+
+        def multiple_bad(
+            arg1,
+            arg2: str,
+            arg3: Annotated[str, Injectable(), Injectable()],
+            arg4: str = ModelFieldInject(model="foobar"),
+            arg5: bool = ModelFieldInject(model=MyType, field="x"),
+            arg6: Path = ModelFieldInject(model=Path, field="is_dir"),
+            arg7: str = Depends("foobar"),
+            arg8=Depends(dep1),
+            arg9: str = Depends(dep1),
+            arg10: str = Depends(dep2),
+        ) -> None:
+            return
+
+        errors = func_signature_validation(multiple_bad, [], bt_default_fallback=False)
+        self.assertEqual(len(errors), 10)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -42,10 +42,8 @@ def compile_proto(
     std_settings: Dict[str, Any] = toml.load("./config.toml")
     app_settings: Dict[str, Any] = {
         "custompass": placeholder_validator,
-        # "extra_args": [Context],  # alterar para transform_args
         "convert_args": placeholder_convert,
         # Depends, ModelMethodField para FromRequest e FromContext
-        "ignore_instance": [],
     }
 
     user_settings = user_settings or {}

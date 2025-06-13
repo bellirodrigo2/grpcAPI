@@ -32,7 +32,12 @@ class ArgsInjectable(Injectable):
 
 
 class ModelFieldInject(ArgsInjectable):
-    def __init__(self, model: type[Any], field: Optional[str] = None, **meta: Any):
+    def __init__(
+        self,
+        model: Optional[type[Any]] = None,
+        field: Optional[str] = None,
+        **meta: Any,
+    ):
         super().__init__(..., **meta)
         self.model = model
         self.field = field

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import asdict
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from grpcAPI.makeproto.protoblock import (
     Block,
@@ -15,7 +15,7 @@ from grpcAPI.makeproto.protoblock import (
     OneOfField,
     ServiceBlock,
 )
-from grpcAPI.typemapping import VarTypeInfo, map_func_args, map_model_fields
+from grpcAPI.typemapping import map_func_args, map_model_fields
 from grpcAPI.types import (
     BaseMessage,
     Metadata,
@@ -141,7 +141,6 @@ def make_cls_block(cls: type[Union[BaseMessage, Enum]]) -> Block:
 
 def make_method(
     func: Callable[..., Any],
-    ignore_instance: List[type[Any]],
     block: Optional[ServiceBlock] = None,
     description: str = "",
     options: Optional[ProtoOption] = None,
@@ -149,11 +148,7 @@ def make_method(
 
     args, returntype = map_func_args(func)
 
-    def has_any(arg: VarTypeInfo, ignore_instance: List[type[Any]]) -> bool:
-        return any(arg.hasinstance(bt) for bt in ignore_instance)
-
-    req_types = [arg.basetype for arg in args if not has_any(arg, ignore_instance)]
-
+    req_types = [arg.basetype for arg in args]
     return Method(
         name=func.__name__,
         request_type=req_types,
@@ -169,7 +164,6 @@ def make_method(
 
 def make_service(
     service: IService,
-    ignore_instance: List[type[Any]],
 ) -> ServiceBlock:
 
     servblock = ServiceBlock(
@@ -187,7 +181,6 @@ def make_service(
     method_list = [
         make_method(
             method.method,
-            ignore_instance,
             servblock,
             method.description,
             method.options,

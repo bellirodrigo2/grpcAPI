@@ -79,7 +79,7 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
         self.assertIn("status", [f.name for f in res_block.fields])
 
     def test_method(self) -> None:
-        method = make_method(perform_action, ignore_instance=[])
+        method = make_method(perform_action)
         self.assertEqual(method.name, "perform_action")
         self.assertEqual(len(method.request_type), 1)
         self.assertIs(method.request_type[0], Request)
@@ -95,7 +95,7 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
             package="integrationpkg",
             methods=[method],
         )
-        service = make_service(pack, [])
+        service = make_service(pack)
         self.assertEqual(service.name, "IntegrationService")
         self.assertEqual(service.protofile, "integration.proto")
         self.assertEqual(len(service.fields), 1)
@@ -114,7 +114,7 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
         res_block = make_msgblock(Response)
 
         # Method
-        method = make_method(perform_action, ignore_instance=[])
+        method = make_method(perform_action)
 
         # Service
         func = MethodPack(perform_action, "", {})
@@ -126,7 +126,7 @@ class TestIntegrationMakeBlocks(unittest.TestCase):
             package="integrationpkg",
             methods=[func],
         )
-        service = make_service(pack, [])
+        service = make_service(pack)
 
         # Assert all connected
         self.assertEqual(enum_block.package, req_block.package)

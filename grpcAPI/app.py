@@ -1,12 +1,20 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
+from grpcAPI.mapclss import map_service_classes
 from grpcAPI.proto_proxy import ProtoProxy
-from grpcAPI.typemapping import map_service_classes
-from grpcAPI.types import NO_PACKAGE, BaseMessage, ProtoOption, _NoPackage
-from grpcAPI.types.interfaces import IMethod, IModule, IPackage, IService
-from grpcAPI.types.message import BaseEnum
+from grpcAPI.types import (
+    NO_PACKAGE,
+    BaseEnum,
+    BaseMessage,
+    IMethod,
+    IModule,
+    IPackage,
+    IService,
+    ProtoOption,
+    _NoPackage,
+)
 
 
 def create_proto_model(

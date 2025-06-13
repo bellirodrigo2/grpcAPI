@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 
 from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
 from grpcAPI.makeproto.protoblock import Block, EnumBlock, MessageBlock
-from grpcAPI.typemapping import map_service_classes
+from grpcAPI.mapclss import map_service_classes
 from grpcAPI.types import (
     BaseMessage,
     Context,

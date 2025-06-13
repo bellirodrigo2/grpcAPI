@@ -6,10 +6,8 @@ from inspect import Parameter, signature
 from typing import (
     Any,
     Callable,
-    List,
     Optional,
     Sequence,
-    Set,
     Tuple,
     TypeVar,
     Union,
@@ -19,8 +17,6 @@ from typing import (
 )
 
 from typing_extensions import Annotated as typing_extensions_Annotated
-
-from grpcAPI.types.message import BaseEnum, BaseMessage, get_BaseMessage
 
 try:
     from typing import Annotated as typing_Annotated
@@ -247,7 +243,9 @@ def map_return_type(
 
 
 def map_func_args(
-    func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
+    func: Callable[..., Any],
+    localns: Optional[dict[str, Any]] = None,
+    bt_default_fallback: bool = True,
 ) -> Tuple[Sequence[VarTypeInfo], VarTypeInfo]:
     partial_args = {}
 
@@ -270,7 +268,7 @@ def map_func_args(
             continue
 
         annotation: type = hints.get(name, param.annotation)
-        arg = field_factory(param, annotation)
+        arg = field_factory(param, annotation, bt_default_fallback)
         funcargs.append(arg)
     return_type = map_return_type(func, localns)
 
@@ -278,54 +276,9 @@ def map_func_args(
 
 
 def get_func_args(
-    func: Callable[..., Any], localns: Optional[dict[str, Any]] = None
+    func: Callable[..., Any],
+    localns: Optional[dict[str, Any]] = None,
+    bt_default_fallback: bool = True,
 ) -> Sequence[VarTypeInfo]:
-    funcargs, _ = map_func_args(func, localns)
+    funcargs, _ = map_func_args(func, localns, bt_default_fallback)
     return funcargs
-
-
-def cls_map(
-    tgt: type[BaseMessage],
-    visited: Optional[Set[type[BaseMessage]]] = None,
-) -> Set[type[BaseMessage]]:
-
-    if visited is None:
-        visited = set()
-
-    if tgt in visited:
-        return visited
-
-    if issubclass(tgt, BaseEnum) or issubclass(tgt, BaseMessage):
-        visited.add(tgt)
-
-        args = map_model_fields(tgt, False)
-
-        for arg in args:
-            if arg.istype(BaseMessage):
-                msgs = cls_map(arg.basetype, visited)
-                visited.update(msgs)
-            elif arg.istype(BaseEnum):
-                visited.add(arg.basetype)
-    return visited
-
-
-def map_service_classes(
-    methods: List[Callable[..., Any]],
-) -> Set[type[Union[BaseMessage, BaseEnum]]]:
-    all_types: Set[type] = set()
-
-    for method in methods:
-        funcargs, return_type = map_func_args(method)
-
-        for arg in funcargs:
-            base = get_BaseMessage(arg.basetype)
-            if base:
-                all_types.add(base)
-        base = get_BaseMessage(return_type.basetype)
-        if base:
-            all_types.add(base)
-    classes: Set[type[Union[BaseMessage, BaseEnum]]] = set()
-    for typ in all_types:
-        clss = cls_map(typ)
-        classes.update(clss)
-    return classes

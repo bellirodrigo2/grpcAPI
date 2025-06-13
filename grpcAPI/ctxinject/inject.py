@@ -1,6 +1,16 @@
 import inspect
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from grpcAPI.ctxinject.constrained import ValidationError
 from grpcAPI.ctxinject.exceptions import UnresolvedInjectableError
@@ -17,19 +27,6 @@ def resolve_from_model(
 ) -> Any:
     method = getattr(context[model], field)
     return method() if callable(method) else method
-
-
-def resolve_by_modelfield(
-    context: Mapping[Union[str, type], Any], model: type[Any], field: str
-) -> Any:
-    return getattr(context[model], field)
-
-
-def resolve_by_modelmethod(
-    context: Mapping[Union[str, type], Any], model: type[Any], field: str
-) -> Any:
-    method = getattr(context[model], field)
-    return method()
 
 
 def resolve_by_type(context: Mapping[Union[str, type], Any], bt: type[Any]) -> Any:
@@ -113,61 +110,23 @@ def resolve_mapped_ctx(
     return results
 
 
-def resolve_ctx(
-    args: Iterable[VarTypeInfo],
-    context: Mapping[Union[str, type], Any],
-    allow_incomplete: bool,
-    validate: bool = True,
-) -> Mapping[str, Any]:
-    ctx: dict[str, Any] = {}
-
-    for arg in args:
-        instance = arg.getinstance(ArgsInjectable)
-        default_ = instance.default if instance else None
-        bt = arg.basetype
-        value = None
-
-        if arg.name in context:  # by name
-            value = context[arg.name]
-
-        elif instance is not None and isinstance(
-            instance, ModelFieldInject
-        ):  # by model field
-
-            tgtmodel = instance.model
-            tgt_field = instance.field or arg.name
-            if tgtmodel in context:
-                value = getattr(context[tgtmodel], tgt_field)
-
-        elif bt is not None and bt in context:  # by type
-            value = context[bt]
-
-        elif default_ is not None and default_ is not Ellipsis:  # by default
-            value = default_
-        elif not allow_incomplete:
-            raise UnresolvedInjectableError(
-                f"Argument '{arg.name}' is incomplete or missing a valid injectable context."
-            )
-        if value is not None:
-            if validate and instance is not None and arg.basetype is not None:
-                validated = instance.validate(value, arg.basetype)
-                if validated is None:
-                    raise ValidationError(f"Validation for {arg.name} returned None")
-                value = validated
-            ctx[arg.name] = value
-    return ctx
-
-
 def inject_args(
     func: Callable[..., Any],
     context: Mapping[Union[str, type], Any],
     allow_incomplete: bool = True,
     validate: bool = True,
+    transform_func_args: Optional[
+        Callable[
+            [Sequence[VarTypeInfo], Mapping[Union[str, type], Any]],
+            Sequence[VarTypeInfo],
+        ]
+    ] = None,
 ) -> partial[Any]:
     funcargs = get_func_args(func)
+    if transform_func_args is not None:
+        funcargs = transform_func_args(funcargs, context)
     mapped_ctx = map_ctx(funcargs, context, allow_incomplete, validate)
     ctx = resolve_mapped_ctx(context, mapped_ctx)
-    # ctx = resolve_ctx(funcargs, context, allow_incomplete, validate)
 
     return partial(func, **ctx)
 

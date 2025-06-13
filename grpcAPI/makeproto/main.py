@@ -1,7 +1,6 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from grpcAPI.makeproto.compiler import CompilerContext, CompilerPass
@@ -29,7 +28,7 @@ from grpcAPI.makeproto.validators.info import (
 )
 from grpcAPI.makeproto.validators.name import BlockNameValidator, FieldNameValidator
 from grpcAPI.makeproto.validators.type import TypeValidator
-from grpcAPI.types import IModule, IPackage, _NoPackage
+from grpcAPI.types import IPackage, _NoPackage
 
 
 class CompilationError(Exception):
@@ -137,7 +136,6 @@ def extract_cls_blocks(
 def make_execution_list(
     packlist: List[IPackage],
     settings: Dict[str, Any],
-    ignore_instance: List[type[Any]],
     version: int = 3,
 ) -> Tuple[List[ModuleTemplate], List[Tuple[List[Block], CompilerContext]]]:
     executionlist = []
@@ -148,10 +146,7 @@ def make_execution_list(
         # ADICIONAR OS FILE LEVEL REPORT AQUI
         blocks = []
         for module in package.modules:
-            # modblocks = module_to_list_block(module, ignore_instance)
-            service_blocks = [
-                make_service(service, ignore_instance) for service in module.services
-            ]
+            service_blocks = [make_service(service) for service in module.services]
             cls_blocks = cls_blocks_dict.get((package.name, module.name), [])
             modblocks = cls_blocks + service_blocks
             module_template = ModuleTemplate(
@@ -175,7 +170,6 @@ def make_execution_list(
 def make_protos(
     packlist: List[IPackage],
     settings: Dict[str, Any],
-    # ignore_instance: List[type[Any]],
 ) -> Optional[Dict[str, Dict[str, str]]]:
 
     imports_validator = make_imports_validator(packlist)
@@ -184,11 +178,9 @@ def make_protos(
 
     VERSION = settings.get("version", 3)
 
-    ignore_instance = settings.get("ignore_instance", [])
     allmodules, executionlist = make_execution_list(
         packlist,
         settings,
-        ignore_instance,
         version=VERSION,
     )
 

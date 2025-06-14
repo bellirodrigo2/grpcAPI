@@ -21,18 +21,6 @@ def is_async_func(func: Callable[..., Any]) -> bool:
 
 class TypeValidator(CompilerPass):
 
-    # def __init__(
-    #     self,
-    #     convert_args: Optional[Callable[[Callable[..., Any]], List[type[Any]]]] = None,
-    # ) -> None:
-    #     super().__init__()
-    #     self.convert_args = convert_args
-
-    # def set_default(self) -> None:
-    #     if self.convert_args is None:
-    #         settings = self.ctx.settings
-    #         self.convert_args = settings.get("convert_args", None)
-
     def visit_block(self, block: Block) -> None:
         for field in block.fields:
             field.accept(self)
@@ -126,7 +114,5 @@ class TypeValidator(CompilerPass):
 
     def visit_method(self, method: Method) -> None:
         report: CompileReport = self.ctx.get_report(method.block.name)
-        # if self.convert_args is not None:
-        # method.request_type = self.convert_args(method.method_func)
         self._check_requests(method.name, report, method.request_type)
         self._check_response(method)

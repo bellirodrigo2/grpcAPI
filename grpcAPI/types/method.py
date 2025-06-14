@@ -1,9 +1,7 @@
 from collections.abc import AsyncIterator
-from typing import Any, Optional, TypeVar, get_args, get_origin
+from typing import Any, Optional, get_args, get_origin
 
-T = TypeVar("T")
-
-Stream = AsyncIterator[T]
+Stream = AsyncIterator
 
 
 def if_stream_get_type(bt: type[Any]) -> Optional[type[Any]]:

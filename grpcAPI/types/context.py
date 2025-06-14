@@ -1,6 +1,9 @@
 from typing import Any, Dict, Optional, Protocol, Sequence, Tuple
 
+from typing_extensions import runtime_checkable
 
+
+@runtime_checkable
 class Context(Protocol):
     def peer(self) -> str: ...
     def peer_identities(self) -> Optional[Sequence[Any]]: ...

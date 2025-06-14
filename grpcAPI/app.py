@@ -190,27 +190,3 @@ class App:
             self.add_package(newpack)
             package = newpack
         package._add_module(module)
-
-
-if __name__ == "__main__":
-
-    app = App()
-
-    pack1 = Package("pack1")
-
-    mod1 = Module("objmodule")
-
-    class MyRequest(mod1.ProtoModel):
-        user: str
-
-    class MyResponse(mod1.ProtoModel):
-        id: int
-
-    mod2 = Module("servmodule")
-    serv2 = mod2.Service("serv1")
-
-    @serv2(description="Method comment here", options={"foo": "bar"})
-    def method1(req: MyRequest) -> MyResponse:
-        return MyResponse()
-
-    app.add_module(mod2)

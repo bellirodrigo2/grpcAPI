@@ -61,6 +61,16 @@ def check_all_injectables(
     return errors
 
 
+def get_field_type(tgt: type[Any], fieldname: str) -> type[Any]:
+    if fieldname not in tgt.__dict__:
+        hinttgt, attrname = tgt, fieldname
+    else:
+        hinttgt, attrname = getattr(tgt, fieldname), "return"
+
+    field_types = get_type_hints(hinttgt)
+    return field_types.get(attrname, None)
+
+
 def check_modefield_types(
     args: List[VarTypeInfo],
     allowed_models: Optional[List[type[Any]]] = None,
@@ -78,9 +88,8 @@ def check_modefield_types(
                 )
                 args.remove(arg)
                 continue
-            field_types = get_type_hints(modelfield_inj.model)
-            field = modelfield_inj.field or arg.name
-            argtype = field_types.get(field, None)
+            fieldname = modelfield_inj.field or arg.name
+            argtype = get_field_type(modelfield_inj.model, fieldname)
             if argtype is None or not arg.istype(argtype):
                 errors.append(
                     error_msg(

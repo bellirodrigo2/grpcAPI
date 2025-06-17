@@ -3,6 +3,8 @@ from dataclasses import asdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from typemapping import get_func_args, map_model_fields, map_return_type
+
 from grpcAPI.makeproto.protoblock import (
     Block,
     EnumBlock,
@@ -15,14 +17,12 @@ from grpcAPI.makeproto.protoblock import (
     OneOfField,
     ServiceBlock,
 )
-from grpcAPI.typemapping import get_func_args, map_model_fields, map_return_type
 from grpcAPI.types import (
     BaseMessage,
     IService,
     Metadata,
     OneOf,
     ProtoOption,
-    _NoPackage,
     get_headers,
 )
 

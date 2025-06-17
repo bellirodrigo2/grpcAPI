@@ -2,8 +2,9 @@ import inspect
 from functools import partial
 from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union
 
+from typemapping import VarTypeInfo, get_func_args
+
 from grpcAPI.ctxinject.model import ArgsInjectable, CallableInjectable, ModelFieldInject
-from grpcAPI.typemapping import VarTypeInfo, get_func_args
 
 
 class UnresolvedInjectableError(Exception):
@@ -41,13 +42,13 @@ def wrap_validate(
 
     value = func(context)
     validated = instance.validate(value, bt)
-    if validated is None:
-        raise ValueError(f"Validation for {name} returned None")
+    # if validated is None:
+    # raise ValueError(f"Validation for {name} returned None")
     return validated
 
 
 type TransformFunction = Callable[
-    [Sequence[VarTypeInfo], Dict[Union[str, type], Any]],
+    [Sequence[VarTypeInfo], Any],
     Sequence[VarTypeInfo],
 ]
 
@@ -122,7 +123,12 @@ async def map_ctx(
                 f"Argument '{arg.name}' is incomplete or missing a valid injectable context."
             )
         if value is not None:
-            if validate and instance is not None and arg.basetype is not None:
+            if (
+                validate
+                and instance is not None
+                and arg.basetype is not None
+                and instance.has_validate
+            ):
                 value = partial(
                     wrap_validate,
                     func=value,

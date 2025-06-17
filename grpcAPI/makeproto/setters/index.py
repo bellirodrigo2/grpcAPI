@@ -1,7 +1,7 @@
 from typing import Optional, Set
 
 from grpcAPI.makeproto.compiler import CompilerPass
-from grpcAPI.makeproto.protoblock import Block, EnumBlock, Field, is_enum
+from grpcAPI.makeproto.protoblock import Block, Field
 from grpcAPI.makeproto.report import CompileErrorCode
 
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, get_args
 
+from typemapping import map_model_fields
 from typing_extensions import get_origin
 
 from grpcAPI.persutil import (
@@ -13,7 +14,6 @@ from grpcAPI.persutil import (
     get_version_paths,
     write_atomic,
 )
-from grpcAPI.typemapping import map_model_fields
 from grpcAPI.types import BaseEnum, BaseMessage, IModule, IPackage, OneOf
 
 

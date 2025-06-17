@@ -3,7 +3,6 @@
 # import "pack2/file2.proto";
 
 from typing import Any, Optional, get_args, get_origin
-from urllib import response
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, EnumField, Field

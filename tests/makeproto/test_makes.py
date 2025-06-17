@@ -166,10 +166,6 @@ class TestMakeBlocks(unittest.TestCase):
         self.assertEqual(names, {"FOO", "BAR"})
 
 
-import unittest
-from typing import Annotated, Dict, List
-
-
 class ReqMessage(BaseMessage):
     a: int
     b: Annotated[str, Metadata(description="Campo b")]

@@ -1,9 +1,11 @@
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from grpcAPI.mapclss import map_service_classes
 from grpcAPI.proto_proxy import ProtoProxy
+from grpcAPI.singleton import SingletonMeta
 from grpcAPI.types import (
     NO_PACKAGE,
     BaseEnum,
@@ -91,9 +93,6 @@ class Module(IModule):
     def ProtoEnum(self) -> type[Enum]:
         return self._proto_enum  # type: ignore
 
-    # def __iter__(self) -> Iterator[IService]:
-    # return iter(self._services)
-
     def Service(
         self,
         servicename: str,
@@ -128,8 +127,17 @@ class Module(IModule):
         return with_meta
 
 
+VALID_PACKAGE_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)(\.[a-zA-Z_][a-zA-Z0-9_]*)*$")
+
+
 @dataclass(frozen=True)
 class Package(IPackage):
+
+    def __post_init__(self) -> None:
+        if not bool(VALID_PACKAGE_RE.match(self.name)):
+            raise ValueError(
+                f'Package name "{self.name}" is not valid. Only, letters, numbers, underscore and dot is allowed'
+            )
 
     name: Union[_NoPackage, str]
     _modules: Dict[str, IModule] = field(default_factory=dict[str, IModule])
@@ -164,7 +172,7 @@ class Package(IPackage):
 
 
 @dataclass(frozen=True)
-class App:
+class App(metaclass=SingletonMeta):
 
     name: Optional[str] = None
     version: Optional[int] = None

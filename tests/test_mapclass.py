@@ -2,7 +2,7 @@ import unittest
 from dataclasses import dataclass, field
 from typing import Annotated, Any, List, Optional, Union
 
-from grpcAPI.typemapping import NO_DEFAULT, map_class_fields, map_func_args
+from typemapping.typemapping import NO_DEFAULT, map_class_fields, map_func_args
 
 # --- Classes auxiliares para metadados em Annotated ---
 

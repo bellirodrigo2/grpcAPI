@@ -2,9 +2,10 @@ import unittest
 from functools import partial
 from typing import Annotated, Any, List, Mapping, Union
 
+from typemapping import VarTypeInfo, get_func_args
+
 from grpcAPI.ctxinject.inject import UnresolvedInjectableError, inject_args
 from grpcAPI.ctxinject.model import ArgsInjectable, Injectable, ModelFieldInject
-from grpcAPI.typemapping import VarTypeInfo, get_func_args
 
 
 class NoValidation(Injectable):

@@ -15,7 +15,7 @@ from typing import (
     ValuesView,
 )
 
-from grpcAPI.typemapping import map_model_fields
+from typemapping import map_model_fields
 
 
 class Proxy:

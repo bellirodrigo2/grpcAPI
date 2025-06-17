@@ -72,23 +72,23 @@ def main() -> None:
 
         compile_proto(app_path, version, settings)
 
-    elif args.command == run_cmd:
-        app_path = args.app_path
-        compile_before = args.compile or app_settings.get("run", {}).get(
-            "compile", False
-        )
-        host = args.host or app_settings.get("run", {}).get("host", "127.0.0.1")
-        port = args.port or app_settings.get("run", {}).get("port", 50051)
+    # elif args.command == run_cmd:
+    #     app_path = args.app_path
+    #     compile_before = args.compile or app_settings.get("run", {}).get(
+    #         "compile", False
+    #     )
+    #     host = args.host or app_settings.get("run", {}).get("host", "127.0.0.1")
+    #     port = args.port or app_settings.get("run", {}).get("port", 50051)
 
-        run_app(
-            app_path,
-            compile_before=compile_before,
-            host=host,
-            port=port,
-            settings=combined_settings,
-        )
-    else:
-        parser.print_help()
+    #     run_app(
+    #         app_path,
+    #         compile_before=compile_before,
+    #         host=host,
+    #         port=port,
+    #         settings=combined_settings,
+    #     )
+    # else:
+    #     parser.print_help()
 
 
 if __name__ == "__main__":

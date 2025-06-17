@@ -1,6 +1,7 @@
 from typing import Any, Callable, List, Optional, Set, Union
 
-from grpcAPI.typemapping import map_func_args, map_model_fields
+from typemapping import map_func_args, map_model_fields
+
 from grpcAPI.types import BaseEnum, BaseMessage, get_BaseMessage
 
 

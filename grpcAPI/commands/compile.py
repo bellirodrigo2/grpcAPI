@@ -1,6 +1,6 @@
 import importlib.util
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import toml
 
@@ -25,10 +25,9 @@ def compile_proto(
 
     load_app(app_path)
 
-    # FALTA FAZER APP singleton
     app = App()
 
-    std_settings: Dict[str, Any] = toml.load("./config.toml")
+    std_settings: Dict[str, Any] = toml.load("./grpcAPI/commands/config.toml")
 
     user_settings = user_settings or {}
     settings = {**std_settings, **user_settings}
@@ -41,10 +40,10 @@ def compile_proto(
         # COMPILATION FAIL
         return
 
-    output_dir = Path(settings.get("output_dir", "grpcAPI/proto"))
-
-    if version_mode is "lint":
-        print(f"[INFO] Lint mode: no files will be written.")
+    output_dir = Path(settings.get("output_dir", "./grpcAPI/proto"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if version_mode == "lint":
+        print("[INFO] Lint mode: no files will be written.")
         return
 
     try:

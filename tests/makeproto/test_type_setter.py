@@ -1,5 +1,4 @@
 import unittest
-from pprint import pprint
 from typing import Dict, List, Union
 
 from grpcAPI.makeproto.compiler import CompilerContext

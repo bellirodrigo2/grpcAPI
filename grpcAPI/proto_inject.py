@@ -1,10 +1,11 @@
 from functools import partial
 from typing import Any, Callable, List, Optional
 
+from typemapping import get_func_args
+
 from grpcAPI.app import ProtoModel
 from grpcAPI.ctxinject.model import ModelFieldInject
-from grpcAPI.ctxinject.validate import func_signature_validation
-from grpcAPI.typemapping import get_func_args
+from grpcAPI.ctxinject.sigcheck import func_signature_check
 from grpcAPI.types import Context, Stream
 from grpcAPI.types.message import is_BaseMessage
 
@@ -19,7 +20,7 @@ class FromRequest(ModelFieldInject):
 
 
 validate_injectable_function = partial(
-    func_signature_validation, modeltype=[ProtoModel, Context], generictype=Stream
+    func_signature_check, modeltype=[ProtoModel, Context], generictype=Stream
 )
 
 

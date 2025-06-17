@@ -1,59 +1,61 @@
 import unittest
-from typing import Annotated, get_args
+from typing import Annotated, Any, Callable, Dict
 
-from grpcAPI.app import ProtoModel
+from grpcAPI.ctxinject.inject import inject_args
 from grpcAPI.ctxinject.model import Depends
-from grpcAPI.proto_inject import (
-    FromContext,
-    FromRequest,
-    extract_request,
-    validate_injectable_function,
-)
+from grpcAPI.ctxinject.sigcheck import func_signature_check
+from grpcAPI.proto_inject import FromContext, FromRequest
+from grpcAPI.proxy import IteratorProxy, Proxy
 from grpcAPI.types import Context, Stream
 
 
 def getdb() -> str:
-    return ""
+    return "sqlite"
 
 
-class MyRequest(ProtoModel):
+class MyRequest(Proxy):
     name: str
 
 
 async def handler1(
     req: MyRequest,
-) -> None:
-    return
+) -> str:
+    return req.name
 
 
-async def handler2(req: MyRequest, ctx: Context) -> None:
-    return
+async def handler2(req: MyRequest, ctx: Context) -> str:
+    return req.name + ctx.peer()
 
 
-async def handler3(req: MyRequest, ctx: Context, db: str = Depends(getdb)) -> None:
-    return
+async def handler3(req: MyRequest, ctx: Context, db: str = Depends(getdb)) -> str:
+    return req.name + ctx.peer() + db
 
 
 async def handler4(
-    req: MyRequest, ctx: Context, db: Annotated[str, Depends(getdb)]
-) -> None:
-    return
+    req: Annotated[MyRequest, "request"],
+    ctx: Context,
+    db: Annotated[str, Depends(getdb)],
+) -> str:
+    return req.name + ctx.peer() + db
 
 
-async def handler5(req: Stream[MyRequest], ctx: Context) -> None:
-    return
+async def handler5(req: Stream[MyRequest], ctx: Context) -> str:
+    names = ""
+    async for mr in req:
+        names += mr.name
+    return names
 
 
-async def handler6(name: str = FromRequest(MyRequest)) -> None:
-    return
+async def handler6(name: str = FromRequest(MyRequest)) -> str:
+    return name
 
 
-async def handler7(name: Annotated[str, FromRequest(MyRequest)]) -> None:
-    return
+async def handler7(name: Annotated[str, FromRequest(MyRequest)]) -> str:
+    return name
 
 
-async def handler8(mydb: Annotated[str, FromRequest(MyRequest, "name")]) -> None:
-    return
+async def handler8(mydb: Annotated[str, FromRequest(MyRequest, "name")]) -> str:
+    return mydb
 
 
 async def handler9(
@@ -62,94 +64,86 @@ async def handler9(
     return
 
 
-class TestValidateFunc(unittest.TestCase):
+class InnerMyRequest:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class MyContext:
+    def peer(self) -> str:
+        return "foobar"
+
+
+class TestValidateFunc(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self) -> None:
-        pass
 
-    def test_validate_1(self) -> None:
-        errors = validate_injectable_function(handler1)
-        self.assertEqual(len(errors), 0)
+        my_request = MyRequest(InnerMyRequest("foobar"))
+        context = MyContext()
 
-    def test_validate_2(self) -> None:
-        errors = validate_injectable_function(handler2)
-        self.assertEqual(len(errors), 0)
+        injctx = {MyRequest: my_request, Context: context}
 
-    def test_validate_3(self) -> None:
-        errors = validate_injectable_function(handler3)
-        self.assertEqual(len(errors), 0)
+        async def inject(
+            func: Callable[..., Any], inj_ctx: Dict[Any, Any] = injctx
+        ) -> Any:
+            errors = func_signature_check(func, [Proxy, Context], Stream)
+            self.assertEqual(len(errors), 0)
+            result_func = await inject_args(func, inj_ctx, False)
+            result = await result_func()
+            return result
 
-    def test_validate_4(self) -> None:
-        errors = validate_injectable_function(handler4)
-        self.assertEqual(len(errors), 0)
+        self.inject = inject
 
-    def test_validate_5(self) -> None:
-        errors = validate_injectable_function(handler5)
-        self.assertEqual(len(errors), 0)
+    async def test_inject1(self) -> None:
 
-    def test_validate_6(self) -> None:
-        errors = validate_injectable_function(handler6)
-        self.assertEqual(len(errors), 0)
+        result = await self.inject(handler1)
+        self.assertEqual(result, "foobar")
 
-    def test_validate_7(self) -> None:
-        errors = validate_injectable_function(handler7)
-        self.assertEqual(len(errors), 0)
+    async def test_inject2(self) -> None:
 
-    def test_validate_8(self) -> None:
-        errors = validate_injectable_function(handler8)
-        self.assertEqual(len(errors), 0)
+        result = await self.inject(handler2)
+        self.assertEqual(result, "foobarfoobar")
 
-    def test_validate_9(self) -> None:
-        errors = validate_injectable_function(handler9)
-        self.assertEqual(len(errors), 0)
+    async def test_inject3(self) -> None:
 
+        result = await self.inject(handler3)
+        self.assertEqual(result, "foobarfoobarsqlite")
 
-class TestExtractRequest(unittest.TestCase):
+    async def test_inject4(self) -> None:
 
-    def setUp(self) -> None:
-        pass
+        result = await self.inject(handler4)
+        self.assertEqual(result, "foobarfoobarsqlite")
 
-    def test_validate_1(self) -> None:
-        requests = extract_request(handler1)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
+    async def test_inject5(self) -> None:
 
-    def test_validate_2(self) -> None:
-        requests = extract_request(handler2)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
+        class MyRequestIterator:
+            names = ["foo", "bar"]
+            curr = 0
 
-    def test_validate_3(self) -> None:
-        requests = extract_request(handler3)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
+            def __aiter__(self) -> "MyRequestIterator":
+                return self
 
-    def test_validate_4(self) -> None:
-        requests = extract_request(handler4)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
+            async def __anext__(self) -> Any:
+                if self.curr >= len(self.names):
+                    self.curr = 0
+                    raise StopAsyncIteration
+                tgt = self.names[self.curr]
+                self.curr += 1
+                return tgt
 
-    def test_validate_5(self) -> None:
-        requests = extract_request(handler5)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(get_args(requests[0])[0], ProtoModel))
+        proxy_it = IteratorProxy(MyRequestIterator(), InnerMyRequest)
+        ctx = {Stream[MyRequest]: proxy_it, Context: MyContext()}
+        result = await self.inject(handler5, ctx)
+        self.assertEqual(result, "foobar")
 
-    def test_validate_6(self) -> None:
-        requests = extract_request(handler6)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
+    async def test_inject6(self) -> None:
+        result = await self.inject(handler6)
+        self.assertEqual(result, "foobar")
 
-    def test_validate_7(self) -> None:
-        requests = extract_request(handler7)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
+    async def test_inject7(self) -> None:
+        result = await self.inject(handler7)
+        self.assertEqual(result, "foobar")
 
-    def test_validate_8(self) -> None:
-        requests = extract_request(handler8)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
-
-    def test_validate_9(self) -> None:
-        requests = extract_request(handler9)
-        self.assertEqual(len(requests), 1)
-        self.assertTrue(issubclass(requests[0], ProtoModel))
+    async def test_inject8(self) -> None:
+        result = await self.inject(handler8)
+        self.assertEqual(result, "foobar")

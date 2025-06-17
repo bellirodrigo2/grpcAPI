@@ -199,7 +199,7 @@ def make_protos(
     proto_files: Dict[str, Dict[str, str]] = defaultdict(dict)
     for template in allmodules:
         rendered = template.render()
-        package = template.package if isinstance(template.package, str) else "NOPCKG"
+        package = str(template.package)
         proto_files[package][template.modulename] = rendered
 
     return proto_files

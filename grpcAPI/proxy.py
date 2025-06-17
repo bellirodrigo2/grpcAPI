@@ -25,7 +25,8 @@ class Proxy:
         if isinstance(self, enum.Enum):
             return
         if _wrapped:
-            self._wrapped = _wrapped
+            # self._wrapped = _wrapped
+            object.__setattr__(self, "_wrapped", _wrapped)
             return
 
         wrapped_class = getattr(self.__class__, "_wrapped_cls", None)
@@ -285,12 +286,13 @@ def bind_proxy(
 
 
 class IteratorProxy:
-    def __init__(self, aioreq_iter: Any) -> None:
+    def __init__(self, aioreq_iter: Any, proxy_cls: type[Proxy]) -> None:
         self._aiter = aioreq_iter
+        self.proxy_cls = proxy_cls
 
     def __aiter__(self) -> "IteratorProxy":
         return self
 
     async def __anext__(self) -> Any:
         raw = await self._aiter.__anext__()
-        return self.make_proxy(raw)
+        return self.proxy_cls(raw)

@@ -41,7 +41,7 @@ class ProtoProxy(Proxy):
     def ClearField(self, field_name: str) -> None:
         self._wrapped.ClearField(field_name)
 
-    def ListFields(self) -> list[tuple[FieldDescriptor, Any]]:
+    def ListFields(self) -> List[tuple[FieldDescriptor, Any]]:
         return self._wrapped.ListFields()
 
     def IsInitialized(self) -> bool:

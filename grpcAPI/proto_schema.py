@@ -31,8 +31,16 @@ def type_to_str(tp: type[Any]) -> str:
     return f"{name}[{args_str}]"
 
 
+class ProtoSchema(ISchema[Dict[str, Any]]):
+
+    def hash(self) -> str:
+        serial = self.serialize()
+        json_str = json.dumps(serial, sort_keys=True)
+        return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
+
+
 @dataclass
-class EnumSchema(ISchema[Dict[str, Any]]):
+class EnumSchema(ProtoSchema):
     cls: type[BaseEnum]
 
     def serialize(self) -> Dict[str, Any]:
@@ -44,14 +52,9 @@ class EnumSchema(ISchema[Dict[str, Any]]):
             "fields": sorted((member.name, member.value) for member in self.cls),
         }
 
-    def hash(self) -> str:
-        serial = self.serialize()
-        json_str = json.dumps(serial, sort_keys=True)
-        return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
-
 
 @dataclass
-class ClassSchema(ISchema[Dict[str, Any]]):
+class ClassSchema(ProtoSchema):
     cls: type[BaseMessage]
 
     def _get_fields(self) -> Set[Tuple[str, str, Optional[str]]]:
@@ -78,14 +81,9 @@ class ClassSchema(ISchema[Dict[str, Any]]):
             "fields": list(self._get_fields()),
         }
 
-    def hash(self) -> str:
-        serial = self.serialize()
-        json_str = json.dumps(serial, sort_keys=True)  # ordena chaves para consistência
-        return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
-
 
 @dataclass
-class MethodSchema(ISchema[Dict[str, Any]]):
+class MethodSchema(ProtoSchema):
     method: Callable[..., Any]
     type_based: Dict[str, type[Any]]  # one, type
     instance_based: Dict[str, Any]  # multiple, instance
@@ -117,57 +115,41 @@ class MethodSchema(ISchema[Dict[str, Any]]):
             "response": (False, {}),  # stream e classschema
         }
 
-    def hash(self) -> str:
-        return ""
+
+def get_class_schema(cls: type[Any]) -> ProtoSchema:
+    if issubclass(cls, BaseMessage):
+        return ClassSchema(cls)
+    if issubclass(cls, BaseEnum):
+        return EnumSchema(cls)
+    raise TypeError
 
 
 @dataclass
-class ModuleSchema(ISchema[Dict[str, Any]]):
+class ModuleSchema(ProtoSchema):
     module: IModule
 
     def serialize(self) -> Dict[str, Any]:
-        return {}
-        #     "version": self.module.version,
-        #     "protofile": self.module.name,
-        #     "package": self.module.package,
-        #     "imports": sorted(self.module.imports),
-        #     "options": dict(sorted(self.module.options.items())),
-        #     "comment": self.module.description,
-        #     "blocks": {
-        #         block.name: {
-        #             "name": block.name,
-        #             "fields": sorted(
-        #                 [
-        #                     {"name": f.name, "type": f.ftype, "number": f.number}
-        #                     for f in block.fields
-        #                 ],
-        #                 key=lambda x: x["number"],
-        #             ),
-        #             "comment": block.comment,
-        #             "options": block.options,
-        #             "reserved_indexes": sorted(block.reserved_index),
-        #             "reserved_names": sorted(block.reserved_keys),
-        #         }
-        #         for block in sorted(self.proto.blocks, key=lambda b: b.name)
-        #     },
-        # }
 
-    def hash(self) -> str:
-        return ""
-        # serialized = self.serialize()
-        # raw = json.dumps(serialized, sort_keys=True)
-        # return hashlib.sha256(raw.encode()).hexdigest()
+        return {
+            "name": self.module.name,
+            "options": self.module.options,
+            "objects": [],
+        }
 
 
 @dataclass
-class AppSchema(ISchema[Dict[str, Any]]):
+class AppSchema(ProtoSchema):
     app: List[IPackage]
 
     def serialize(self) -> Dict[str, Any]:
-        return {}
-
-    def hash(self) -> str:
-        return ""
+        app: Dict[Any, Any] = {}
+        for package in self.app:
+            if package.name not in app:
+                app[str(package.name)] = {}
+            for module in package.modules:
+                modules_schema = ModuleSchema(module)
+                app[str(package.name)][module.name] = modules_schema.serialize()
+        return app
 
 
 def create_app_schema(packages: List[IPackage]) -> str:

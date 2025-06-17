@@ -14,12 +14,15 @@ def compile(tgt_folder: str, protofile: str, output_dir: str) -> bool:
         raise Exception(f"File {protofile} does not exists")
 
     os.makedirs(output_dir, exist_ok=True)
-
+    init_file = Path(output_dir) / "__init__.py"
+    if not init_file.exists():
+        init_file.touch()
     result = protoc.main(
         [
             "grpc_tools.protoc",
             f"--proto_path={tgt_folder}",
             f"--python_out={output_dir}",
+            f"--grpc_python_out={output_dir}",
             str(filepath),
         ]
     )

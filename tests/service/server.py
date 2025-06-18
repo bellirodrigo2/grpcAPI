@@ -7,6 +7,8 @@ import grpc
 
 import tests.proto2.compiled.service_pb2 as pb2
 import tests.proto2.compiled.service_pb2_grpc as pb2_grpc
+from grpcAPI.ctxinject.inject import inject_args
+from grpcAPI.proto_inject import FromContext, FromRequest
 from grpcAPI.proto_proxy import (
     ProtoProxy,
     bind_proto_proxy,
@@ -22,19 +24,21 @@ class user_code(BaseEnum):
     INACTIVE = 1
 
 
-class user_input(ProtoProxy):
+class baseproto(ProtoProxy):
 
     @classmethod
     def protofile(cls) -> str:
         return "service"
 
+
+class user_input(baseproto):
     code: user_code
     age: int
     name: str
     affilliation: str
 
 
-class user(ProtoProxy):
+class user(baseproto):
     age: int
     id: int
     name: str
@@ -43,38 +47,41 @@ class user(ProtoProxy):
     inactive: Annotated[bool, OneOf("occupation")]
 
 
-def newuser(request: user_input, ctx: Context) -> user:
-    userproxy = user(age=request.age, id=0, name=request.name)
+source_folder = Path(__file__).parent.parent
+p = source_folder / "proto2" / "compiled"
+
+modules = import_py_files_from_folder(p, f"{source_folder.name}.proto2.compiled")
+bind_proto_proxy(user_input, modules)
+bind_proto_proxy(user, modules)
+
+
+async def newuser(
+    request: user_input,
+    userage: str = FromRequest(model=user_input, field="age"),
+    peer: str = FromContext(),
+) -> user:
+    userproxy = user(age=userage, id=0, name=request.name)
 
     key = request.code.name.lower()
     if key not in ("employee", "student", "inactive"):
         raise ValueError(f"Occupation = {key}")
 
     setattr(userproxy, key, request.affilliation)
-    print(ctx.peer())
+    print(f"Received newuser: '{userproxy}' from: '{peer}'")
+
     return userproxy
-
-
-# p = Path(__file__).parent.parent / "proto2" / "compiled"
-
-# modules = import_py_files_from_folder(p)
-# bind_proto_proxy(user_input, modules)
-# bind_proto_proxy(user, modules)
 
 
 class UserService(pb2_grpc.user_serviceServicer):
 
     async def newuser(self, request, context):
 
-        userproxy = pb2.user(age=request.age, id=0, name=request.name)
+        proxyreq = user_input(request)
+        ctx = {user_input: proxyreq, Context: context}
+        func = await inject_args(newuser, ctx)
 
-        key = user_code(request.code).name.lower()
-        if key not in ("employee", "student", "inactive"):
-            raise ValueError(f"Occupation = {key}")
-
-        setattr(userproxy, key, request.affilliation)
-        print(f"Received newuser: {userproxy}")
-        return userproxy
+        proxy_response = await func()
+        return proxy_response.unwrap
 
     async def manynewuser(self, request_iterator, context):
         users = []

@@ -1,5 +1,6 @@
 import enum
 import importlib.util
+import sys
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -333,18 +334,24 @@ def _get_class(
     return get(protofile(), mapcls.__name__)
 
 
-def import_py_files_from_folder(folder: Path) -> dict[str, ModuleType]:
+def import_py_files_from_folder(
+    folder: Path, package_prefix: str = ""
+) -> dict[str, ModuleType]:
     modules: dict[str, ModuleType] = {}
+
     for py_file in folder.glob("*.py"):
         if py_file.name == "__init__.py":
             continue
 
         module_name = py_file.stem
-        spec = importlib.util.spec_from_file_location(module_name, py_file)
-        print("-->", spec)
+        full_module_name = module_name
+        if package_prefix:
+            full_module_name = f"{package_prefix}.{module_name}"
+        spec = importlib.util.spec_from_file_location(full_module_name, py_file)
+
         if spec and spec.loader:
             module = importlib.util.module_from_spec(spec)
-            # sys.modules[module_name] = module  # opcional
+            sys.modules[full_module_name] = module
             spec.loader.exec_module(module)
             normalized_name = module_name.replace("_pb2", "")
             modules[normalized_name] = module

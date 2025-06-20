@@ -115,8 +115,13 @@ async def bilateralnewuser(request: Stream[user_input], ctx: Context) -> Stream[
 
 class UserService(service_grpc.user_serviceServicer):
 
-    def __init__(self, newuser_mapped) -> None:
+    def __init__(
+        self, newuser_mapped, manynewuser_mapped, getusers_mapped, bilateral_mapped
+    ) -> None:
         self.newuser_mapped = newuser_mapped
+        self.manynewuser_mapped = manynewuser_mapped
+        self.getusers_mapped = getusers_mapped
+        self.bilateral_mapped = bilateral_mapped
 
     async def newuser(self, request, context):
 
@@ -129,35 +134,40 @@ class UserService(service_grpc.user_serviceServicer):
     async def manynewuser(self, request_iterator, context):
         req_iter = IteratorProxy(request_iterator, user_input)
         ctx = {Stream[user_input]: req_iter, Context: context}
-
-        func = await inject_args(manynewuser, ctx)
-
-        proxy_response = await func()
+        kwargs = await resolve_mapped_ctx(ctx, self.manynewuser_mapped)
+        proxy_response = await manynewuser(**kwargs)
         return proxy_response.unwrap
 
     async def getusers(self, request, context):
         proxyreq = names_id(request)
         ctx = {names_id: proxyreq, Context: context}
-        func = await inject_args(getusers, ctx)
-
-        async for resp in func():
+        kwargs = await resolve_mapped_ctx(ctx, self.getusers_mapped)
+        async for resp in getusers(**kwargs):
             yield resp.unwrap
 
     async def bilateralnewuser(self, request_iterator, context):
         req_iter = IteratorProxy(request_iterator, user_input)
         ctx = {Stream[user_input]: req_iter, Context: context}
-
-        func = await inject_args(bilateralnewuser, ctx)
-
-        async for resp in func():
+        kwargs = await resolve_mapped_ctx(ctx, self.bilateral_mapped)
+        async for resp in bilateralnewuser(**kwargs):
             yield resp.unwrap
 
 
 async def serve():
     server = grpc.aio.server()
 
-    mapped = await get_mapped_ctx(newuser, {user_input: None, Context: None})
-    service = UserService(mapped)
+    unary_mapped = await get_mapped_ctx(newuser, {user_input: None, Context: None})
+    client_mapped = await get_mapped_ctx(
+        manynewuser, {Stream[user_input]: None, Context: None}
+    )
+    getusers_mapped = await get_mapped_ctx(getusers, {names_id: None, Context: None})
+    bilateral_mapped = await get_mapped_ctx(
+        bilateralnewuser, {Stream[user_input]: None, Context: None}
+    )
+
+    service = UserService(
+        unary_mapped, client_mapped, getusers_mapped, bilateral_mapped
+    )
     service_grpc.add_user_serviceServicer_to_server(service, server)
     server.add_insecure_port("[::]:50051")
     await server.start()

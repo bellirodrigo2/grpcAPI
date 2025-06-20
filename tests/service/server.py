@@ -1,26 +1,25 @@
 # server.py
 import asyncio
+import sys
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, List
 
 import grpc
 
-import tests.proto2.compiled.service_pb2 as pb2
-import tests.proto2.compiled.service_pb2_grpc as pb2_grpc
-from grpcAPI.ctxinject.inject import inject_args
+from grpcAPI.ctxinject.inject import get_mapped_ctx, inject_args, resolve_mapped_ctx
 from grpcAPI.proto_inject import FromContext, FromRequest
 from grpcAPI.proto_proxy import (
     ProtoProxy,
     bind_proto_proxy,
     import_py_files_from_folder,
 )
-from grpcAPI.types import BaseEnum, Context
-from grpcAPI.types.base import OneOf
+from grpcAPI.proxy import IteratorProxy
+from grpcAPI.types import BaseEnum, Context, Int32, OneOf, Stream
 
 
 class user_code(BaseEnum):
     EMPLOYEE = 0
-    STUDENT = -247
+    SCHOOL = -247
     INACTIVE = 1
 
 
@@ -47,12 +46,26 @@ class user(baseproto):
     inactive: Annotated[bool, OneOf("occupation")]
 
 
+class user_list(baseproto):
+    users: List[user]
+    index: Int32
+
+
+class names_id(baseproto):
+    ids: List[int]
+
+
 source_folder = Path(__file__).parent.parent
 p = source_folder / "proto2" / "compiled"
+sys.path.append(str(p))
 
 modules = import_py_files_from_folder(p, f"{source_folder.name}.proto2.compiled")
 bind_proto_proxy(user_input, modules)
 bind_proto_proxy(user, modules)
+bind_proto_proxy(user_list, modules)
+bind_proto_proxy(names_id, modules)
+
+service_grpc = modules["service_grpc"]
 
 
 async def newuser(
@@ -63,52 +76,89 @@ async def newuser(
     userproxy = user(age=userage, id=0, name=request.name)
 
     key = request.code.name.lower()
-    if key not in ("employee", "student", "inactive"):
+    if key not in ("employee", "school", "inactive"):
         raise ValueError(f"Occupation = {key}")
-
-    setattr(userproxy, key, request.affilliation)
+    affiliation = (
+        request.affilliation if key != "inactive" else bool(request.affilliation)
+    )
+    setattr(userproxy, key, affiliation)
     print(f"Received newuser: '{userproxy}' from: '{peer}'")
 
     return userproxy
 
 
-class UserService(pb2_grpc.user_serviceServicer):
+async def manynewuser(request: Stream[user_input], ctx: Context) -> user_list:
+
+    users = []
+    try:
+        async for req in request:
+            user_obj = await newuser(req, req.age, ctx.peer())
+            users.append(user_obj)
+    except Exception as e:
+        print(f"[Server] Error in manynewuser: {e}")
+        raise
+
+    return user_list(users=users, index=0)
+
+
+async def getusers(request: names_id) -> Stream[user]:
+    print(f"getusers called with ids: {request.ids}")
+    for i in request.ids:
+        yield user(age=30 + i, id=i, name=f"User {i}", inactive=True)
+
+
+async def bilateralnewuser(request: Stream[user_input], ctx: Context) -> Stream[user]:
+    async for req in request:
+        print(f"Bilateral stream received: {req}")
+        yield user(age=req.age, id=req.code, name=req.name, employee="StreamInc")
+
+
+class UserService(service_grpc.user_serviceServicer):
+
+    def __init__(self, newuser_mapped) -> None:
+        self.newuser_mapped = newuser_mapped
 
     async def newuser(self, request, context):
 
         proxyreq = user_input(request)
         ctx = {user_input: proxyreq, Context: context}
-        func = await inject_args(newuser, ctx)
+        kwargs = await resolve_mapped_ctx(ctx, self.newuser_mapped)
+        proxy_response = await newuser(**kwargs)
+        return proxy_response.unwrap
+
+    async def manynewuser(self, request_iterator, context):
+        req_iter = IteratorProxy(request_iterator, user_input)
+        ctx = {Stream[user_input]: req_iter, Context: context}
+
+        func = await inject_args(manynewuser, ctx)
 
         proxy_response = await func()
         return proxy_response.unwrap
 
-    async def manynewuser(self, request_iterator, context):
-        users = []
-        async for req in request_iterator:
-            print(f"Received manynewuser item: {req}")
-            u = pb2.user(
-                age=req.age, id=len(users) + 1, name=req.name, school="School X"
-            )
-            users.append(u)
-        return pb2.user_list(users=users, index=42)
-
     async def getusers(self, request, context):
-        print(f"getusers called with ids: {request.ids}")
-        for i in request.ids:
-            yield pb2.user(age=30 + i, id=i, name=f"User {i}", inactive=True)
+        proxyreq = names_id(request)
+        ctx = {names_id: proxyreq, Context: context}
+        func = await inject_args(getusers, ctx)
+
+        async for resp in func():
+            yield resp.unwrap
 
     async def bilateralnewuser(self, request_iterator, context):
-        async for req in request_iterator:
-            print(f"Bilateral stream received: {req}")
-            yield pb2.user(
-                age=req.age, id=req.code, name=req.name, employer="StreamInc"
-            )
+        req_iter = IteratorProxy(request_iterator, user_input)
+        ctx = {Stream[user_input]: req_iter, Context: context}
+
+        func = await inject_args(bilateralnewuser, ctx)
+
+        async for resp in func():
+            yield resp.unwrap
 
 
 async def serve():
     server = grpc.aio.server()
-    pb2_grpc.add_user_serviceServicer_to_server(UserService(), server)
+
+    mapped = await get_mapped_ctx(newuser, {user_input: None, Context: None})
+    service = UserService(mapped)
+    service_grpc.add_user_serviceServicer_to_server(service, server)
     server.add_insecure_port("[::]:50051")
     await server.start()
     print("Server started on :50051")

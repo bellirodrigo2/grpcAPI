@@ -1,4 +1,11 @@
+import sys
+from pathlib import Path
+
 import grpc
+
+source_folder = Path(__file__).parent.parent
+p = source_folder / "proto2" / "compiled"
+sys.path.append(str(p))
 
 from tests.proto2.compiled import service_pb2, service_pb2_grpc
 

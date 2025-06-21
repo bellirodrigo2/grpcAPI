@@ -88,6 +88,7 @@ async def map_ctx(
             dep_func = overrides.get(
                 callable_instance.default, callable_instance.default
             )
+            callable_instance._default = dep_func
             dep_args = get_func_args(dep_func)
             dep_ctx_map = await map_ctx(
                 dep_args, context, allow_incomplete, validate, overrides

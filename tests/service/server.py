@@ -2,7 +2,7 @@
 import asyncio
 import sys
 from pathlib import Path
-from typing import Annotated, List
+from typing import Annotated, Any, AsyncGenerator, Callable, Dict, List
 
 import grpc
 
@@ -113,6 +113,32 @@ async def bilateralnewuser(request: Stream[user_input], ctx: Context) -> Stream[
         yield user(age=req.age, id=req.code, name=req.name, employee="StreamInc")
 
 
+def get_ctx(req_type: type[Any], request: Any, context: Any) -> Dict[Any, Any]:
+    proxyreq = req_type(request)
+    return {req_type: proxyreq, Context: context}
+
+
+def get_stream_ctx(req_type: type[Any], request: Any, context: Any) -> Dict[Any, Any]:
+    req_iter = IteratorProxy(request, req_type)
+    return {Stream[req_type]: req_iter, Context: context}
+
+
+async def resolve_method(
+    func: Callable[..., Any], ctx: Dict[Any, Any], mapped_ctx: Dict[Any, Any]
+) -> Any:
+    kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
+    proxy_response = await func(**kwargs)
+    return proxy_response.unwrap
+
+
+async def resolve_stream_method(
+    func: Callable[..., Any], ctx: Dict[Any, Any], mapped_ctx: Dict[Any, Any]
+):
+    kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
+    async for resp in func(**kwargs):
+        yield resp.unwrap
+
+
 class UserService(service_grpc.user_serviceServicer):
 
     def __init__(
@@ -125,32 +151,24 @@ class UserService(service_grpc.user_serviceServicer):
 
     async def newuser(self, request, context):
 
-        proxyreq = user_input(request)
-        ctx = {user_input: proxyreq, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, self.newuser_mapped)
-        proxy_response = await newuser(**kwargs)
-        return proxy_response.unwrap
+        ctx = get_ctx(user_input, request, context)
+        return await resolve_method(newuser, ctx, self.newuser_mapped)
 
     async def manynewuser(self, request_iterator, context):
-        req_iter = IteratorProxy(request_iterator, user_input)
-        ctx = {Stream[user_input]: req_iter, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, self.manynewuser_mapped)
-        proxy_response = await manynewuser(**kwargs)
-        return proxy_response.unwrap
+        ctx = get_stream_ctx(user_input, request_iterator, context)
+        return await resolve_method(manynewuser, ctx, self.manynewuser_mapped)
 
     async def getusers(self, request, context):
-        proxyreq = names_id(request)
-        ctx = {names_id: proxyreq, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, self.getusers_mapped)
-        async for resp in getusers(**kwargs):
-            yield resp.unwrap
+        ctx = get_ctx(names_id, request, context)
+        async for resp in resolve_stream_method(getusers, ctx, self.getusers_mapped):
+            yield resp
 
     async def bilateralnewuser(self, request_iterator, context):
-        req_iter = IteratorProxy(request_iterator, user_input)
-        ctx = {Stream[user_input]: req_iter, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, self.bilateral_mapped)
-        async for resp in bilateralnewuser(**kwargs):
-            yield resp.unwrap
+        ctx = get_stream_ctx(user_input, request_iterator, context)
+        async for resp in resolve_stream_method(
+            bilateralnewuser, ctx, self.bilateral_mapped
+        ):
+            yield resp
 
 
 async def serve():

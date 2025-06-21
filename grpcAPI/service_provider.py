@@ -1,7 +1,6 @@
-from types import CoroutineType
-from typing import Any, AsyncGenerator, Callable, Dict, Literal
+from typing import Any, Callable, Dict
 
-from grpcAPI.ctxinject.inject import get_mapped_ctx, inject_args, resolve_mapped_ctx
+from grpcAPI.ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
 from grpcAPI.proxy import IteratorProxy
 from grpcAPI.types import IService
 from grpcAPI.types.context import Context
@@ -9,66 +8,58 @@ from grpcAPI.types.method import Stream
 
 
 def make_service_class(service: IService, modules: Dict[Any, Any]) -> type[Any]:
+    # dado o service
+    # descobrir se é unary, client_stream, server_stream ou bilateral
+    # descobrir qual o request model
+    # extract_request from proto_inject
     pass
 
 
-def make_method(
+async def make_method(
     request_type: type[Any],
     func: Callable[..., Any],
-    method_type: Literal["unary", "client_stream", "server_stream", "bilateral"],
+    request_stream: bool,
+    response_stream: bool,
 ) -> Callable[..., Any]:
-    pass
+
+    getctx = get_stream_ctx if request_stream else get_ctx
+
+    req_t = Stream[request_type] if request_stream else request_type
+    mapped_ctx = await get_mapped_ctx(func, {req_t: None, Context: None})
+
+    async def method(self, request, context):
+        ctx = getctx(request_type, request, context)
+        return await resolve_method(func, ctx, mapped_ctx)
+
+    async def stream_method(self, request, context):
+        ctx = getctx(request_type, request, context)
+        async for resp in resolve_stream_method(func, ctx, mapped_ctx):
+            yield resp
+
+    return stream_method if response_stream else method
 
 
-async def make_unary(request_type: type[Any], method: Callable[..., Any]):
-    mapped_ctx = await get_mapped_ctx(
-        method, context={request_type: None, Context: None}
-    )
-
-    async def unary(self, request, context):
-        proxyreq = request_type(request)
-        ctx = {request_type: proxyreq, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
-        proxy_response = await method(**kwargs)
-        return proxy_response.unwrap
-
-    return unary
+def get_ctx(req_type: type[Any], request: Any, context: Any) -> Dict[Any, Any]:
+    proxyreq = req_type(request)
+    return {req_type: proxyreq, Context: context}
 
 
-def make_client_stream(
-    request_type: type[Any], method: Callable[..., Any], mapped_ctx: Dict[Any, Any]
+def get_stream_ctx(req_type: type[Any], request: Any, context: Any) -> Dict[Any, Any]:
+    req_iter = IteratorProxy(request, req_type)
+    return {Stream[req_type]: req_iter, Context: context}
+
+
+async def resolve_method(
+    func: Callable[..., Any], ctx: Dict[Any, Any], mapped_ctx: Dict[Any, Any]
+) -> Any:
+    kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
+    proxy_response = await func(**kwargs)
+    return proxy_response.unwrap
+
+
+async def resolve_stream_method(
+    func: Callable[..., Any], ctx: Dict[Any, Any], mapped_ctx: Dict[Any, Any]
 ):
-    async def client_stream(self, request_iterator, context):
-        req_iter = IteratorProxy(request_iterator, request_type)
-        ctx = {Stream[request_type]: req_iter, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
-        proxy_response = await method(**kwargs)
-        return proxy_response.unwrap
-
-    return client_stream
-
-
-def make_server_stream(
-    request_type: type[Any], method: Callable[..., Any], mapped_ctx: Dict[Any, Any]
-):
-    async def server_stream(self, request, context):
-        proxyreq = request_type(request)
-        ctx = {request_type: proxyreq, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
-        async for resp in method(**kwargs):
-            yield resp.unwrap
-
-    return server_stream
-
-
-def make_bilateral(
-    request_type: type[Any], method: Callable[..., Any], mapped_ctx: Dict[Any, Any]
-):
-    async def bilateral(self, request_iterator, context):
-        req_iter = IteratorProxy(request_iterator, request_type)
-        ctx = {Stream[request_type]: req_iter, Context: context}
-        kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
-        async for resp in method(**kwargs):
-            yield resp.unwrap
-
-    return bilateral
+    kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
+    async for resp in func(**kwargs):
+        yield resp.unwrap

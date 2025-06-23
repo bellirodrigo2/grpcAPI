@@ -146,12 +146,13 @@ async def get_mapped_ctx(
     context: Dict[Union[str, type], Any],
     allow_incomplete: bool = True,
     validate: bool = True,
-    transform_func_args: Optional[TransformFunction] = None,
+    transform_func: Optional[Callable[[Callable[..., Any]], Callable[..., Any]]] = None,
     overrides: Optional[Dict[Callable[..., Any], Callable[..., Any]]] = None,
 ) -> Dict[str, Any]:
+    if transform_func is not None:
+        func = transform_func(func)
+
     funcargs = get_func_args(func)
-    if transform_func_args is not None:
-        funcargs = transform_func_args(funcargs, context)
 
     return await map_ctx(funcargs, context, allow_incomplete, validate, overrides)
 
@@ -161,11 +162,11 @@ async def inject_args(
     context: Dict[Union[str, type], Any],
     allow_incomplete: bool = True,
     validate: bool = True,
-    transform_func_args: Optional[TransformFunction] = None,
+    transform_func: Optional[Callable[[Callable[..., Any]], Callable[..., Any]]] = None,
     overrides: Optional[Dict[Callable[..., Any], Callable[..., Any]]] = None,
 ) -> partial[Any]:
     mapped_ctx = await get_mapped_ctx(
-        func, context, allow_incomplete, validate, transform_func_args, overrides
+        func, context, allow_incomplete, validate, transform_func, overrides
     )
     resolved = await resolve_mapped_ctx(context, mapped_ctx)
     return partial(func, **resolved)

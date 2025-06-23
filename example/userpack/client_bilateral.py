@@ -4,29 +4,30 @@ from pathlib import Path
 
 import grpc
 
-source_folder = Path(__file__).parent.parent
-sys.path.append(str(source_folder / "proto2" / "compiled"))
+from grpcAPI.module_import import import_modules
 
-
-from tests.proto2.compiled import service_pb2, service_pb2_grpc
+p = Path(__file__).parent / "proto"
+modules = import_modules(p, ["compiled"])
+from example.userpack.proto.compiled.pack1 import mod1_pb2
+from example.userpack.proto.compiled.pack2 import mod2_pb2_grpc
 
 
 def generate_requests():
     users = [
-        service_pb2.user_input(
-            code=service_pb2.EMPLOYEE,
+        mod1_pb2.UserInput(
+            code=mod1_pb2.EMPLOYEE,
             age=35,
             name="Diana",
             affilliation="Globex",
         ),
-        service_pb2.user_input(
-            code=service_pb2.SCHOOL,
+        mod1_pb2.UserInput(
+            code=mod1_pb2.SCHOOL,
             age=20,
             name="Evan",
             affilliation="Springfield College",
         ),
-        service_pb2.user_input(
-            code=service_pb2.INACTIVE,
+        mod1_pb2.UserInput(
+            code=mod1_pb2.INACTIVE,
             age=50,
             name="Frank",
             affilliation="",  # Inativo não requer affilliation textual
@@ -40,7 +41,7 @@ def generate_requests():
 
 def run():
     with grpc.insecure_channel("localhost:50051") as channel:
-        stub = service_pb2_grpc.user_serviceStub(channel)
+        stub = mod2_pb2_grpc.user_serviceStub(channel)
 
         responses = stub.bilateralnewuser(generate_requests())
 

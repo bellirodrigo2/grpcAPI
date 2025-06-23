@@ -244,8 +244,10 @@ def bind_proxy(
 ) -> None:
 
     tgtcls = tgtcls or mapcls
-    if hasattr(tgtcls, "_wrapped_cls"):
+    if "_wrapped_cls" in tgtcls.__dict__:
         return
+    # if hasattr(tgtcls, "_wrapped_cls"):
+    # return
 
     # bind wrapped class constructor
     tgtcls._wrapped_cls = wrapped_class
@@ -253,7 +255,6 @@ def bind_proxy(
     fields = map_model_fields(mapcls)
     slot_names = tuple(f.name for f in fields)
     tgtcls.__slots__ = slot_names + ("_wrapped",)
-
     proto_kwargs: Dict[str, Callable[[Any], Any]] = {}
 
     for field in fields:
@@ -280,6 +281,8 @@ def bind_proxy(
                     f" {tgtcls.__name__}.__init__()  got an unexpected keyword argument '{k}'"
                 )
             constructor[k] = proto_kwargs[k](v)
+            # if k in proto_kwargs:
+            # constructor[k] = proto_kwargs[k](v)
         return constructor
 
     tgtcls._wrapped_kwargs = set_constructor

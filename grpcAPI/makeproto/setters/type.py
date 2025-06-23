@@ -3,8 +3,13 @@ from typing import Any, Tuple, get_args, get_origin
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, Method
 from grpcAPI.makeproto.report import CompileErrorCode, CompileReport
-from grpcAPI.types import DEFAULT_PRIMITIVES, BaseProto, if_stream_get_type
-from grpcAPI.types.message import BaseEnum, BaseMessage
+from grpcAPI.types import (
+    DEFAULT_PRIMITIVES,
+    BaseEnum,
+    BaseMessage,
+    BaseProto,
+    get_func_arg_info,
+)
 from grpcAPI.types.types import BaseField
 
 
@@ -41,13 +46,6 @@ def get_type_str(bt: type[Any], block_package: str) -> str:
         value_type_str = get_base_type_str(value_type, block_package)
         return f"map<{key_type_str}, {value_type_str}>"
     return get_base_type_str(bt, block_package)
-
-
-def get_func_arg_info(tgt: type[Any]) -> Tuple[type[Any], bool]:
-    argtype = if_stream_get_type(tgt)
-    if argtype is not None:
-        return argtype, True
-    return tgt, False
 
 
 class TypeSetter(CompilerPass):

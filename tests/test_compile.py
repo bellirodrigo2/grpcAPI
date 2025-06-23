@@ -6,6 +6,7 @@ from pathlib import Path
 from grpcAPI.app import Package
 from grpcAPI.makeproto.main import make_protos
 from grpcAPI.makeproto.protoc_compiler import compile
+from grpcAPI.proto_inject import extract_request
 from tests.test_app_helper import make_app
 
 app = make_app()
@@ -24,7 +25,7 @@ class TestCompileApp(unittest.TestCase):
             # pass
 
     def test_compile_proto(self) -> None:
-        protos = make_protos(self.app.packages, {})
+        protos = make_protos(self.app.packages, {}, convert_arg=extract_request)
         if protos is None:
             raise
         for package, module_dict in protos.items():

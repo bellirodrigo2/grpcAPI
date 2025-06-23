@@ -30,6 +30,7 @@ __all__ = [
     "get_BaseMessage",
     "_NoPackage",
     "if_stream_get_type",
+    "get_func_arg_info",
     "BaseEnum",
     "IService",
     "IMethod",
@@ -50,7 +51,7 @@ from grpcAPI.types.message import (
     get_module,
     is_BaseMessage,
 )
-from grpcAPI.types.method import Stream, if_stream_get_type
+from grpcAPI.types.method import Stream, get_func_arg_info, if_stream_get_type
 from grpcAPI.types.types import (
     DEFAULT_PRIMITIVES,
     Bool,

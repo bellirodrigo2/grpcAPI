@@ -336,8 +336,8 @@ def _get_class(
 
 def import_py_files_from_folder(
     folder: Path, package_prefix: str = ""
-) -> dict[str, ModuleType]:
-    modules: dict[str, ModuleType] = {}
+) -> Dict[str, ModuleType]:
+    modules: Dict[str, ModuleType] = {}
 
     for py_file in folder.glob("*.py"):
         if py_file.name == "__init__.py":

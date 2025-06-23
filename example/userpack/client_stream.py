@@ -3,33 +3,35 @@ from pathlib import Path
 
 import grpc
 
-source_folder = Path(__file__).parent.parent
-sys.path.append(str(source_folder / "proto2" / "compiled"))
+from grpcAPI.module_import import import_modules
 
-from tests.proto2.compiled import service_pb2, service_pb2_grpc
+p = Path(__file__).parent / "proto"
+modules = import_modules(p, ["compiled"])
+from example.userpack.proto.compiled.pack1 import mod1_pb2
+from example.userpack.proto.compiled.pack2 import mod2_pb2_grpc
 
 
 def run() -> None:
     # 1) Cria canal síncrono
     with grpc.insecure_channel("localhost:50051") as channel:
-        stub = service_pb2_grpc.user_serviceStub(channel)
+        stub = mod2_pb2_grpc.user_serviceStub(channel)
 
         # 2) Prepara lista de requests
         requests = [
-            service_pb2.user_input(
-                code=service_pb2.EMPLOYEE,
+            mod1_pb2.UserInput(
+                code=mod1_pb2.EMPLOYEE,
                 age=28,
                 name="Alice",
                 affilliation="ACME Corp",
             ),
-            service_pb2.user_input(
-                code=service_pb2.SCHOOL,
+            mod1_pb2.UserInput(
+                code=mod1_pb2.SCHOOL,
                 age=22,
                 name="Bob",
                 affilliation="UniX University",
             ),
-            service_pb2.user_input(
-                code=service_pb2.INACTIVE, age=45, name="Charlie", affilliation=""
+            mod1_pb2.UserInput(
+                code=mod1_pb2.INACTIVE, age=45, name="Charlie", affilliation=""
             ),
         ]
 

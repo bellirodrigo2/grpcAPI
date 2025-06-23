@@ -3,21 +3,20 @@ from pathlib import Path
 
 import grpc
 
-# Configuração de path para os stubs gerados
-source_folder = Path(__file__).parent.parent
-p = source_folder / "proto2" / "compiled"
-sys.path.append(str(p))
+from grpcAPI.module_import import import_modules
 
-# Importação dos stubs gerados
-from tests.proto2.compiled import service_pb2, service_pb2_grpc
+p = Path(__file__).parent / "proto"
+modules = import_modules(p, ["compiled"])
+from example.userpack.proto.compiled.pack1 import mod1_pb2
+from example.userpack.proto.compiled.pack2 import mod2_pb2_grpc
 
 
 def run() -> None:
     with grpc.insecure_channel("localhost:50051") as channel:
-        stub = service_pb2_grpc.user_serviceStub(channel)
+        stub = mod2_pb2_grpc.user_serviceStub(channel)
 
         # Cria a requisição com os IDs
-        request = service_pb2.names_id(ids=[1, 2, 3, 4])
+        request = mod1_pb2.UserNames(ids=[1, 2, 3, 4])
 
         # Chama o método que retorna um stream
         response_iterator = stub.getusers(request)

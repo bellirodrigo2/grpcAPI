@@ -1,0 +1,19 @@
+{
+  "hash": "95dc831c7016db24363777a9a3692bd97e21ae6dd9159264ae4f7b288a9663f8",
+  "schema": {
+    "pack1": {
+      "mod1": {
+        "name": "mod1",
+        "objects": [],
+        "options": {}
+      }
+    },
+    "pack2": {
+      "mod2": {
+        "name": "mod2",
+        "objects": [],
+        "options": {}
+      }
+    }
+  }
+}

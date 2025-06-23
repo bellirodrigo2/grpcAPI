@@ -146,6 +146,11 @@ def get_args(
     return [arg.basetype for arg in args]
 
 
+def get_return_type(func: Callable[..., Any]) -> type[Any]:
+    returntype = map_return_type(func)
+    return returntype.basetype
+
+
 def make_method(
     func: Callable[..., Any],
     block: Optional[ServiceBlock] = None,
@@ -157,11 +162,11 @@ def make_method(
     getargs = getargs or get_args
     req_types = getargs(func)
 
-    returntype = map_return_type(func)
+    returntype = get_return_type(func)
     return Method(
         name=func.__name__,
         request_type=req_types,
-        response_type=returntype.basetype,
+        response_type=returntype,
         block=block,
         method_func=func,
         number=0,

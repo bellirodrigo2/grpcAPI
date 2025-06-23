@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator
-from typing import Any, Optional, get_args, get_origin
+from typing import Any, Optional, Tuple, get_args, get_origin
 
 Stream = AsyncIterator
 
@@ -10,11 +10,8 @@ def if_stream_get_type(bt: type[Any]) -> Optional[type[Any]]:
     return None
 
 
-# async def unary_call(request: UserRequest) -> UserResponse:
-#     pass
-# async def client_stream(stream: Stream[FileChunk]) -> UploadSummary:
-#     pass
-# async def serverStream(request: ItemQuery) -> Stream[ItemResponse]:
-#     pass
-# async def bi_direct_stream(stream: Stream[FileChunk]) -> Stream[UploadSummary]:
-#     pass
+def get_func_arg_info(tgt: type[Any]) -> Tuple[type[Any], bool]:
+    argtype = if_stream_get_type(tgt)
+    if argtype is not None:
+        return argtype, True
+    return tgt, False

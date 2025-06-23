@@ -132,14 +132,12 @@ T = TypeVar("T")
 
 def inject_validation(
     func: Callable[..., Any],
-    argproc: Optional[Dict[Tuple[type[Any], type[Any]], Callable[..., Any]]] = None,
-    extracttype: Optional[Callable[[type[T]], type[T]]] = None,
+    argproc: Dict[Tuple[type[Any], type[Any]], Callable[..., Any]] = arg_proc,
+    extracttype: Callable[[type[T]], type[T]] = extract_type,
 ) -> None:
 
     args = get_func_args(func)
 
-    argproc = argproc or arg_proc
-    extracttype = extracttype or extract_type
     for arg in args:
         instance = arg.getinstance(ModelFieldInject)
         if instance is None:

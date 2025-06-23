@@ -45,6 +45,7 @@ def make_app() -> App:
 
         class UserNames(mod1.ProtoModel):
             ids: List[int]
+            employee: Annotated[str, OneOf("occupation")]
 
         class UserList(mod1.ProtoModel):
             users: List[User]

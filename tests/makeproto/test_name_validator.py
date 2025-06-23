@@ -71,8 +71,7 @@ class TestBlockNameValidator(unittest.TestCase):
         make_oneof_block("OO1", block=self.block)
         make_oneof_block("OO1", block=self.block)
         self.validator.execute([self.block], self.context)
-        self.assertEqual(len(self.context), 1)
-        self.assertTrue(all(msg == "E104" for msg in list_ctx_error_code(self.context)))
+        self.assertEqual(len(self.context), 0)
 
 
 class TestFieldNameValidator(unittest.TestCase):

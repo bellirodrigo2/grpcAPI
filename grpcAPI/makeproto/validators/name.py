@@ -78,7 +78,8 @@ class BlockNameValidator(NameValidator):
                 override_msg=f"Duplicated Block name '{name}' in the block list",
             )
         else:
-            self.used_names.add(name)
+            if not isinstance(block, OneOfBlock):
+                self.used_names.add(name)
         oneofs = [item for item in block.fields if isinstance(item, OneOfBlock)]
         for oneof in oneofs:
             oneof.accept(self)

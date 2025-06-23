@@ -43,6 +43,12 @@ message Product {
   Code code = 3;
   ProductArea area = 4;
   Enum2 enum2 = 5;
+    oneof oo1 {
+  bool o1 = 9;
+  string o2 = 10;
+  int64 o3 = 11;
+  string o4 = 12;
+}
 }
 message Requisition {
   User user = 1;

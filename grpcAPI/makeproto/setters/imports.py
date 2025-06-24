@@ -2,7 +2,7 @@
 # import "pack1/file2.proto";
 # import "pack2/file2.proto";
 
-from typing import Any, Optional, get_args, get_origin
+from typing import Any, Optional, Type, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, EnumField, Field
@@ -11,14 +11,14 @@ from grpcAPI.types.method import if_stream_get_type
 from grpcAPI.types.types import DEFAULT_PRIMITIVES, BaseField
 
 
-def get_type(bt: type[Any]) -> type[Any]:
+def get_type(bt: Type[Any]) -> Type[Any]:
 
     if get_origin(bt) in {list, dict}:
         return get_args(bt)[0]
     return bt
 
 
-def get_func_arg(bt: type[Any]) -> type[Any]:
+def get_func_arg(bt: Type[Any]) -> Type[Any]:
     basetype = if_stream_get_type(bt)
     return basetype or bt
 
@@ -30,7 +30,7 @@ class ImportsSetter(CompilerPass):
             field.accept(self)
 
     def _get_imports(
-        self, ftype: type[Any], block_package: str, block_protofile: str
+        self, ftype: Type[Any], block_package: str, block_protofile: str
     ) -> Optional[str]:
 
         if ftype in DEFAULT_PRIMITIVES or issubclass(ftype, BaseField):
@@ -48,7 +48,7 @@ class ImportsSetter(CompilerPass):
             import_str = f"{ftype_proto}"
         return import_str
 
-    def _set_imports(self, field: Field, ftype: type[Any]) -> None:
+    def _set_imports(self, field: Field, ftype: Type[Any]) -> None:
         try:
             import_str = self._get_imports(
                 ftype, field.block.package, field.block.protofile

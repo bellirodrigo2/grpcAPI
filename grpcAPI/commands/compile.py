@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict
 
@@ -24,8 +25,15 @@ def compile_proto(
     settings = {**std_settings, **user_settings}
 
     packs = app.packages
+
+    # add caster do signature check
+    p = validate_injectable_function
+    caster_tuples = list(app._caster.keys())
+    validate_injectable_function_wrapper = partial(
+        p.func, *p.args, **p.keywords, type_cast=caster_tuples
+    )
     protos_dict = make_protos(
-        packs, settings, validate_injectable_function, extract_request
+        packs, settings, validate_injectable_function_wrapper, extract_request
     )
     if protos_dict is None:
         # COMPILATION FAIL

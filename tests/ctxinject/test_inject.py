@@ -1,6 +1,6 @@
 import unittest
 from functools import partial
-from typing import Annotated, Any, List, Mapping, Union
+from typing import Annotated, Any, List, Mapping, Type, Union
 
 from typemapping import VarTypeInfo, get_func_args
 
@@ -16,7 +16,7 @@ class No42(ArgsInjectable):
     def __init__(self, default: Any) -> None:
         super().__init__(default)
 
-    def validate(self, instance: Any, basetype: type[Any]) -> None:
+    def validate(self, instance: Any, basetype: Type[Any]) -> None:
         if instance == 42:
             raise ValueError
         return instance

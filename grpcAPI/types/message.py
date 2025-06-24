@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 
 from grpcAPI.types.base import BaseProto, ProtoOption
 from grpcAPI.types.method import if_stream_get_type
@@ -64,11 +64,11 @@ class BaseEnum(SelfNamePrototype, Meta, IntEnum):
     pass
 
 
-def is_BaseMessage(tgt: type[Any]) -> bool:
+def is_BaseMessage(tgt: Type[Any]) -> bool:
     return get_BaseMessage(tgt) is not None
 
 
-def get_BaseMessage(tgt: type[Any]) -> Optional[type[Any]]:
+def get_BaseMessage(tgt: Type[Any]) -> Optional[type[Any]]:
     basetype = if_stream_get_type(tgt)
     bt = basetype or tgt
     if not isinstance(bt, type):
@@ -81,7 +81,7 @@ def get_BaseMessage(tgt: type[Any]) -> Optional[type[Any]]:
 # ---------------- Extract Class Info ---------------------------------------
 
 
-def get_module(cls: type[BaseMessage]) -> Tuple[str, Union[str, _NoPackage]]:
+def get_module(cls: Type[BaseMessage]) -> Tuple[str, Union[str, _NoPackage]]:
     protofile_attr = getattr(cls, "protofile", None)
     if not callable(protofile_attr):
         raise TypeError(
@@ -96,7 +96,7 @@ def get_module(cls: type[BaseMessage]) -> Tuple[str, Union[str, _NoPackage]]:
 
 
 def get_description_options(
-    cls: type[BaseMessage],
+    cls: Type[BaseMessage],
 ) -> Tuple[str, ProtoOption]:
     description_method = getattr(cls, "description", None)
     description: str = description_method() if callable(description_method) else ""
@@ -110,7 +110,7 @@ def get_description_options(
 
 
 def get_headers(
-    cls: type[BaseMessage],
+    cls: Type[BaseMessage],
 ) -> Tuple[str, Union[str, _NoPackage], str, ProtoOption, List[Union[int, range, str]]]:
 
     protofile, package = get_module(cls)

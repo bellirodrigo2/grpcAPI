@@ -7,6 +7,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     get_args,
     get_origin,
     get_type_hints,
@@ -66,7 +67,7 @@ def check_all_injectables(
 def check_modefield_types(
     args: List[VarTypeInfo],
     allowed_models: Optional[List[type[Any]]] = None,
-    type_cast: Optional[List[Tuple[type[Any], type[Any]]]] = None,
+    type_cast: Optional[List[Tuple[type[Any], Type[Any]]]] = None,
 ) -> List[str]:
     errors: List[str] = []
     type_cast = type_cast or []
@@ -115,7 +116,7 @@ def check_modefield_types(
 
 
 def check_depends_types(
-    args: Sequence[VarTypeInfo], tgttype: type[DependsInject] = DependsInject
+    args: Sequence[VarTypeInfo], tgttype: Type[DependsInject] = DependsInject
 ) -> List[str]:
 
     errors: List[str] = []
@@ -176,6 +177,7 @@ def func_signature_check(
     modeltype: Optional[List[type[Any]]] = None,
     generictype: Optional[type[Any]] = None,
     bt_default_fallback: bool = True,
+    type_cast: Optional[List[Tuple[type[Any], Type[Any]]]] = None,
 ) -> List[str]:
 
     modeltype = modeltype or []
@@ -194,7 +196,7 @@ def func_signature_check(
     single_errors = check_single_injectable(args)
     all_errors.extend(single_errors)
 
-    model_errors = check_modefield_types(args, modeltype)
+    model_errors = check_modefield_types(args, modeltype, type_cast)
     all_errors.extend(model_errors)
 
     dep_errors = check_depends_types(args)

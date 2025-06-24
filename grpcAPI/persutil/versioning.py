@@ -54,13 +54,15 @@ def get_next_version(
 
 def define_version_mode(base_path: Path, mode: str) -> Union[str, int]:
 
-    if mode == "new":
+    mode = mode.upper()
+
+    if mode == "NEW":
         version = get_next_version(base_path)
 
-    elif mode == "overwrite":
+    elif mode == "OVERWRITE":
         version = get_current_version(base_path)
 
-    elif mode == "draft":
+    elif mode == "DRAFT":
         version = mode
 
     else:

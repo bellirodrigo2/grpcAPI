@@ -1,11 +1,11 @@
-from typing import Any, Callable, Optional, Protocol, TypeVar, runtime_checkable
+from typing import Any, Callable, Optional, Protocol, Type, TypeVar, runtime_checkable
 
 
 @runtime_checkable
 class Iinjectable(Protocol):
     @property
     def default(self) -> Any: ...
-    def validate(self, instance: Any, basetype: type[Any]) -> Any: ...
+    def validate(self, instance: Any, basetype: Type[Any]) -> Any: ...
 
 
 class ICallableInjectable(Iinjectable, Protocol):
@@ -32,7 +32,7 @@ class Injectable(Iinjectable):
     def has_validate(self) -> bool:
         return self._validator is not None
 
-    def validate(self, instance: Any, basetype: type[Any]) -> Any:
+    def validate(self, instance: Any, basetype: Type[Any]) -> Any:
         self.meta["basetype"] = basetype
         return self._validator(instance, **self.meta)
 
@@ -44,7 +44,7 @@ class ArgsInjectable(Injectable):
 class ModelFieldInject(ArgsInjectable):
     def __init__(
         self,
-        model: type[Any],
+        model: Type[Any],
         field: Optional[str] = None,
         validator: Optional[Callable[..., Any]] = None,
         **meta: Any,
@@ -88,7 +88,7 @@ class ConstrArgInject(ArgsInjectable):
     def has_validate(self) -> bool:
         return True
 
-    def validate(self, instance: Any, basetype: type[Any]) -> Any:
+    def validate(self, instance: Any, basetype: Type[Any]) -> Any:
         if self._validator is not None:
             instance = self._validator(instance, **self.meta)
         constr = self._constrained_factory(basetype)

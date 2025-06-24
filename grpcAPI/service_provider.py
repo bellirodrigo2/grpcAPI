@@ -1,5 +1,5 @@
 from types import ModuleType
-from typing import Any, AsyncGenerator, Callable, Dict, List, Tuple
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Type
 
 from typemapping import map_return_type
 
@@ -20,7 +20,12 @@ from grpcAPI.types import (
 
 
 async def make_service_classes(
-    packs: List[IPackage], modules: Dict[str, Dict[str, ModuleType]]
+    packs: List[IPackage],
+    modules: Dict[str, Dict[str, ModuleType]],
+    transform_func: Callable[[Callable[..., Any]], Callable[..., Any]],
+    overrides: Dict[Callable[..., Any], Callable[..., Any]],
+    exception_registry: ExceptionRegistry,
+    error_log: Optional[Callable[[str, Exception], None]] = None,
 ) -> List[type[Any]]:
 
     service_clss: List[type[Any]] = []
@@ -28,13 +33,18 @@ async def make_service_classes(
         for module in pack.modules:
             for service in module.services:
                 service_cls = await make_service_class(
-                    service, modules, lambda x: x, {}, {}
+                    service,
+                    modules,
+                    transform_func,
+                    overrides,
+                    exception_registry,
+                    error_log,
                 )
                 service_clss.append(service_cls)
     return service_clss
 
 
-def get_return_type(func: Callable[..., Any]) -> type[Any]:
+def get_return_type(func: Callable[..., Any]) -> Type[Any]:
     returntype = map_return_type(func)
     return returntype.basetype
 
@@ -45,7 +55,8 @@ async def make_service_class(
     transform_func: Callable[[Callable[..., Any]], Callable[..., Any]],
     overrides: Dict[Callable[..., Any], Callable[..., Any]],
     exception_registry: ExceptionRegistry,
-) -> type[Any]:
+    error_log: Optional[Callable[[str, Exception], None]] = None,
+) -> Type[Any]:
 
     methods: Dict[str, Callable[..., Any]] = {}
     for method in service.methods:
@@ -70,6 +81,7 @@ async def make_service_class(
             transform_func,
             overrides,
             exception_registry,
+            error_log,
         )
         methods[method.method.__name__] = service_method
     module_str = f"{service.module}_grpc"
@@ -83,12 +95,13 @@ async def make_service_class(
 
 async def make_method(
     func: Callable[..., Any],
-    request_type: type[Any],
+    request_type: Type[Any],
     request_stream: bool,
     response_stream: bool,
     transform_func: Callable[[Callable[..., Any]], Callable[..., Any]],
     overrides: Dict[Callable[..., Any], Callable[..., Any]],
     exception_registry: ExceptionRegistry,
+    error_log: Optional[Callable[[str, Exception], None]] = None,
 ) -> Callable[..., Any]:
 
     func = transform_func(func)
@@ -107,34 +120,44 @@ async def make_method(
 
     async def method(self: Any, request: Any, context: Context) -> Any:
         try:
-            # wrap middleware AQUI
             ctx = getctx(request_type, request, context)
             return await resolve_method(func, ctx, mapped_ctx)
-            # wrap middleware
         except Exception as e:
-            # raise e
+            if error_log is not None:
+                error_log(func.__name__, e)
             exc_handler = exception_registry.get(type(e), None)
             if exc_handler is not None:
                 err_code, err_msg = exc_handler(e)
-                context.abort(err_code.value, err_msg)
+                context.set_trailing_metadata(
+                    (
+                        ("error-type", e.__class__.__name__),
+                        # ("custom-detail", "additional info here"),
+                    )
+                )
+                await context.abort(err_code.value, err_msg)
             else:
-                print(f"Error on method '{func.__name__}': \n \t{str(e)}")
                 raise e
 
     async def stream_method(
         self: Any, request: Any, context: Context
     ) -> AsyncGenerator[Any, Any]:
         try:
-            # wrap middleware AQUI
             ctx = getctx(request_type, request, context)
             async for resp in resolve_stream_method(func, ctx, mapped_ctx):
                 yield resp
-            # wrap moddleware
         except Exception as e:
+            if error_log is not None:
+                error_log(func.__name__, e)
             exc_handler = exception_registry.get(type(e), None)
             if exc_handler is not None:
                 err_code, err_msg = exc_handler(e)
-                context.abort(err_code.value, err_msg)
+                context.set_trailing_metadata(
+                    (
+                        ("error-type", e.__class__.__name__),
+                        # ("custom-detail", "additional info here"),
+                    )
+                )
+                await context.abort(err_code.value, err_msg)
             else:
                 print(f"Error on method '{func.__name__}': \n \t{str(e)}")
                 raise e
@@ -142,12 +165,12 @@ async def make_method(
     return stream_method if response_stream else method
 
 
-def get_ctx(req_type: type[Any], request: Any, context: Any) -> Dict[Any, Any]:
+def get_ctx(req_type: Type[Any], request: Any, context: Any) -> Dict[Any, Any]:
     proxyreq = req_type(request)
     return {req_type: proxyreq, Context: context}
 
 
-def get_stream_ctx(req_type: type[Any], request: Any, context: Any) -> Dict[Any, Any]:
+def get_stream_ctx(req_type: Type[Any], request: Any, context: Any) -> Dict[Any, Any]:
     req_iter = IteratorProxy(request, req_type)
     return {Stream[req_type]: req_iter, Context: context}
 

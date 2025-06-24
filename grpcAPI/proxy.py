@@ -11,6 +11,7 @@ from typing import (
     MutableMapping,
     MutableSequence,
     Optional,
+    Type,
     Union,
     ValuesView,
 )
@@ -75,7 +76,7 @@ class ListProxy(MutableSequence[Any]):
         container: List[Any],
         get_v: Callable[[Any], Any],
         set_v: Callable[[Any], Any],
-        base_type: type[Any],
+        base_type: Type[Any],
     ) -> None:
         self._container = container
         self._get_v = get_v
@@ -164,7 +165,7 @@ class DictProxy(MutableMapping[Any, Any]):
         container: Dict[Any, Any],
         get_v: Callable[[Any], Any],
         set_v: Callable[[Any], Any],
-        base_type: type[Any],
+        base_type: Type[Any],
     ):
         self._container = container
         self._get_v = get_v
@@ -235,10 +236,10 @@ class DictProxy(MutableMapping[Any, Any]):
 
 
 def bind_proxy(
-    mapcls: type[Any],
-    wrapped_class: type[Any],
-    make_getter: Callable[[str, type[Any]], Callable[[Any], Any]],
-    make_setter: Callable[[str, type[Any]], Callable[[Any, Any], Any]],
+    mapcls: Type[Any],
+    wrapped_class: Type[Any],
+    make_getter: Callable[[str, Type[Any]], Callable[[Any], Any]],
+    make_setter: Callable[[str, Type[Any]], Callable[[Any, Any], Any]],
     make_kwarg: Callable[[type[Any]], Any],
     tgtcls: Optional[type[Any]] = None,
 ) -> None:
@@ -289,7 +290,7 @@ def bind_proxy(
 
 
 class IteratorProxy:
-    def __init__(self, aioreq_iter: Any, proxy_cls: type[Proxy]) -> None:
+    def __init__(self, aioreq_iter: Any, proxy_cls: Type[Proxy]) -> None:
         self._aiter = aioreq_iter
         self.proxy_cls = proxy_cls
 

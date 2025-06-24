@@ -1,13 +1,22 @@
-from typing import Annotated, List
+from typing import Annotated, List, Tuple, Type
 
 from grpcAPI.app import App, Package
+from grpcAPI.ctxinject.model import Depends
+from grpcAPI.exceptionhandler import ErrorCode
 from grpcAPI.proto_inject import FromContext, FromRequest
 from grpcAPI.types import Context, Int32, Metadata, OneOf, Stream
 
 
+async def get_db(peer: str = FromContext()) -> str:
+    return peer + "sqlite"
+
+
 def make_app() -> App:
 
-    app = App()
+    error_log = lambda func_name, e: print(
+        f"Error on method '{func_name}': \n \t{str(e)}"
+    )
+    app = App(error_log=error_log)
     if not app.packages:
 
         pack1 = Package("pack1")
@@ -56,8 +65,9 @@ def make_app() -> App:
         @user_service(description="Make New User")
         async def newuser(
             request: UserInput,
-            userage: str = FromRequest(model=UserInput, field="age"),
+            userage: int = FromRequest(model=UserInput, field="age", gt=50),
             peer: str = FromContext(),
+            db: str = Depends(get_db),
         ) -> User:
             userproxy = User(age=userage, id="0", name=request.name)
 
@@ -70,7 +80,7 @@ def make_app() -> App:
                 else bool(request.affilliation)
             )
             setattr(userproxy, key, affiliation)
-            print(f"Received newuser: '{userproxy}' from: '{peer}'")
+            print(f"Received newuser: '{userproxy}' from: '{peer}' and db: '{db}'")
 
             return userproxy
 
@@ -102,4 +112,21 @@ def make_app() -> App:
                     age=req.age, id=str(req.code), name=req.name, employee="StreamInc"
                 )
 
+        async def get_db2() -> str:
+            return "postgresql"
+
+        app.dependency_overrides[get_db] = get_db2
+
+        @app.exception_handler(ValueError)
+        def handle_valueerror(
+            e: Exception,
+        ) -> Tuple[ErrorCode, str]:
+            return (
+                ErrorCode.ABORTED,
+                f"New ValueError Handler ofr: '{str(e)}'",
+            )
+
     return app
+
+
+make_app()

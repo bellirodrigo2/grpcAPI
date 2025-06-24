@@ -6,6 +6,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     TypeVar,
     Union,
     get_origin,
@@ -108,7 +109,7 @@ def constrained_uuid(
     return ConstrainedUUID(value, **kwargs)
 
 
-arg_proc: Dict[Tuple[type[Any], type[Any]], Callable[..., Any]] = {
+arg_proc: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = {
     (str, str): constrained_str,
     (int, int): constrained_num,
     (float, float): constrained_num,
@@ -121,7 +122,7 @@ arg_proc: Dict[Tuple[type[Any], type[Any]], Callable[..., Any]] = {
 }
 
 
-def extract_type(bt: type[Any]) -> type[Any]:
+def extract_type(bt: Type[Any]) -> Type[Any]:
     if not isinstance(bt, type):
         return get_origin(bt)
     return bt
@@ -132,8 +133,8 @@ T = TypeVar("T")
 
 def inject_validation(
     func: Callable[..., Any],
-    argproc: Dict[Tuple[type[Any], type[Any]], Callable[..., Any]] = arg_proc,
-    extracttype: Callable[[type[T]], type[T]] = extract_type,
+    argproc: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = arg_proc,
+    extracttype: Callable[[type[T]], Type[T]] = extract_type,
 ) -> None:
 
     args = get_func_args(func)

@@ -1,8 +1,21 @@
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
+from grpcAPI.ctxinject.validate import arg_proc
+from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
 from grpcAPI.mapclss import map_service_classes
 from grpcAPI.proto_proxy import ProtoProxy
 from grpcAPI.singleton import SingletonMeta
@@ -20,8 +33,8 @@ from grpcAPI.types import (
 
 
 def create_proto_model(
-    base_cls: type[Any], protofile: str, package: Union[str, object]
-) -> type:
+    base_cls: Type[Any], protofile: str, package: Union[str, object]
+) -> Type[Any]:
     class GeneratedProto(base_cls):
         @classmethod
         def protofile(cls) -> str:
@@ -64,7 +77,7 @@ class Module(IModule):
     description: str = field(default="")
     options: ProtoOption = field(default_factory=ProtoOption)
     _services: List[IService] = field(default_factory=list[IService])
-    _model: type[BaseMessage] = ProtoModel
+    _model: Type[BaseMessage] = ProtoModel
 
     def __post_init__(self) -> None:
         proto_cls = create_proto_model(self._model, self.name, self.package)
@@ -77,7 +90,7 @@ class Module(IModule):
         return self._services
 
     @property
-    def objects(self) -> Set[type[Union[BaseMessage, BaseEnum]]]:
+    def objects(self) -> Set[Type[Union[BaseMessage, BaseEnum]]]:
         all_methods: List[Callable[..., Any]] = [
             method_pack.method
             for service_pack in self._services
@@ -86,11 +99,11 @@ class Module(IModule):
         return map_service_classes(all_methods)
 
     @property
-    def ProtoModel(self) -> type[BaseMessage]:
+    def ProtoModel(self) -> Type[BaseMessage]:
         return self._proto_model  # type: ignore
 
     @property
-    def ProtoEnum(self) -> type[Enum]:
+    def ProtoEnum(self) -> Type[Enum]:
         return self._proto_enum  # type: ignore
 
     def Service(
@@ -176,8 +189,17 @@ class App(metaclass=SingletonMeta):
 
     name: Optional[str] = None
     version: Optional[int] = None
+    lifespan: Optional[Callable[[Any], AsyncGenerator[None, None]]] = None
+    dependency_overrides: Dict[Callable[..., Any], Callable[..., Any]] = field(
+        default_factory=dict[Callable[..., Any], Callable[..., Any]]
+    )
+    error_log: Optional[Callable[[str, Exception], None]] = None
     _packages: Dict[Union[_NoPackage, str], IPackage] = field(
         default_factory=dict[Union[_NoPackage, str], IPackage]
+    )
+    _exception_handlers: ExceptionRegistry = field(default_factory=dict)
+    _caster: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = field(
+        default_factory=lambda: dict(arg_proc)
     )
 
     @property
@@ -198,3 +220,22 @@ class App(metaclass=SingletonMeta):
             self.add_package(newpack)
             package = newpack
         package._add_module(module)
+
+    def add_exception_handler(
+        self,
+        exc_type: Type[Exception],
+        handler: Callable[[Exception], Tuple[ErrorCode, str]],
+    ) -> None:
+        self._exception_handlers[exc_type] = handler
+
+    def exception_handler(self, exc_type: Type[Exception]) -> Callable[
+        [Callable[[Exception], Tuple[ErrorCode, str]]],
+        Callable[[Exception], Tuple[ErrorCode, str]],
+    ]:
+        def decorator(
+            func: Callable[[Exception], Tuple[ErrorCode, str]],
+        ) -> Callable[[Exception], Tuple[ErrorCode, str]]:
+            self.add_exception_handler(exc_type, func)
+            return func
+
+        return decorator

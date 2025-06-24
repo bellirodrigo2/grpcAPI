@@ -1,4 +1,4 @@
-from typing import Any, Tuple, get_args, get_origin
+from typing import Any, Tuple, Type, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, Method
@@ -13,7 +13,7 @@ from grpcAPI.types import (
 from grpcAPI.types.types import BaseField
 
 
-def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
+def get_base_type_str(bt: Type[BaseProto], block_package: str) -> str:
 
     if bt is None:
         return ""
@@ -32,7 +32,7 @@ def get_base_type_str(bt: type[BaseProto], block_package: str) -> str:
     raise ValueError(f"{bt} object of type {type(bt)} cannot be resolved")
 
 
-def get_type_str(bt: type[Any], block_package: str) -> str:
+def get_type_str(bt: Type[Any], block_package: str) -> str:
     origin = get_origin(bt)
     args = get_args(bt)
 

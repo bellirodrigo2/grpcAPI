@@ -101,7 +101,7 @@ class TestVersioningFunctions(unittest.TestCase):
         self.assertEqual(overwrite_version, 2)
 
         draft_version: Union[int, str] = define_version_mode(Path(), "draft")
-        self.assertEqual(draft_version, "draft")
+        self.assertEqual(draft_version, "DRAFT")
 
         with self.assertRaises(ValueError):
             define_version_mode(Path(), "unknown")

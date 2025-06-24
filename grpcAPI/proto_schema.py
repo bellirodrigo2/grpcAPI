@@ -2,7 +2,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, get_args
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, get_args
 
 from typemapping import map_model_fields
 from typing_extensions import get_origin
@@ -17,7 +17,7 @@ from grpcAPI.persutil import (
 from grpcAPI.types import BaseEnum, BaseMessage, IModule, IPackage, OneOf
 
 
-def type_to_str(tp: type[Any]) -> str:
+def type_to_str(tp: Type[Any]) -> str:
     origin = get_origin(tp)
     args = get_args(tp)
     if origin is None:
@@ -41,7 +41,7 @@ class ProtoSchema(ISchema[Dict[str, Any]]):
 
 @dataclass
 class EnumSchema(ProtoSchema):
-    cls: type[BaseEnum]
+    cls: Type[BaseEnum]
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -55,7 +55,7 @@ class EnumSchema(ProtoSchema):
 
 @dataclass
 class ClassSchema(ProtoSchema):
-    cls: type[BaseMessage]
+    cls: Type[BaseMessage]
 
     def _get_fields(self) -> Set[Tuple[str, str, Optional[str]]]:
 
@@ -85,14 +85,14 @@ class ClassSchema(ProtoSchema):
 @dataclass
 class MethodSchema(ProtoSchema):
     method: Callable[..., Any]
-    type_based: Dict[str, type[Any]]  # one, type
+    type_based: Dict[str, Type[Any]]  # one, type
     instance_based: Dict[str, Any]  # multiple, instance
 
-    def _get_type(self, btype: type[Any]) -> Tuple[Optional[str], str]:
+    def _get_type(self, btype: Type[Any]) -> Tuple[Optional[str], str]:
         # (field_name, qualified package name)
         return ("", "")
 
-    def _get_instance(self, binst: type[Any]) -> Optional[str]:
+    def _get_instance(self, binst: Type[Any]) -> Optional[str]:
         # field_name or None
         return None
 
@@ -116,7 +116,7 @@ class MethodSchema(ProtoSchema):
         }
 
 
-def get_class_schema(cls: type[Any]) -> ProtoSchema:
+def get_class_schema(cls: Type[Any]) -> ProtoSchema:
     if issubclass(cls, BaseMessage):
         return ClassSchema(cls)
     if issubclass(cls, BaseEnum):

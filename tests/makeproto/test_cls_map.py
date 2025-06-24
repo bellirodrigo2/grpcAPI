@@ -1,6 +1,6 @@
 import unittest
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Type
 
 from grpcAPI.makeproto.makeblock import make_enumblock, make_msgblock
 from grpcAPI.makeproto.protoblock import Block, EnumBlock, MessageBlock
@@ -8,7 +8,7 @@ from grpcAPI.mapclss import cls_map
 from grpcAPI.types import BaseMessage, Int32
 
 
-def cls_to_blocks(tgt: type[BaseMessage]) -> List[Block]:
+def cls_to_blocks(tgt: Type[BaseMessage]) -> List[Block]:
 
     clss = cls_map(tgt)
 

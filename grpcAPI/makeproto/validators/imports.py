@@ -2,7 +2,7 @@
 # import "pack1/file2.proto";
 # import "pack2/file2.proto";
 
-from typing import Any, Optional, Set, Tuple, Union, get_args, get_origin
+from typing import Any, Optional, Set, Tuple, Type, Union, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, EnumField, Field
@@ -11,7 +11,7 @@ from grpcAPI.types import DEFAULT_PRIMITIVES, _NoPackage
 from grpcAPI.types.types import BaseField
 
 
-def get_type(bt: type[Any]) -> type[Any]:
+def get_type(bt: Type[Any]) -> Type[Any]:
 
     if get_origin(bt) in {list, dict}:
         return get_args(bt)[0]

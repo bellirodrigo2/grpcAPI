@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import asdict
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from typemapping import get_func_args, map_model_fields, map_return_type
 
@@ -27,7 +27,7 @@ from grpcAPI.types import (
 )
 
 
-def make_msgblock(cls: type[BaseMessage]) -> Block:
+def make_msgblock(cls: Type[BaseMessage]) -> Block:
 
     protofile, package, description, options, reserveds = get_headers(cls)
 
@@ -92,7 +92,7 @@ def make_msgblock(cls: type[BaseMessage]) -> Block:
     return block
 
 
-def make_enumblock(enum: type[BaseMessage]) -> Block:
+def make_enumblock(enum: Type[BaseMessage]) -> Block:
 
     protofile, package, description, options, reserveds = get_headers(enum)
 
@@ -129,7 +129,7 @@ def make_enumblock(enum: type[BaseMessage]) -> Block:
     return enum_block
 
 
-def make_cls_block(cls: type[Union[BaseMessage, Enum]]) -> Block:
+def make_cls_block(cls: Type[Union[BaseMessage, Enum]]) -> Block:
     if issubclass(cls, Enum):
         return make_enumblock(cls)
     elif issubclass(cls, BaseMessage):
@@ -146,7 +146,7 @@ def get_args(
     return [arg.basetype for arg in args]
 
 
-def get_return_type(func: Callable[..., Any]) -> type[Any]:
+def get_return_type(func: Callable[..., Any]) -> Type[Any]:
     returntype = map_return_type(func)
     return returntype.basetype
 

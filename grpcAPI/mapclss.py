@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Set, Union
+from typing import Any, Callable, List, Optional, Set, Type, Union
 
 from typemapping import map_func_args, map_model_fields
 
@@ -6,7 +6,7 @@ from grpcAPI.types import BaseEnum, BaseMessage, get_BaseMessage
 
 
 def cls_map(
-    tgt: type[BaseMessage],
+    tgt: Type[BaseMessage],
     visited: Optional[Set[type[BaseMessage]]] = None,
 ) -> Set[type[BaseMessage]]:
 

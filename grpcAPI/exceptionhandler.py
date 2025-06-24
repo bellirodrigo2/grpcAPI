@@ -1,10 +1,10 @@
 from enum import Enum
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, Type
 
 from grpc import StatusCode
 
 type ExceptionRegistry = Dict[
-    type[Exception], Callable[[Exception], Tuple[ErrorCode, str]]
+    Type[Exception], Callable[[Exception], Tuple[ErrorCode, str]]
 ]
 
 

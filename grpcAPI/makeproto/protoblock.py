@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Protocol, Union
+from typing import Any, Callable, Dict, List, Optional, Protocol, Type, Union
 
 
 class Visitor(Protocol):
@@ -61,7 +61,7 @@ class OneOfField(Field):
 @dataclass
 class Method(Node):
     request_type: List[type[Any]]
-    response_type: type[Any]
+    response_type: Type[Any]
 
     method_func: Callable[..., Any]
 

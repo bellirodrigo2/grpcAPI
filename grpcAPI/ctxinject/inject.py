@@ -1,6 +1,6 @@
 import inspect
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Type, Union
 
 from typemapping import VarTypeInfo, get_func_args
 
@@ -18,13 +18,13 @@ def resolve_by_name(context: Dict[Union[str, type], Any], arg: str) -> Any:
 
 
 def resolve_from_model(
-    context: Dict[Union[str, type], Any], model: type[Any], field: str
+    context: Dict[Union[str, type], Any], model: Type[Any], field: str
 ) -> Any:
     method = getattr(context[model], field)
     return method() if callable(method) else method
 
 
-def resolve_by_type(context: Dict[Union[str, type], Any], bt: type[Any]) -> Any:
+def resolve_by_type(context: Dict[Union[str, type], Any], bt: Type[Any]) -> Any:
     return context[bt]
 
 
@@ -36,7 +36,7 @@ def wrap_validate(
     context: Dict[Union[str, type], Any],
     func: Callable[..., Any],
     instance: ArgsInjectable,
-    bt: type[Any],
+    bt: Type[Any],
     name: str,
 ) -> Any:
 

@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Type
 
 from grpcAPI.types.base import BaseProto
 
@@ -126,7 +126,7 @@ class Bytes(BaseBytesField):
         return "bytes"
 
 
-DEFAULT_PRIMITIVES: dict[type[Any], type[BaseField]] = {
+DEFAULT_PRIMITIVES: dict[type[Any], Type[BaseField]] = {
     str: String,
     int: Int64,
     float: Float,

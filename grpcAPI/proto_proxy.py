@@ -6,7 +6,17 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, TypeVar, get_args, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
@@ -78,19 +88,19 @@ class ProtoProxy(Proxy):
 # ----------------- GETTERS -------------------------------------------------
 
 
-def EnumListProxy(container: List[Any], enum_type: type[enum.Enum]) -> ListProxy:
+def EnumListProxy(container: List[Any], enum_type: Type[enum.Enum]) -> ListProxy:
     return ListProxy(container, enum_type, lambda v: v.value, enum_type)
 
 
-def MessageListProxy(container: List[Any], base_type: type[Proxy]) -> ListProxy:
+def MessageListProxy(container: List[Any], base_type: Type[Proxy]) -> ListProxy:
     return ListProxy(container, base_type, lambda v: v.unwrap, base_type)
 
 
-def ValueListProxy(container: List[Any], base_type: type[Any]) -> ListProxy:
+def ValueListProxy(container: List[Any], base_type: Type[Any]) -> ListProxy:
     return ListProxy(container, lambda v: v, lambda v: v, base_type)
 
 
-def list_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
+def list_getter_factory(bt: Type[Any], name: str) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda self: EnumListProxy(getattr(self._wrapped, name), bt)
     elif issubclass(bt, ProtoProxy):
@@ -104,19 +114,19 @@ class DictProtoProxy(DictProxy):
         self._container[k].CopyFrom(v.unwrap)
 
 
-def EnumDictProxy(container: Dict[Any, Any], enum_type: type[enum.Enum]) -> DictProxy:
+def EnumDictProxy(container: Dict[Any, Any], enum_type: Type[enum.Enum]) -> DictProxy:
     return DictProxy(container, enum_type, lambda v: v.value, enum_type)
 
 
-def MessageDictProxy(container: Dict[Any, Any], base_type: type[Proxy]) -> DictProxy:
+def MessageDictProxy(container: Dict[Any, Any], base_type: Type[Proxy]) -> DictProxy:
     return DictProtoProxy(container, base_type, lambda v: v.unwrap, base_type)
 
 
-def ValueDictProxy(container: Dict[Any, Any], base_type: type[Any]) -> DictProxy:
+def ValueDictProxy(container: Dict[Any, Any], base_type: Type[Any]) -> DictProxy:
     return DictProxy(container, lambda v: v, lambda v: v, base_type)
 
 
-def dict_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
+def dict_getter_factory(bt: Type[Any], name: str) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda self: EnumDictProxy(getattr(self._wrapped, name), bt)
     elif issubclass(bt, ProtoProxy):
@@ -125,7 +135,7 @@ def dict_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
         return lambda self: ValueDictProxy(getattr(self._wrapped, name), bt)
 
 
-def single_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
+def single_getter_factory(bt: Type[Any], name: str) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda self: bt(getattr(self._wrapped, name))
     elif issubclass(bt, ProtoProxy):
@@ -134,7 +144,7 @@ def single_getter_factory(bt: type[Any], name: str) -> Callable[[Any], Any]:
         return lambda self: getattr(self._wrapped, name)
 
 
-def make_getter(name: str, bt: type[Any]) -> Callable[[Any], Any]:
+def make_getter(name: str, bt: Type[Any]) -> Callable[[Any], Any]:
     origin = get_origin(bt)
     args = get_args(bt)
 
@@ -154,7 +164,7 @@ def make_getter(name: str, bt: type[Any]) -> Callable[[Any], Any]:
 # ----------------- SETTERS -------------------------------------------------
 
 
-def list_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]:
+def list_setter_factory(bt: Type[Any], name: str) -> Callable[[Any, Any], Any]:
 
     def set_list(self: Any, value: Any, set_v: Callable[[Any], Any]) -> None:
 
@@ -187,7 +197,7 @@ def list_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]:
 
 
 def dict_setter_factory(
-    bt: type[Any], dict_key: str, name: str
+    bt: Type[Any], dict_key: str, name: str
 ) -> Callable[[Any, Any], Any]:
 
     def set_dict(self: Any, value: dict[Any, Any], set_v: Callable[[Any], Any]) -> None:
@@ -220,7 +230,7 @@ def dict_setter_factory(
         return partial(set_dict, set_v=lambda x: x)
 
 
-def single_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]:
+def single_setter_factory(bt: Type[Any], name: str) -> Callable[[Any, Any], Any]:
     def assign_value(self: ProtoProxy, value: Any, set_v: Callable[[Any], Any]) -> None:
         try:
             setattr(self.unwrap, name, set_v(value))
@@ -246,7 +256,7 @@ def single_setter_factory(bt: type[Any], name: str) -> Callable[[Any, Any], Any]
         return partial(assign_value, set_v=lambda x: x)
 
 
-def make_setter(name: str, bt: type[Any]) -> Callable[[Any, Any], Any]:
+def make_setter(name: str, bt: Type[Any]) -> Callable[[Any, Any], Any]:
     origin = get_origin(bt)
     args = get_args(bt)
 
@@ -266,7 +276,7 @@ def make_setter(name: str, bt: type[Any]) -> Callable[[Any, Any], Any]:
 # ----------------- KWARGS ------------------------------------------------
 
 
-def single_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
+def single_kwarg_factory(bt: Type[Any]) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda v: v.value
     elif issubclass(bt, ProtoProxy):
@@ -275,7 +285,7 @@ def single_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
         return lambda v: v
 
 
-def list_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
+def list_kwarg_factory(bt: Type[Any]) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda value: [v.value for v in value]
     elif issubclass(bt, ProtoProxy):
@@ -284,7 +294,7 @@ def list_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
         return lambda value: value
 
 
-def dict_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
+def dict_kwarg_factory(bt: Type[Any]) -> Callable[[Any], Any]:
     if issubclass(bt, Enum):
         return lambda value: {k: v.value for k, v in value.items()}
     elif issubclass(bt, ProtoProxy):
@@ -293,7 +303,7 @@ def dict_kwarg_factory(bt: type[Any]) -> Callable[[Any], Any]:
         return lambda value: value
 
 
-def make_kwarg(bt: type[Any]) -> Callable[[Any], Any]:
+def make_kwarg(bt: Type[Any]) -> Callable[[Any], Any]:
     """
     Transform a dict of Python values (Message, Enum, list, dict)
     to viable args for protobuf constructor.
@@ -315,11 +325,11 @@ def make_kwarg(bt: type[Any]) -> Callable[[Any], Any]:
 
 
 def _get_class(
-    mapcls: type[Any],
+    mapcls: Type[Any],
     modules: Dict[str, ModuleType],
 ) -> type[Any]:
 
-    def get(modname: str, clsname: str) -> type[Any]:
+    def get(modname: str, clsname: str) -> Type[Any]:
         mod = modules.get(modname)
         if mod is None:
             raise KeyError(f'Module "{modname}" not found.')
@@ -360,7 +370,7 @@ def import_py_files_from_folder(
 
 
 def bind_proto_proxy(
-    mapcls: type[Any],
+    mapcls: Type[Any],
     modules: Dict[str, ModuleType],
 ) -> None:
 

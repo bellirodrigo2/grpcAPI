@@ -1,5 +1,34 @@
 import importlib.util
+import os
 import sys
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import toml
+
+
+def load_config(
+    config_arg: Optional[str] = None, field: Optional[str] = None
+) -> Dict[str, Any]:
+    std = Path("./grpcAPI/commands/config.toml")
+    if config_arg is not None:
+        config_path = Path(config_arg)
+    elif os.getenv("GRPCAPI_CONFIG"):
+        config_path = Path(os.getenv("GRPCAPI_CONFIG"))
+    elif std.exists():
+        config_path = std
+    else:
+        config_path = None
+
+    if config_path and config_path.exists():
+        print(f"Loading config from {config_path}")
+        settings = toml.load(config_path)
+        if field is not None and field in settings:
+            return settings.get(field, {})
+        return settings
+    else:
+        print("No config found, using defaults")
+        return {}
 
 
 def load_app(app_path: str) -> None:
@@ -10,3 +39,9 @@ def load_app(app_path: str) -> None:
     sys.modules["app_module"] = app_module
 
     spec.loader.exec_module(app_module)
+
+
+if __name__ == "__main__":
+
+    config = load_config()
+    print(config)

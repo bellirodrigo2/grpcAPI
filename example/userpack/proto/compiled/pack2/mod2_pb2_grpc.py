@@ -5,7 +5,7 @@ import warnings
 
 from pack1 import mod1_pb2 as pack1_dot_mod1__pb2
 
-GRPC_GENERATED_VERSION = '1.71.0'
+GRPC_GENERATED_VERSION = '1.73.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 

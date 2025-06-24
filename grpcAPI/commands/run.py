@@ -2,14 +2,17 @@ import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, AsyncGenerator, Callable, Dict, List
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
+
+import toml
 
 from grpcAPI.app import App
 from grpcAPI.commands.utils import load_app
 from grpcAPI.ctxinject.validate import inject_validation
 from grpcAPI.makeproto.protoc_compiler import compile
 from grpcAPI.module_import import import_modules
-from grpcAPI.server import Server
+from grpcAPI.persutil.versioning import get_current_version
+from grpcAPI.server import IServer, Server
 from grpcAPI.service_provider import make_service_classes
 
 
@@ -44,13 +47,31 @@ async def compiler_lifespan(src_dir: Path, version: str) -> AsyncGenerator[Path,
         yield output_dir
 
 
-async def run_app(app_path: str, settings: Dict[str, Any], version: str) -> None:
+async def run_app(
+    app_path: str,
+    user_settings: Dict[str, Any],
+    version: Optional[str],
+    host: str,
+    port: int,
+    server: IServer = Server,
+) -> None:
 
-    version = version.upper()
+    std_settings: Dict[str, Any] = toml.load("./grpcAPI/commands/config.toml")
+    std_settings = std_settings.get("run")
+
+    if "run" in user_settings:
+        user_settings = user_settings.get("run")
+    settings = {**std_settings, **user_settings}
 
     load_app(app_path)
 
-    src_dir = Path(settings.get("output_dir", "./grpcAPI/proto"))
+    src_dir = Path(settings.get("proto_dir", "./grpcAPI/proto"))
+
+    if version is None:
+        version = f"V{get_current_version(src_dir)}"
+
+    version = version.upper()
+
     app = App()
 
     @asynccontextmanager
@@ -85,8 +106,21 @@ async def run_app(app_path: str, settings: Dict[str, Any], version: str) -> None
                 async with app.lifespan(server):
                     yield
 
-    server = Server({})
-    await server.start(lifespan=lifespan)
+    block_wait = settings.get("block_wait", True)
+    options = [
+        (item["key"], item["value"]) for item in settings.get("server_options", [])
+    ]
+    health_check = settings.get("health_check", True)
+    reflection = settings.get("reflection", True)
+
+    server = server(
+        modules={},
+        block_wait=block_wait,
+        options=options,
+        health_check=health_check,
+        reflection=reflection,
+    )
+    await server.start(host, port, lifespan=lifespan)
 
 
 if __name__ == "__main__":
@@ -94,7 +128,9 @@ if __name__ == "__main__":
     asyncio.run(
         run_app(
             "./tests/test_app_helper.py",
-            {"output_dir": "./example/userpack/proto"},
-            "V1",
+            {"proto_dir": "./example/userpack/proto"},
+            None,
+            "0.0.0.0",
+            50051,
         )
     )

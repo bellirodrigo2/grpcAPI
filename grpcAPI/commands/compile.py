@@ -20,8 +20,10 @@ def compile_proto(
     app = App()
 
     std_settings: Dict[str, Any] = toml.load("./grpcAPI/commands/config.toml")
+    std_settings = std_settings.get("compile")
 
-    user_settings = user_settings or {}
+    if "compile" in user_settings:
+        user_settings = user_settings.get("compile")
     settings = {**std_settings, **user_settings}
 
     packs = app.packages

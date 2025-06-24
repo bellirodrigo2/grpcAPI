@@ -2,9 +2,11 @@
   // Module1
 syntax = "proto3";
 package pack1;
-message UserList {
-repeated User users = 1;
-int32 index = 12;
+message UserNames {
+repeated int64 ids = 1;
+  oneof occupation {
+string employee = 2;
+  }
 }
 message User {
 UserCode code = 1 [json_name = "user_code"];
@@ -24,10 +26,9 @@ string school = 7;
 bool inactive = 8;
   }
 }
-enum UserCode {
-EMPLOYEE = 0;
-SCHOOL = -247;
-INACTIVE = 1;
+message UserList {
+repeated User users = 1;
+int32 index = 12;
 }
 message UserInput {
 UserCode code = 1 [json_name = "user_code"];
@@ -37,6 +38,8 @@ string affilliation = 3;
   // user name
 string name = 4 [deprecated = true];
 }
-message UserNames {
-repeated int64 ids = 1;
+enum UserCode {
+EMPLOYEE = 0;
+SCHOOL = -247;
+INACTIVE = 1;
 }

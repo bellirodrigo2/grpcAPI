@@ -86,4 +86,4 @@ class TestBlockNameValidator(unittest.TestCase):
         self.packages = [pack]
 
     def test_compiler_basic(self) -> None:
-        print(self.packages[0])
+        pass

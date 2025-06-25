@@ -5,8 +5,8 @@ from pathlib import Path
 
 from grpcAPI.app import Package
 from grpcAPI.makeproto.main import make_protos
-from grpcAPI.makeproto.protoc_compiler import compile
 from grpcAPI.proto_inject import extract_request
+from grpcAPI.protoc_compiler import compile
 from tests.test_app_helper import make_app
 
 app = make_app()

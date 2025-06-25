@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from typing import Any, Dict
 
-from grpcAPI.makeproto.protoc_compiler import compile
 from grpcAPI.makeproto.render.render import BaseModuleTemplate
+from grpcAPI.protoc_compiler import compile
 
 message_block: Dict[str, Any] = {
     "block_type": "message",

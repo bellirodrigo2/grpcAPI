@@ -4,7 +4,7 @@ from pathlib import Path
 
 import grpc
 
-from grpcAPI.module_import import import_modules
+from grpcAPI.proto_load import import_modules
 
 p = Path(__file__).parent / "proto"
 modules = import_modules(p, ["compiled"])

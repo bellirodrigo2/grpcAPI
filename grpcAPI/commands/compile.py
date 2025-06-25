@@ -1,48 +1,49 @@
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 import toml
 
 from grpcAPI import App
-from grpcAPI.commands.utils import load_app
+from grpcAPI.commands.utils import combine_settings, load_app
 from grpcAPI.makeproto import make_protos
 from grpcAPI.proto_inject import extract_request, validate_injectable_function
 from grpcAPI.proto_schema import persist_protos
+
+
+def get_output_dir(settings: Dict[str, str]) -> Path:
+    output_dir = Path(settings.get("output_dir", "./grpcAPI/proto"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
+def define_validation_function(app: App) -> Callable[..., Any]:
+    p = validate_injectable_function
+    caster_tuples = list(app._caster.keys())
+    return partial(p.func, *p.args, **p.keywords, type_cast=caster_tuples)
 
 
 def compile_proto(
     app_path: str, version_mode: str, user_settings: Dict[str, Any]
 ) -> None:
 
-    load_app(app_path)
+    settings = combine_settings(
+        "./grpcAPI/commands/config.toml", user_settings, "compile"
+    )
 
+    load_app(app_path)
     app = App()
 
-    std_settings: Dict[str, Any] = toml.load("./grpcAPI/commands/config.toml")
-    std_settings = std_settings.get("compile")
-
-    if "compile" in user_settings:
-        user_settings = user_settings.get("compile")
-    settings = {**std_settings, **user_settings}
+    validate_function = define_validation_function(app)
 
     packs = app.packages
-
-    # add caster do signature check
-    p = validate_injectable_function
-    caster_tuples = list(app._caster.keys())
-    validate_injectable_function_wrapper = partial(
-        p.func, *p.args, **p.keywords, type_cast=caster_tuples
-    )
-    protos_dict = make_protos(
-        packs, settings, validate_injectable_function_wrapper, extract_request
-    )
+    protos_dict = make_protos(packs, settings, validate_function, extract_request)
     if protos_dict is None:
         # COMPILATION FAIL
         return
 
-    output_dir = Path(settings.get("output_dir", "./grpcAPI/proto"))
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = get_output_dir(settings)
+
     if version_mode == "lint":
         print("[INFO] Lint mode: no files will be written.")
         return

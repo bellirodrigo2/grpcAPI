@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, AsyncGenerator, Callable
 
 from grpcAPI.ctxinject.validate import inject_validation
-from grpcAPI.module_import import import_modules
+from grpcAPI.proto_load import import_modules
 from grpcAPI.server import Server
 from grpcAPI.service_provider import make_service_classes
 from tests.test_app_helper import make_app

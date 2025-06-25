@@ -2,7 +2,7 @@ from pathlib import Path
 
 import grpc
 
-from grpcAPI.module_import import import_modules
+from grpcAPI.proto_load import import_modules
 
 p = Path(__file__).parent / "proto"
 modules = import_modules(p, ["compiled"])
@@ -16,7 +16,9 @@ def run() -> None:
         request = mod1_pb2.UserInput(
             code=mod1_pb2.EMPLOYEE, age=30, name="John Doe", affilliation="ACME Corp"
         )
-        response = stub.newuser(request)
+        # response = stub.newuser(request)
+        method = getattr(stub, "newuser")
+        response = method(request)
 
         print("Resposta recebida:")
         print(response)

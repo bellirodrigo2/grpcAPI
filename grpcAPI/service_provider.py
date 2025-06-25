@@ -3,7 +3,6 @@ from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, T
 
 from typemapping import map_return_type
 
-from grpcAPI.app import ProtoModel
 from grpcAPI.ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
 from grpcAPI.exceptionhandler import ExceptionRegistry
 from grpcAPI.proto_inject import extract_request

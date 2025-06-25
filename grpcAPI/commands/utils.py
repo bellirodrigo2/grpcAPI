@@ -31,6 +31,20 @@ def load_config(
         return {}
 
 
+def combine_settings(
+    std_settings_path: str,
+    user_settings: Dict[str, Any],
+    field: Optional[str] = None,
+) -> Dict[str, Any]:
+
+    std_settings: Dict[str, Any] = toml.load(std_settings_path)
+    std_settings = std_settings.get(field)
+
+    if field in user_settings:
+        user_settings = user_settings.get(field)
+    return {**std_settings, **user_settings}
+
+
 def load_app(app_path: str) -> None:
     spec = importlib.util.spec_from_file_location("app_module", app_path)
     if spec is None or spec.loader is None:

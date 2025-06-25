@@ -1,10 +1,7 @@
 import enum
-import importlib.util
-import sys
 from copy import deepcopy
 from enum import Enum
 from functools import partial
-from pathlib import Path
 from types import ModuleType
 from typing import (
     Any,
@@ -342,31 +339,6 @@ def _get_class(
     if protofile is None:
         raise KeyError(f'Class "{mapcls.__name__}" has no protofile() set')
     return get(protofile(), mapcls.__name__)
-
-
-def import_py_files_from_folder(
-    folder: Path, package_prefix: str = ""
-) -> Dict[str, ModuleType]:
-    modules: Dict[str, ModuleType] = {}
-
-    for py_file in folder.glob("*.py"):
-        if py_file.name == "__init__.py":
-            continue
-
-        module_name = py_file.stem
-        full_module_name = module_name
-        if package_prefix:
-            full_module_name = f"{package_prefix}.{module_name}"
-        spec = importlib.util.spec_from_file_location(full_module_name, py_file)
-
-        if spec and spec.loader:
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[full_module_name] = module
-            spec.loader.exec_module(module)
-            normalized_name = module_name.replace("_pb2", "")
-            modules[normalized_name] = module
-
-    return modules
 
 
 def bind_proto_proxy(

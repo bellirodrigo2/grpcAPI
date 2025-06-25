@@ -1,102 +1,95 @@
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
-
-import toml
+from types import ModuleType
+from typing import Any, AsyncGenerator, Callable, Dict, List, Union
 
 from grpcAPI.app import App
-from grpcAPI.commands.utils import load_app
+from grpcAPI.commands.utils import combine_settings, load_app
 from grpcAPI.ctxinject.validate import inject_validation
-from grpcAPI.makeproto.protoc_compiler import compile
-from grpcAPI.module_import import import_modules
 from grpcAPI.persutil.versioning import get_current_version
+from grpcAPI.proto_load import load_proto_temp_lifespan
 from grpcAPI.server import IServer, Server
 from grpcAPI.service_provider import make_service_classes
 
 
-def list_proto_files(path: Path) -> list[Path]:
-    return [p for p in path.iterdir() if str(p).endswith(".proto")]
+async def load_services(
+    app: App, modules: Dict[str, Dict[str, ModuleType]]
+) -> List[type[Any]]:
+    def inject_validation_wrapper(
+        func: Callable[..., Any],
+    ) -> Callable[..., Any]:
+        inject_validation(func, app._caster)
+        return func
+
+    transform_func = inject_validation_wrapper
+    overrides = app.dependency_overrides
+    exception_registry = app._exception_handlers
+    return await make_service_classes(
+        app.packages,
+        modules,
+        transform_func,
+        overrides,
+        exception_registry,
+        app.error_log,
+    )
 
 
-def list_subfolders(path: Path) -> List[Path]:
-    return [p for p in path.iterdir() if p.is_dir()]
-
-
-@asynccontextmanager
-async def compiler_lifespan(src_dir: Path, version: str) -> AsyncGenerator[Path, Any]:
-    src_path = src_dir / version
-    if not src_path.exists():
-        raise ValueError(f'Can´t find version "{version}" on Source Path: "{src_path}"')
-
-    packages = list_subfolders(src_path)
-    with TemporaryDirectory() as temp_dir:
-        output_dir = Path(temp_dir)
-        for package in packages:
-            proto_files = list_proto_files(package)
-            for file in proto_files:
-                tgt_dir = output_dir / package.name
-                tgt_dir.mkdir(exist_ok=True)
-
-                compile(
-                    tgt_folder=str(src_path),
-                    protofile=f"{str(package.name)}/{str(file.name)}",
-                    output_dir=str(output_dir),
-                )
-        yield output_dir
-
-
-async def run_app(
-    app_path: str,
-    user_settings: Dict[str, Any],
-    version: Optional[str],
-    host: str,
-    port: int,
-    server: IServer = Server,
-) -> None:
-
-    std_settings: Dict[str, Any] = toml.load("./grpcAPI/commands/config.toml")
-    std_settings = std_settings.get("run")
-
-    if "run" in user_settings:
-        user_settings = user_settings.get("run")
-    settings = {**std_settings, **user_settings}
-
-    load_app(app_path)
+def define_path(settings: Dict[str, str], version: Union[str, int, None]) -> Path:
 
     src_dir = Path(settings.get("proto_dir", "./grpcAPI/proto"))
 
     if version is None:
         version = f"V{get_current_version(src_dir)}"
-
+    if isinstance(version, int):
+        version = f"V{version}"
     version = version.upper()
+    src_path = src_dir / version
+    if not src_path.exists():
+        raise ValueError(f'Can´t find version "{version}" on Source Path: "{src_path}"')
+    return src_path
 
+
+def make_server(settings: Dict[str, Any]) -> IServer:
+
+    block_wait = settings.get("block_wait", True)
+    options = [
+        (item["key"], item["value"]) for item in settings.get("server_options", [])
+    ]
+    health_check = settings.get("health_checking", True)
+    reflection = settings.get("reflection", True)
+
+    return Server(
+        modules={},
+        block_wait=block_wait,
+        options=options,
+        health_check=health_check,
+        reflection=reflection,
+    )
+
+
+async def run_app(
+    app_path: str,
+    user_settings: Dict[str, Any],
+    version: Union[str, int, None],
+    host: str,
+    port: int,
+) -> None:
+
+    settings = combine_settings("./grpcAPI/commands/config.toml", user_settings, "run")
+
+    src_path = define_path(settings, version)
+
+    load_app(app_path)
     app = App()
 
     @asynccontextmanager
     async def lifespan(server: Server) -> AsyncGenerator[Any, Any]:
-        async with compiler_lifespan(src_dir, version) as output_dir:
-            modules = import_modules(output_dir.parent, [output_dir.name])
+        async with load_proto_temp_lifespan(src_path) as modules:
+
             server.modules = modules
 
-            def inject_validation_wrapper(
-                func: Callable[..., Any],
-            ) -> Callable[..., Any]:
-                inject_validation(func, app._caster)
-                return func
-
-            transform_func = inject_validation_wrapper
-            overrides = app.dependency_overrides
-            exception_registry = app._exception_handlers
-            services = await make_service_classes(
-                app.packages,
-                modules,
-                transform_func,
-                overrides,
-                exception_registry,
-                app.error_log,
-            )
+            services = await load_services(app, modules)
             for service in services:
                 server.add_service(service)
 
@@ -106,20 +99,7 @@ async def run_app(
                 async with app.lifespan(server):
                     yield
 
-    block_wait = settings.get("block_wait", True)
-    options = [
-        (item["key"], item["value"]) for item in settings.get("server_options", [])
-    ]
-    health_check = settings.get("health_check", True)
-    reflection = settings.get("reflection", True)
-
-    server = server(
-        modules={},
-        block_wait=block_wait,
-        options=options,
-        health_check=health_check,
-        reflection=reflection,
-    )
+    server = make_server(settings)
     await server.start(host, port, lifespan=lifespan)
 
 

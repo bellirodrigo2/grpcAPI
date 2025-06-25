@@ -5,11 +5,8 @@ from typing import Dict, List, Mapping, Sequence
 
 from typing_extensions import Annotated
 
-from grpcAPI.proto_proxy import (
-    ProtoProxy,
-    bind_proto_proxy,
-    import_py_files_from_folder,
-)
+from grpcAPI.proto_load import import_py_files_from_folder
+from grpcAPI.proto_proxy import ProtoProxy, bind_proto_proxy
 from grpcAPI.types import Float, Int32, Metadata, OneOf, String
 
 

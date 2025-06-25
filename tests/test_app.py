@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from grpcAPI.commands.compile import compile_proto
-from grpcAPI.makeproto.protoc_compiler import compile
+from grpcAPI.protoc_compiler import compile
 from tests.test_app_helper import make_app
 
 app = make_app()

@@ -1,24 +1,15 @@
 from types import ModuleType
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Type
 
-from typemapping import map_return_type
-
 from grpcAPI.ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
 from grpcAPI.exceptionhandler import ExceptionRegistry
-from grpcAPI.proto_inject import extract_request
+from grpcAPI.proto_inject import extract_models
 from grpcAPI.proto_proxy import bind_proto_proxy
 from grpcAPI.proxy import IteratorProxy
-from grpcAPI.types import (
-    Context,
-    IPackage,
-    IService,
-    Stream,
-    get_func_arg_info,
-    is_BaseMessage,
-)
+from grpcAPI.types import Context, IPackage, IService, Stream, get_func_arg_info
 
 
-async def make_service_classes(
+def make_service_classes(
     packs: List[IPackage],
     modules: Dict[str, Dict[str, ModuleType]],
     transform_func: Callable[[Callable[..., Any]], Callable[..., Any]],
@@ -31,7 +22,7 @@ async def make_service_classes(
     for pack in packs:
         for module in pack.modules:
             for service in module.services:
-                service_cls = await make_service_class(
+                service_cls = make_service_class(
                     service,
                     modules,
                     transform_func,
@@ -43,12 +34,21 @@ async def make_service_classes(
     return service_clss
 
 
-def get_return_type(func: Callable[..., Any]) -> Type[Any]:
-    returntype = map_return_type(func)
-    return returntype.basetype
+def get_baseclass(
+    service: IService,
+    modules: Dict[str, Dict[str, ModuleType]],
+    methods: Dict[str, Callable[..., Any]],
+) -> Type[Any]:
+    module_str = f"{service.module}_grpc"
+    service_grpc = modules[str(service.package)][module_str]
+    baseclass = getattr(service_grpc, f"{service.name}Servicer")
+    service_class = provide_service_class(
+        service.name, baseclass, methods, (str(service.package), service.module)
+    )
+    return service_class
 
 
-async def make_service_class(
+def make_service_class(
     service: IService,
     modules: Dict[str, Dict[str, ModuleType]],
     transform_func: Callable[[Callable[..., Any]], Callable[..., Any]],
@@ -60,19 +60,15 @@ async def make_service_class(
     methods: Dict[str, Callable[..., Any]] = {}
     for method in service.methods:
 
-        request_types = extract_request(method.method)
-        if len(request_types) != 1 or not is_BaseMessage(request_types[0]):
-            raise TypeError(f"Request Model is not valid: {request_types}")
+        request_type, response_type = extract_models(method.method)
 
-        request_model, request_stream = get_func_arg_info(request_types[0])
-
-        response_type = get_return_type(method.method)
+        request_model, request_stream = get_func_arg_info(request_type)
         response_model, response_stream = get_func_arg_info(response_type)
 
         bind_proto_proxy(request_model, modules[str(request_model.package())])
         bind_proto_proxy(response_model, modules[str(response_model.package())])
 
-        service_method = await make_method(
+        service_method = make_method(
             method.method,
             request_model,
             request_stream,
@@ -83,16 +79,12 @@ async def make_service_class(
             error_log,
         )
         methods[method.method.__name__] = service_method
-    module_str = f"{service.module}_grpc"
-    service_grpc = modules[str(service.package)][module_str]
-    baseclass = getattr(service_grpc, f"{service.name}Servicer")
-    service_class = provide_service_class(
-        service.name, baseclass, methods, (str(service.package), service.module)
-    )
+
+    service_class = get_baseclass(service, modules, methods)
     return service_class
 
 
-async def make_method(
+def make_method(
     func: Callable[..., Any],
     request_type: Type[Any],
     request_stream: bool,
@@ -108,7 +100,7 @@ async def make_method(
     getctx = get_stream_ctx if request_stream else get_ctx
 
     req_t = Stream[request_type] if request_stream else request_type
-    mapped_ctx = await get_mapped_ctx(
+    mapped_ctx = get_mapped_ctx(
         func,
         context={req_t: None, Context: None},
         allow_incomplete=False,
@@ -190,16 +182,26 @@ async def resolve_stream_method(
         yield resp.unwrap
 
 
+class classproperty:
+    def __init__(self, fget):
+        self.fget = classmethod(fget)
+
+    def __get__(self, obj, owner):
+        return self.fget.__get__(obj, owner)()
+
+
 def provide_service_class(
     name: str,
     baseclass: type,
     methods: dict[str, Callable[..., Any]],
     label: Tuple[str, str],
-) -> type:
-    def _label(self: Any) -> tuple[str, str]:
+) -> Type[Any]:
+
+    @classproperty
+    def _label(_: Any) -> Tuple[str, str]:
         return label
 
-    methods["label"] = property(_label)
+    methods["label"] = _label
     return type(name, (baseclass,), methods)
 
 

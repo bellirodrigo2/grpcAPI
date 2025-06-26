@@ -65,7 +65,7 @@ async def resolve_mapped_ctx(
     return results
 
 
-async def map_ctx(
+def map_ctx(
     args: Iterable[VarTypeInfo],
     context: Dict[Union[str, type], Any],
     allow_incomplete: bool,
@@ -90,7 +90,7 @@ async def map_ctx(
             )
             callable_instance._default = dep_func
             dep_args = get_func_args(dep_func)
-            dep_ctx_map = await map_ctx(
+            dep_ctx_map = map_ctx(
                 dep_args, context, allow_incomplete, validate, overrides
             )
 
@@ -141,7 +141,7 @@ async def map_ctx(
     return ctx
 
 
-async def get_mapped_ctx(
+def get_mapped_ctx(
     func: Callable[..., Any],
     context: Dict[Union[str, type], Any],
     allow_incomplete: bool = True,
@@ -154,7 +154,7 @@ async def get_mapped_ctx(
 
     funcargs = get_func_args(func)
 
-    return await map_ctx(funcargs, context, allow_incomplete, validate, overrides)
+    return map_ctx(funcargs, context, allow_incomplete, validate, overrides)
 
 
 async def inject_args(
@@ -165,7 +165,7 @@ async def inject_args(
     transform_func: Optional[Callable[[Callable[..., Any]], Callable[..., Any]]] = None,
     overrides: Optional[Dict[Callable[..., Any], Callable[..., Any]]] = None,
 ) -> partial[Any]:
-    mapped_ctx = await get_mapped_ctx(
+    mapped_ctx = get_mapped_ctx(
         func, context, allow_incomplete, validate, transform_func, overrides
     )
     resolved = await resolve_mapped_ctx(context, mapped_ctx)

@@ -6,11 +6,13 @@ from typing import Any, Dict, Optional
 
 import toml
 
+str_settings_path = "./grpcAPI/commands/config.toml"
+
 
 def load_config(
     config_arg: Optional[str] = None, field: Optional[str] = None
 ) -> Dict[str, Any]:
-    std = Path("./grpcAPI/commands/config.toml")
+    std = Path(str_settings_path)
     if config_arg is not None:
         config_path = Path(config_arg)
     elif os.getenv("GRPCAPI_CONFIG"):
@@ -32,9 +34,9 @@ def load_config(
 
 
 def combine_settings(
-    std_settings_path: str,
     user_settings: Dict[str, Any],
     field: Optional[str] = None,
+    std_settings_path: str = str_settings_path,
 ) -> Dict[str, Any]:
 
     std_settings: Dict[str, Any] = toml.load(std_settings_path)

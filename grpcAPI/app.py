@@ -133,6 +133,7 @@ class Module(IModule):
                     method=func, description=description, options=options
                 )
                 servicepack.methods.append(methodpack)
+                func.__grpcAPI_label__ = (self.package, self.name, servicename)
                 return func
 
             return decorator

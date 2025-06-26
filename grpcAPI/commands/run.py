@@ -2,7 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 from types import ModuleType
-from typing import Any, AsyncGenerator, Callable, Dict, List, Union
+from typing import Any, AsyncGenerator, Callable, Dict, List, Type, Union
 
 from grpcAPI.app import App
 from grpcAPI.commands.utils import combine_settings, load_app
@@ -13,9 +13,9 @@ from grpcAPI.server import IServer, Server
 from grpcAPI.service_provider import make_service_classes
 
 
-async def load_services(
+def load_services(
     app: App, modules: Dict[str, Dict[str, ModuleType]]
-) -> List[type[Any]]:
+) -> List[Type[Any]]:
     def inject_validation_wrapper(
         func: Callable[..., Any],
     ) -> Callable[..., Any]:
@@ -25,7 +25,7 @@ async def load_services(
     transform_func = inject_validation_wrapper
     overrides = app.dependency_overrides
     exception_registry = app._exception_handlers
-    return await make_service_classes(
+    return make_service_classes(
         app.packages,
         modules,
         transform_func,
@@ -76,7 +76,7 @@ async def run_app(
     port: int,
 ) -> None:
 
-    settings = combine_settings("./grpcAPI/commands/config.toml", user_settings, "run")
+    settings = combine_settings(user_settings, "run")
 
     src_path = define_path(settings, version)
 
@@ -85,11 +85,11 @@ async def run_app(
 
     @asynccontextmanager
     async def lifespan(server: Server) -> AsyncGenerator[Any, Any]:
-        async with load_proto_temp_lifespan(src_path) as modules:
+        with load_proto_temp_lifespan(src_path) as modules:
 
             server.modules = modules
 
-            services = await load_services(app, modules)
+            services = load_services(app, modules)
             for service in services:
                 server.add_service(service)
 

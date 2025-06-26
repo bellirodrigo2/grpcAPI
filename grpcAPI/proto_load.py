@@ -1,6 +1,6 @@
 import importlib.util
 import sys
-from contextlib import asynccontextmanager
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import ModuleType
@@ -78,8 +78,8 @@ def load_proto(proto_dir: Path, dst_dir: Path) -> Dict[str, Dict[str, ModuleType
     return import_modules(dst_dir.parent, [dst_dir.name])
 
 
-@asynccontextmanager
-async def load_proto_temp_lifespan(
+@contextmanager
+def load_proto_temp_lifespan(
     src_path: Path,
 ) -> AsyncGenerator[Dict[str, Dict[str, ModuleType]], Any]:
     with TemporaryDirectory() as temp_dir:

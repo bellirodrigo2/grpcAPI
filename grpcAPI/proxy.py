@@ -1,10 +1,12 @@
 import enum
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
     Generator,
     ItemsView,
+    Iterable,
     Iterator,
     KeysView,
     List,
@@ -290,8 +292,14 @@ def bind_proxy(
 
 
 class IteratorProxy:
-    def __init__(self, aioreq_iter: Any, proxy_cls: Type[Proxy]) -> None:
-        self._aiter = aioreq_iter
+    def __init__(
+        self, aioreq_iter: Union[AsyncIterator, Iterable], proxy_cls: Type[Any]
+    ) -> None:
+        if hasattr(aioreq_iter, "__aiter__"):
+            self._aiter = aioreq_iter
+        else:
+            self._aiter = self._wrap_sync_iter(aioreq_iter)
+
         self.proxy_cls = proxy_cls
 
     def __aiter__(self) -> "IteratorProxy":
@@ -300,3 +308,20 @@ class IteratorProxy:
     async def __anext__(self) -> Any:
         raw = await self._aiter.__anext__()
         return self.proxy_cls(raw)
+
+    @staticmethod
+    def _wrap_sync_iter(data: Iterable) -> AsyncIterator:
+        class _AsyncIter:
+            def __init__(self, it):
+                self._it = iter(it)
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                try:
+                    return next(self._it)
+                except StopIteration:
+                    raise StopAsyncIteration
+
+        return _AsyncIter(data)

@@ -1,7 +1,7 @@
 from functools import partial
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Tuple, Type
 
-from typemapping import get_func_args
+from typemapping import get_func_args, map_return_type
 
 from grpcAPI.app import ProtoModel
 from grpcAPI.ctxinject.model import ModelFieldInject
@@ -24,7 +24,7 @@ validate_injectable_function = partial(
 )
 
 
-def extract_request(func: Callable[..., Any]) -> List[type]:
+def extract_request(func: Callable[..., Any]) -> List[Type[Any]]:
     funcargs = get_func_args(func)
     requests = set()
 
@@ -36,3 +36,17 @@ def extract_request(func: Callable[..., Any]) -> List[type]:
             requests.add(instance.model)
 
     return list(requests)
+
+
+def get_return_type(func: Callable[..., Any]) -> Type[Any]:
+    returntype = map_return_type(func)
+    return returntype.basetype
+
+
+def extract_models(func: Callable[..., Any]) -> Tuple[Type[Any], Type[Any]]:
+    request_types = extract_request(func)
+    if len(request_types) != 1 or not is_BaseMessage(request_types[0]):
+        raise TypeError(f"Request Model is not valid: {request_types}")
+    request_type = request_types[0]
+    response_type = get_return_type(func)
+    return request_type, response_type

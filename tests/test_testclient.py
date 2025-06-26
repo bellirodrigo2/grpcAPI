@@ -1,8 +1,7 @@
 import unittest
-from re import L
 from typing import Any, Generator, List
 
-from grpcAPI.testclient.testclient import TestClient
+from grpcAPI.testclient import TestClient
 from tests.test_app_helper import (
     UserCode,
     UserInput,
@@ -15,7 +14,6 @@ from tests.test_app_helper import (
 )
 
 app = make_app()
-
 client = TestClient(app)
 
 

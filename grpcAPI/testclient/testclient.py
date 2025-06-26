@@ -10,7 +10,7 @@ from grpcAPI.commands.run import load_services
 from grpcAPI.commands.utils import combine_settings
 from grpcAPI.proto_load import load_proto
 from grpcAPI.singleton import SingletonMeta
-from grpcAPI.testclient.contextmock import ContextMock
+from grpcAPI.testclient import ContextMock
 from grpcAPI.types import Context
 from grpcAPI.types.method import Stream
 

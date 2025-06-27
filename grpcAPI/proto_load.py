@@ -12,7 +12,9 @@ from grpcAPI.types.message import NO_PACKAGE
 
 def list_subfolders(path: Union[Path, str]) -> List[Path]:
     path = Path(path)
-    return [p for p in path.iterdir() if p.is_dir()]
+    return [
+        p for p in path.iterdir() if p.is_dir() and not str(p.name).startswith("__")
+    ]
 
 
 def list_proto_files(path: Path) -> list[Path]:
@@ -35,7 +37,7 @@ def import_py_files_from_folder(
     modules: Dict[str, ModuleType] = {}
 
     for py_file in folder.glob("*.py"):
-        if py_file.name == "__init__.py":
+        if py_file.name.startswith("__"):
             continue
 
         module_name = py_file.stem
@@ -111,6 +113,8 @@ def load_proto_temp_lifespan(
     src_path: Path,
 ) -> AsyncGenerator[Dict[str, Dict[str, ModuleType]], Any]:
     with TemporaryDirectory() as temp_dir:
-        output_dir = Path(temp_dir)
+        output_dir = Path(temp_dir) / "compiled"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         modules = load_proto(src_path, output_dir)
         yield modules

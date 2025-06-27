@@ -2,41 +2,32 @@
   // Module1
 syntax = "proto3";
 package pack1;
-message UserNames {
-repeated int64 ids = 1;
-  oneof occupation {
-string employee = 2;
-  }
-}
-message User {
-UserCode code = 1 [json_name = "user_code"];
-  // user´s age
+message UserInput {
+UserCode code = 1;
 int64 age = 2;
 string affilliation = 3;
   // user name
 string name = 4 [deprecated = true];
-  /*
-this is a long description that should be formatted, because it has more than 80
-characteres
-*/
+}
+message UserNames {
+repeated int64 ids = 1;
+}
+message UserList {
+repeated User users = 1;
+int32 index = 12;
+}
+message User {
+UserCode code = 1;
+int64 age = 2;
+string affilliation = 3;
+  // user name
+string name = 4 [deprecated = true];
 string id = 5;
   oneof occupation {
 string employee = 6;
 string school = 7;
 bool inactive = 8;
   }
-}
-message UserList {
-repeated User users = 1;
-int32 index = 12;
-}
-message UserInput {
-UserCode code = 1 [json_name = "user_code"];
-  // user´s age
-int64 age = 2;
-string affilliation = 3;
-  // user name
-string name = 4 [deprecated = true];
 }
 enum UserCode {
 EMPLOYEE = 0;

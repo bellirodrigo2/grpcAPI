@@ -65,7 +65,7 @@ def get_baseclass(
     service_grpc = modules[service.package][module_str]
     baseclass = getattr(service_grpc, f"{service.name}Servicer")
     service_class = provide_service_class(
-        service.name, baseclass, methods, (str(service.package), service.module)
+        service.name, baseclass, methods, (service.package, service.module)
     )
     return service_class
 
@@ -89,7 +89,6 @@ def make_service_class(
 
         bind_proto_proxy(request_model, modules[str(request_model.package())])
         bind_proto_proxy(response_model, modules[str(response_model.package())])
-
         service_method = make_method(
             method.method,
             request_model,

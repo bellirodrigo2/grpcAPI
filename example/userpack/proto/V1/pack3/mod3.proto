@@ -1,0 +1,11 @@
+// mod3
+  // Module3
+syntax = "proto3";
+package pack3;
+message Request3 {
+string now = 1;
+string uuid = 2;
+}
+service extra_service {
+  rpc castings(Request3) returns (Request3);
+}

@@ -1,6 +1,13 @@
 {
-  "hash": "95dc831c7016db24363777a9a3692bd97e21ae6dd9159264ae4f7b288a9663f8",
+  "hash": "bf8042ef49dba12fcbde6c645bb1292bb56e65b6df00819290b75ba9f7dad61c",
   "schema": {
+    "NO_PACKAGE": {
+      "mod4": {
+        "name": "mod4",
+        "objects": [],
+        "options": {}
+      }
+    },
     "pack1": {
       "mod1": {
         "name": "mod1",
@@ -11,6 +18,13 @@
     "pack2": {
       "mod2": {
         "name": "mod2",
+        "objects": [],
+        "options": {}
+      }
+    },
+    "pack3": {
+      "mod3": {
+        "name": "mod3",
         "objects": [],
         "options": {}
       }

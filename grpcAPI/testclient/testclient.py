@@ -45,7 +45,6 @@ class ModuleLoader(metaclass=SingletonMeta):
 
         compiled_path = self.tempdir / "compiled"
         compiled_path.mkdir(parents=True, exist_ok=True)
-
         self.modules = load_proto(protos_path, compiled_path)
 
         atexit.register(self._cleanup)

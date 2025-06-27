@@ -4,7 +4,7 @@ from typing import Tuple
 
 from grpcAPI.commands.compile import compile_proto
 from grpcAPI.commands.run import run_app
-from grpcAPI.commands.utils import load_config
+from grpcAPI.settings.utils import load_config
 
 
 def get_args_compile(

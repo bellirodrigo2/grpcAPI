@@ -164,7 +164,9 @@ def make_path_content_list(modules: Dict[str, Dict[str, str]]) -> List[Tuple[str
 
     for package, proto_dict in modules.items():
         for modulename, proto_text in proto_dict.items():
-            proto_path = f"{package}/{modulename}.proto"
+            proto_path = f"{modulename}.proto"
+            if isinstance(package, str):
+                proto_path = f"{package}/{proto_path}"
             all_modules.add((proto_text, proto_path))
     return list(all_modules)
 
@@ -179,8 +181,8 @@ def persist_protos(
     output_subdir, (schema_dir, schema_file) = get_version_paths(
         output_dir, version_mode
     )
-
     protos_file = make_path_content_list(protos_dict)
+
     protos_write_pack = WritePackage(
         parent_dir=output_subdir,
         clear_parent=True,

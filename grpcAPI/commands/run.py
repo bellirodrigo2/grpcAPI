@@ -1,38 +1,14 @@
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
-from types import ModuleType
-from typing import Any, AsyncGenerator, Callable, Dict, List, Type, Union
+from typing import Any, AsyncGenerator, Dict, Union
 
 from grpcAPI.app import App
-from grpcAPI.commands.utils import combine_settings, load_app
-from grpcAPI.ctxinject.validate import inject_validation
 from grpcAPI.persutil.versioning import get_current_version
 from grpcAPI.proto_load import load_proto_temp_lifespan
 from grpcAPI.server import IServer, Server
-from grpcAPI.service_provider import make_service_classes
-
-
-def load_services(
-    app: App, modules: Dict[str, Dict[str, ModuleType]]
-) -> List[Type[Any]]:
-    def inject_validation_wrapper(
-        func: Callable[..., Any],
-    ) -> Callable[..., Any]:
-        inject_validation(func, app._caster)
-        return func
-
-    transform_func = inject_validation_wrapper
-    overrides = app.dependency_overrides
-    exception_registry = app._exception_handlers
-    return make_service_classes(
-        app.packages,
-        modules,
-        transform_func,
-        overrides,
-        exception_registry,
-        app.error_log,
-    )
+from grpcAPI.service_provider import load_services
+from grpcAPI.settings.utils import combine_settings, load_app
 
 
 def define_path(settings: Dict[str, str], version: Union[str, int, None]) -> Path:

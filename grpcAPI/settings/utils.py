@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 import toml
 
-str_settings_path = "./grpcAPI/commands/config.toml"
+str_settings_path = "./grpcAPI/settings/config.toml"
 
 
 def load_config(

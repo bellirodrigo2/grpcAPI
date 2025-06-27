@@ -7,7 +7,7 @@ from grpcAPI.proto_inject import (
     FromContext,
     FromRequest,
     extract_request,
-    validate_injectable_function,
+    proto_check_injectable,
 )
 from grpcAPI.types import Context, Stream
 
@@ -68,39 +68,39 @@ class TestValidateFunc(unittest.TestCase):
         pass
 
     def test_validate_1(self) -> None:
-        errors = validate_injectable_function(handler1)
+        errors = proto_check_injectable(handler1)
         self.assertEqual(len(errors), 0)
 
     def test_validate_2(self) -> None:
-        errors = validate_injectable_function(handler2)
+        errors = proto_check_injectable(handler2)
         self.assertEqual(len(errors), 0)
 
     def test_validate_3(self) -> None:
-        errors = validate_injectable_function(handler3)
+        errors = proto_check_injectable(handler3)
         self.assertEqual(len(errors), 0)
 
     def test_validate_4(self) -> None:
-        errors = validate_injectable_function(handler4)
+        errors = proto_check_injectable(handler4)
         self.assertEqual(len(errors), 0)
 
     def test_validate_5(self) -> None:
-        errors = validate_injectable_function(handler5)
+        errors = proto_check_injectable(handler5)
         self.assertEqual(len(errors), 0)
 
     def test_validate_6(self) -> None:
-        errors = validate_injectable_function(handler6)
+        errors = proto_check_injectable(handler6)
         self.assertEqual(len(errors), 0)
 
     def test_validate_7(self) -> None:
-        errors = validate_injectable_function(handler7)
+        errors = proto_check_injectable(handler7)
         self.assertEqual(len(errors), 0)
 
     def test_validate_8(self) -> None:
-        errors = validate_injectable_function(handler8)
+        errors = proto_check_injectable(handler8)
         self.assertEqual(len(errors), 0)
 
     def test_validate_9(self) -> None:
-        errors = validate_injectable_function(handler9)
+        errors = proto_check_injectable(handler9)
         self.assertEqual(len(errors), 0)
 
 

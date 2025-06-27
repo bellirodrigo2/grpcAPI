@@ -1,6 +1,8 @@
-from typing import Annotated, List, Tuple, Type
+from datetime import datetime
+from typing import Annotated, List, Tuple
+from uuid import UUID
 
-from grpcAPI.app import App, Package
+from grpcAPI.app import App, Module, Package
 from grpcAPI.ctxinject.model import Depends
 from grpcAPI.exceptionhandler import ErrorCode
 from grpcAPI.proto_inject import FromContext, FromRequest
@@ -66,7 +68,8 @@ async def newuser(
     peer: str = FromContext(),
     db: str = Depends(get_db),
 ) -> User:
-    userproxy = User(age=userage, id="0", name=request.name)
+    name = request.name + db
+    userproxy = User(age=userage, id="0", name=name)
     key = request.code.name.lower()
     if key not in ("employee", "school", "inactive"):
         raise ValueError(f"Occupation = {key}")
@@ -91,7 +94,7 @@ async def manynewuser(request: Stream[UserInput], ctx: Context) -> UserList:
     # print("Many Users received")
     try:
         async for req in request:
-            user_obj = await newuser(req, req.age, ctx.peer())
+            user_obj = await newuser(req, req.age, ctx.peer(), db="")
             users.append(user_obj)
     except Exception as e:
         # print(f"[Server] Error in manynewuser: {e}")
@@ -100,7 +103,10 @@ async def manynewuser(request: Stream[UserInput], ctx: Context) -> UserList:
 
 
 @user_service()
-async def bilateralnewuser(request: Stream[UserInput]) -> Stream[User]:
+async def bilateralnewuser(
+    request: Stream[UserInput],
+    peer: str = FromContext(),
+) -> Stream[User]:
     async for req in request:
         # print(f"Bilateral stream received: {req}")
         yield User(
@@ -108,11 +114,37 @@ async def bilateralnewuser(request: Stream[UserInput]) -> Stream[User]:
         )
 
 
-async def get_db2() -> str:
-    return "postgresql"
+pack3 = Package("pack3")
+
+mod3 = pack3.Module("mod3", description="Module3")
+
+extra_service = mod3.Service("extra_service")
 
 
-app.dependency_overrides[get_db] = get_db2
+class Request3(mod3.ProtoModel):
+    now: str
+    uuid: str
+
+
+@extra_service()
+async def castings(
+    now: datetime = FromRequest(Request3), uuid: UUID = FromRequest(Request3)
+) -> Request3:
+    return Request3(now=str(now), uuid=str(uuid))
+
+
+mod4 = Module("mod4")
+
+
+class Request4(mod4.ProtoModel):
+    path: str
+
+
+test_service = mod4.Service("test")
+
+
+async def test(req: Request4) -> Request4:
+    return Request4(path=req.path)
 
 
 @app.exception_handler(ValueError)
@@ -128,6 +160,8 @@ def handle_valueerror(
 if not app.packages:
     app.add_package(pack1)
     app.add_package(pack2)
+    app.add_package(pack3)
+    app.add_module(mod4)
 
 
 def make_app() -> App:

@@ -1,3 +1,4 @@
+import json
 from datetime import date, datetime, time
 from typing import (
     Any,
@@ -109,6 +110,16 @@ def constrained_uuid(
     return ConstrainedUUID(value, **kwargs)
 
 
+def constrained_json(
+    value: str,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    # try:
+    return json.loads(value)
+    # except json.JSONDecodeError as e:
+    # raise ValueError(str(e))
+
+
 arg_proc: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = {
     (str, str): constrained_str,
     (int, int): constrained_num,
@@ -119,6 +130,7 @@ arg_proc: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = {
     (str, time): constrained_time,
     (str, datetime): constrained_datetime,
     (str, UUID): constrained_uuid,
+    (str, dict): constrained_json,
 }
 
 
@@ -152,7 +164,8 @@ def inject_validation(
 
         modeltype = extracttype(modeltype)
         argtype = extracttype(argtype)
-
         validator = argproc.get((modeltype, argtype), None)
         if validator is not None and instance._validator is None:
             instance._validator = validator
+
+        # da pra tentar aqui baseado em subclass

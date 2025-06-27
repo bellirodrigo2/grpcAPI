@@ -47,6 +47,8 @@ class ModuleTemplate(BaseModuleTemplate):
         self.blocks = blocks
 
     def render(self) -> str:
+        if not self.blocks:
+            return ""
         for block in self.blocks:
             self.add_field(block.get_render_dict())
         str_file = super().render()
@@ -141,7 +143,6 @@ def make_execution_list(
     cls_blocks_dict = extract_cls_blocks(packlist)
     for package in packlist:
         state: Dict[str, ModuleTemplate] = {}
-        # ADICIONAR OS FILE LEVEL REPORT AQUI
         blocks = []
         for module in package.modules:
             service_blocks = [
@@ -198,8 +199,17 @@ def make_protos(
 
     proto_files: Dict[str, Dict[str, str]] = defaultdict(dict)
     for template in allmodules:
+
+        if isinstance(template.package, _NoPackage):
+            package_key = template.package
+            # AQUI MUDAR PARA NAO KEY
+            template.package = ""
+        else:
+            package_key = str(template.package)
+
         rendered = template.render()
-        package = str(template.package)
-        proto_files[package][template.modulename] = rendered
+        if not rendered:
+            continue
+        proto_files[package_key][template.modulename] = rendered
 
     return proto_files

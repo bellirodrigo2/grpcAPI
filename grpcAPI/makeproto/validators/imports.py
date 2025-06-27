@@ -1,7 +1,3 @@
-# import "common.proto";
-# import "pack1/file2.proto";
-# import "pack2/file2.proto";
-
 from typing import Any, Optional, Set, Tuple, Type, Union, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass

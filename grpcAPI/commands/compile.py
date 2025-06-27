@@ -1,35 +1,16 @@
-from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
-
-import toml
+from typing import Any, Dict
 
 from grpcAPI import App
-from grpcAPI.commands.utils import combine_settings, load_app
-from grpcAPI.makeproto import make_protos
-from grpcAPI.proto_inject import extract_request, validate_injectable_function
+from grpcAPI.proto_builder import build_protos
 from grpcAPI.proto_schema import persist_protos
+from grpcAPI.settings.utils import combine_settings, load_app
 
 
 def get_output_dir(settings: Dict[str, str]) -> Path:
     output_dir = Path(settings.get("output_dir", "./grpcAPI/proto"))
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
-
-
-def define_validation_function(app: App) -> Callable[..., Any]:
-    p = validate_injectable_function
-    caster_tuples = list(app._caster.keys())
-    return partial(p.func, *p.args, **p.keywords, type_cast=caster_tuples)
-
-
-def build_protos(
-    app: App, settings: Dict[str, Any]
-) -> Optional[Dict[str, Dict[str, str]]]:
-
-    validate_function = define_validation_function(app)
-    packs = app.packages
-    return make_protos(packs, settings, validate_function, extract_request)
 
 
 def compile_proto(

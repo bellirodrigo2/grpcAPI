@@ -7,6 +7,7 @@ from types import ModuleType
 from typing import Any, AsyncGenerator, Dict, List, Union
 
 from grpcAPI.protoc_compiler import compile
+from grpcAPI.types.message import NO_PACKAGE
 
 
 def list_subfolders(path: Union[Path, str]) -> List[Path]:
@@ -16,6 +17,16 @@ def list_subfolders(path: Union[Path, str]) -> List[Path]:
 
 def list_proto_files(path: Path) -> list[Path]:
     return [p for p in path.iterdir() if str(p).endswith(".proto")]
+
+
+def list_compiled_proto_files(path: Path) -> list[Path]:
+    def is_module(file: str) -> bool:
+        if not file.startswith("__") and file.endswith(".py") and "_pb2" in file:
+            print(file)
+            return True
+        return False
+
+    return [p for p in path.iterdir() if is_module(p.name)]
 
 
 def import_py_files_from_folder(
@@ -50,8 +61,16 @@ def import_modules(
     proto_path = path.joinpath(*sub_paths)
     if str(proto_path) not in sys.path:
         sys.path.insert(0, str(proto_path))
-    packages = list_subfolders(proto_path)
+
     modules: Dict[str, Dict[str, ModuleType]] = {}
+
+    no_pack_module_str = ".".join([path.name, *sub_paths])
+    no_package_module: Dict[str, ModuleType] = import_py_files_from_folder(
+        proto_path, no_pack_module_str
+    )
+    modules[NO_PACKAGE] = no_package_module
+
+    packages = list_subfolders(proto_path)
     for pack in packages:
         modules_str = ".".join([path.name, *sub_paths, pack.name])
         module: Dict[str, ModuleType] = import_py_files_from_folder(pack, modules_str)
@@ -60,6 +79,15 @@ def import_modules(
 
 
 def compile_proto(src_dir: Path, dst_dir: Path) -> None:
+
+    no_packagers = list_proto_files(src_dir)
+    for file in no_packagers:
+        compile(
+            tgt_folder=str(src_dir),
+            protofile=file.name,
+            output_dir=str(dst_dir),
+        )
+
     packages = list_subfolders(src_dir)
     for package in packages:
         proto_files = list_proto_files(package)
@@ -68,7 +96,7 @@ def compile_proto(src_dir: Path, dst_dir: Path) -> None:
             tgt_dir.mkdir(exist_ok=True)
             compile(
                 tgt_folder=str(src_dir),
-                protofile=f"{str(package.name)}/{str(file.name)}",
+                protofile=f"{package.name}/{str(file.name)}",
                 output_dir=str(dst_dir),
             )
 

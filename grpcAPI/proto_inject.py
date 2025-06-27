@@ -1,11 +1,12 @@
 from functools import partial
-from typing import Any, Callable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from typemapping import get_func_args, map_return_type
 
 from grpcAPI.app import ProtoModel
 from grpcAPI.ctxinject.model import ModelFieldInject
 from grpcAPI.ctxinject.sigcheck import func_signature_check
+from grpcAPI.ctxinject.validate import inject_validation
 from grpcAPI.types import Context, Stream
 from grpcAPI.types.message import is_BaseMessage
 
@@ -19,9 +20,32 @@ class FromRequest(ModelFieldInject):
     pass
 
 
-validate_injectable_function = partial(
-    func_signature_check, modeltype=[ProtoModel, Context], generictype=Stream
-)
+def proto_check_injectable(
+    func: Callable[..., Any],
+    type_cast: Optional[List[Tuple[type[Any], Type[Any]]]] = None,
+) -> List[str]:
+    type_cast = type_cast or []
+    return func_signature_check(
+        func,
+        modeltype=[ProtoModel, Context],
+        generictype=Stream,
+        bt_default_fallback=True,
+        type_cast=type_cast,
+    )
+
+
+def define_validation_function(
+    type_cast: List[Tuple[type[Any], Type[Any]]],
+) -> Callable[..., Any]:
+    return partial(proto_check_injectable, type_cast=type_cast)
+
+
+def proto_inject_validation(
+    func: Callable[..., Any],
+    argproc: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]],
+) -> Callable[..., Any]:
+    inject_validation(func, argproc)
+    return func
 
 
 def extract_request(func: Callable[..., Any]) -> List[Type[Any]]:

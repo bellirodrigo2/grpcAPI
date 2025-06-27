@@ -1,12 +1,34 @@
+from functools import partial
 from types import ModuleType
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Type
 
+from grpcAPI.app import App
 from grpcAPI.ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
 from grpcAPI.exceptionhandler import ExceptionRegistry
-from grpcAPI.proto_inject import extract_models
+from grpcAPI.proto_inject import extract_models, proto_inject_validation
 from grpcAPI.proto_proxy import bind_proto_proxy
 from grpcAPI.proxy import IteratorProxy
 from grpcAPI.types import Context, IPackage, IService, Stream, get_func_arg_info
+
+
+def load_services(
+    app: App, modules: Dict[str, Dict[str, ModuleType]]
+) -> List[Type[Any]]:
+    inject_validation_wrapper = partial(
+        proto_inject_validation, argproc=app.casting_dict
+    )
+
+    transform_func = inject_validation_wrapper
+    overrides = app.dependency_overrides
+    exception_registry = app._exception_handlers
+    return make_service_classes(
+        app.packages,
+        modules,
+        transform_func,
+        overrides,
+        exception_registry,
+        app.error_log,
+    )
 
 
 def make_service_classes(
@@ -40,7 +62,7 @@ def get_baseclass(
     methods: Dict[str, Callable[..., Any]],
 ) -> Type[Any]:
     module_str = f"{service.module}_grpc"
-    service_grpc = modules[str(service.package)][module_str]
+    service_grpc = modules[service.package][module_str]
     baseclass = getattr(service_grpc, f"{service.name}Servicer")
     service_class = provide_service_class(
         service.name, baseclass, methods, (str(service.package), service.module)

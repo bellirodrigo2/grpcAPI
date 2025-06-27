@@ -12,6 +12,7 @@ from grpcAPI.types import (
     if_stream_get_type,
     is_BaseMessage,
 )
+from grpcAPI.types.message import get_BaseMessage
 from grpcAPI.types.types import BaseField
 
 
@@ -88,7 +89,10 @@ class TypeValidator(CompilerPass):
         if len(requests) == 0:
             msg = "Method must define a request message."
         elif len(requests) > 1:
-            msg = f"Only one request message allowed per method. Found {len(requests)}"
+            if len(set(map(lambda x: get_BaseMessage(x), requests))) == 1:
+                msg = f"Stream and Single request mixed in the args"
+            else:
+                msg = f"Only one request message allowed per method. Found {[req.__name__ for req in requests]}"
         elif not is_BaseMessage(requests[0]):
             msg = invalid_req.description
         if msg is not None:

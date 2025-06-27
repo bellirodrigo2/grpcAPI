@@ -225,6 +225,22 @@ class TestTypeValidator(unittest.TestCase):
             list_ctx_error_messages(self.context)[0],
         )
 
+    def test_method_single_and_stream_req(self) -> None:
+        make_method(
+            "Method1",
+            request_type=[Stream[Proto2], Proto2],
+            block=self.service,
+            response_type=BaseMessage,
+            method_func=agen,
+        )
+        self.validator.execute([self.service], self.context)
+        self.assertEqual(len(self.context), 1)
+        self.assertTrue(any(msg == "E801" for msg in list_ctx_error_code(self.context)))
+        self.assertIn(
+            "Stream and Single request mixed in the args",
+            list_ctx_error_messages(self.context)[0],
+        )
+
     def test_method_empty_res(self) -> None:
         make_method(
             "Method1",

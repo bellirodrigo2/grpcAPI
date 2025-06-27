@@ -11,6 +11,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -67,6 +68,17 @@ class ServicePack(IService):
     methods: List[IMethod]
     description: str
     options: ProtoOption
+
+
+def set_label(
+    func: Callable[..., Any], package: str, module: str, service: str
+) -> None:
+    func.__grpcAPI_label__ = (package, module, service)
+
+
+def get_label(func: Callable[..., Any]) -> Tuple[str, str, str]:
+    label = getattr(func, "__grpcAPI_label__", None)
+    return label
 
 
 @dataclass(frozen=True)
@@ -133,7 +145,7 @@ class Module(IModule):
                     method=func, description=description, options=options
                 )
                 servicepack.methods.append(methodpack)
-                func.__grpcAPI_label__ = (self.package, self.name, servicename)
+                set_label(func, self.package, self.name, servicename)
                 return func
 
             return decorator
@@ -148,7 +160,7 @@ VALID_PACKAGE_RE = re.compile(r"^([a-zA-Z_][a-zA-Z0-9_]*)(\.[a-zA-Z_][a-zA-Z0-9_
 class Package(IPackage):
 
     def __post_init__(self) -> None:
-        if not bool(VALID_PACKAGE_RE.match(self.name)):
+        if self.name != NO_PACKAGE and not bool(VALID_PACKAGE_RE.match(self.name)):
             raise ValueError(
                 f'Package name "{self.name}" is not valid. Only, letters, numbers, underscore and dot is allowed'
             )
@@ -202,6 +214,13 @@ class App(metaclass=SingletonMeta):
     _caster: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = field(
         default_factory=lambda: dict(arg_proc)
     )
+    _add_casting: Optional[Callable[["App"], None]] = None
+
+    @property
+    def casting_dict(self) -> Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]]:
+        if self._add_casting is not None:
+            self._add_casting(self)
+        return self._caster
 
     @property
     def packages(self) -> List[IPackage]:
@@ -240,3 +259,33 @@ class App(metaclass=SingletonMeta):
             return func
 
         return decorator
+
+
+def get_models(
+    func: Callable[..., Any], from_type: Any, to_subclass: Any
+) -> List[Type[Any]]:
+    models: List[Type[Any]] = []
+
+    return models
+
+
+T = TypeVar("T")
+U = TypeVar("U")
+
+
+def add_models(app: App, from_type: T, to_subclass: U, cast: Callable[[T], U]) -> None:
+
+    funcs: List[Callable[..., Any]] = []
+    for package in app.packages:
+        for module in package.modules:
+            for service in module.services:
+                for method in service.methods:
+                    funcs.append(method.method)
+
+    for func in funcs:
+        models = get_models(func, from_type, to_subclass)
+        for model in models:
+            key = (from_type, model)
+            if key in app._caster.keys():
+                continue
+            app._caster[key] = cast

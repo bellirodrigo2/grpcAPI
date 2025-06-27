@@ -1,12 +1,12 @@
+import json
 import unittest
 from datetime import date, datetime, time
-from typing import Dict, List
+from typing import Any, Dict, List
 from uuid import UUID
 
 from typemapping import get_func_args
 
 from grpcAPI.ctxinject.model import ModelFieldInject
-from grpcAPI.ctxinject.sigcheck import func_signature_check
 from grpcAPI.ctxinject.validate import inject_validation
 
 
@@ -185,3 +185,28 @@ class TestValidation(unittest.TestCase):
         modelinj.validate("94fa2f76-84c7-484e-95ee-5fc3fabbd9fb", basetype=UUID)
         with self.assertRaises(ValueError):
             modelinj.validate("NONUUID", basetype=UUID)
+
+    def test_validate_json(self) -> None:
+        class Model:
+            x: str
+
+        def func(
+            arg: Dict[str, Any] = ModelFieldInject(
+                model=Model,
+                field="x",
+            )
+        ) -> None:
+            return
+
+        args = get_func_args(func)
+        modelinj = args[0].getinstance(ModelFieldInject)
+        self.assertFalse(modelinj.has_validate)
+        inject_validation(func)
+        self.assertTrue(modelinj.has_validate)
+        data = {"foo": "bar"}
+        self.assertEqual(
+            modelinj.validate(json.dumps(data), basetype=Dict[str, Any]), data
+        )
+
+        with self.assertRaises(ValueError):
+            modelinj.validate("no json", basetype=Dict[str, Any])

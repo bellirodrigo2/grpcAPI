@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from grpcAPI.app import Package
-from grpcAPI.makeproto.main import make_protos
+from grpcAPI.makeproto import make_protos
 from grpcAPI.proto_inject import extract_request
 from grpcAPI.protoc_compiler import compile
 from tests.test_app_helper import make_app
@@ -29,7 +29,7 @@ class TestCompileApp(unittest.TestCase):
         if protos is None:
             raise
         for package, module_dict in protos.items():
-            outdir = self.output_dir / package
+            outdir = self.output_dir / str(package)
             outdir.mkdir(exist_ok=True)
             for modulename, proto_str in module_dict.items():
                 filename = f"{modulename}.proto"

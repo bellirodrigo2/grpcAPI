@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Type, get_args, get_origin
+from typing import Any, Type, get_args, get_origin
 
 from grpcAPI.makeproto.compiler import CompilerPass
 from grpcAPI.makeproto.protoblock import Block, Field, Method

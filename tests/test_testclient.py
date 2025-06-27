@@ -1,12 +1,16 @@
 import unittest
 from typing import Any, Generator, List
 
+from grpcAPI.app import Module
 from grpcAPI.testclient import TestClient
 from tests.test_app_helper import (
+    Request3,
     UserCode,
     UserInput,
     UserNames,
     bilateralnewuser,
+    castings,
+    get_db,
     getusers,
     make_app,
     manynewuser,
@@ -14,10 +18,18 @@ from tests.test_app_helper import (
 )
 
 app = make_app()
+
+
+def empty() -> str:
+    return ""
+
+
+app.dependency_overrides[get_db] = empty
+
 client = TestClient(app)
 
 
-class TestValidateFunc(unittest.IsolatedAsyncioTestCase):
+class TestTestClient(unittest.IsolatedAsyncioTestCase):
 
     async def test_unary(self) -> None:
         code = UserCode.EMPLOYEE
@@ -112,3 +124,14 @@ class TestValidateFunc(unittest.IsolatedAsyncioTestCase):
             self.assertIn(resp.name, ["Diana", "Evan", "Frank"])
             self.assertIn(resp.age, [20, 35, 50])
             self.assertEqual(getattr(resp, occ), val)
+
+    async def test_extras(self) -> None:
+        uuid = "be40c80a-8d96-4a42-8fd6-7e3e4fcaf254"
+        now = "31/12/2021"
+
+        request = Request3(now=now, uuid=uuid)
+
+        responses = await client.run(castings, request)
+
+        self.assertEqual(responses.now, "2021-12-31 00:00:00")
+        self.assertEqual(responses.uuid, uuid)

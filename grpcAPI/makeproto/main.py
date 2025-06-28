@@ -118,7 +118,7 @@ def make_imports_validator(
 
 
 def extract_cls_blocks(
-    packlist: List[IPackage],
+    packlist: List[IPackage], all_cls: bool = False
 ) -> Dict[Tuple[Union[str, _NoPackage], str], List[Block]]:
 
     block_dict: Dict[Tuple[Union[str, _NoPackage], str], List[Block]] = defaultdict(
@@ -126,7 +126,7 @@ def extract_cls_blocks(
     )
     for package in packlist:
         for module in package.modules:
-            blocks = [make_cls_block(bt) for bt in module.objects]
+            blocks = [make_cls_block(bt) for bt in module.objects(all_cls)]
             for block in blocks:
                 block_dict[(block.package, block.protofile)].append(block)
     return block_dict

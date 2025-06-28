@@ -27,8 +27,8 @@ class IModule(Protocol):
     @property
     def services(self) -> List[IService]: ...
 
-    @property
-    def objects(self) -> Set[type[Union[BaseMessage, BaseEnum]]]: ...
+    # @property
+    def objects(self, all_cls: bool) -> Set[type[Union[BaseMessage, BaseEnum]]]: ...
 
 
 class IPackage(Protocol):

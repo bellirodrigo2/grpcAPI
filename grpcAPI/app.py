@@ -101,13 +101,18 @@ class Module(IModule):
     def services(self) -> List[IService]:
         return self._services
 
-    @property
-    def objects(self) -> Set[Type[Union[BaseMessage, BaseEnum]]]:
+    # @property
+    def objects(self, all_cls: bool) -> Set[Type[Union[BaseMessage, BaseEnum]]]:
         all_methods: List[Callable[..., Any]] = [
             method_pack.method
             for service_pack in self._services
             for method_pack in service_pack.methods
         ]
+        # modificar map_sevivce_classes para usar extract request
+        # adicionar opção usando derived classes\
+        # fazer caster de bytes para JSON
+        # testar pydantic
+        # em main de makeproto, pegar all_cls do settings\/
         return map_service_classes(all_methods)
 
     @property

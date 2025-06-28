@@ -18,7 +18,7 @@ from typing import (
 from grpcAPI.ctxinject.validate import arg_proc
 from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
 from grpcAPI.mapclss import map_service_classes
-from grpcAPI.proto_proxy import ProtoProxy
+from grpcAPI.proto_proxy import ProtoModel
 from grpcAPI.singleton import SingletonMeta
 from grpcAPI.types import (
     NO_PACKAGE,
@@ -47,10 +47,6 @@ def create_proto_model(
 
     GeneratedProto.__name__ = f"{base_cls.__name__}Proto"
     return GeneratedProto
-
-
-class ProtoModel(BaseMessage, ProtoProxy):
-    pass
 
 
 @dataclass

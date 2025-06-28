@@ -3,10 +3,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from typemapping import get_func_args, map_return_type
 
-from grpcAPI.app import ProtoModel
 from grpcAPI.ctxinject.model import ModelFieldInject
 from grpcAPI.ctxinject.sigcheck import func_signature_check
 from grpcAPI.ctxinject.validate import inject_validation
+from grpcAPI.proto_proxy import ProtoModel
 from grpcAPI.types import Context, Stream, is_BaseMessage
 
 

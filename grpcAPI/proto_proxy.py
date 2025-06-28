@@ -19,6 +19,7 @@ from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 
 from grpcAPI.proxy import DictProxy, ListProxy, Proxy, bind_proxy
+from grpcAPI.types import BaseMessage
 
 Self = TypeVar("Self", bound="ProtoProxy")
 
@@ -80,6 +81,10 @@ class ProtoProxy(Proxy):
 
     def __deepcopy__(self, memo: dict[int, Any]) -> "ProtoProxy":
         return self.__class__(_wrapped=deepcopy(self._wrapped, memo))
+
+
+class ProtoModel(BaseMessage, ProtoProxy):
+    pass
 
 
 # ----------------- GETTERS -------------------------------------------------

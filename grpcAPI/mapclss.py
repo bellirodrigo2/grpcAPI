@@ -1,7 +1,8 @@
 from typing import Any, Callable, List, Optional, Set, Type, Union
 
-from typemapping import map_func_args, map_model_fields
+from typemapping import map_model_fields
 
+from grpcAPI.proto_inject import extract_request, get_return_type
 from grpcAPI.types import BaseEnum, BaseMessage, get_BaseMessage
 
 
@@ -36,16 +37,22 @@ def map_service_classes(
     all_types: Set[type] = set()
 
     for method in methods:
+        types = extract_request(method)
+        method_types: Set[type] = set(types)
 
-        funcargs, return_type = map_func_args(method)
-
-        for arg in funcargs:
-            base = get_BaseMessage(arg.basetype)
-            if base:
-                all_types.add(base)
-        base = get_BaseMessage(return_type.basetype)
+        if len(method_types) != 1:
+            raise TypeError(
+                f'Function "{method.__name__}" has multiple requests: "{list(method_types)}"'
+            )
+        return_type = get_return_type(method)
+        base = get_BaseMessage(return_type)
+        if base is None:
+            raise TypeError(
+                f'Function "{method.__name__}" has an invalid return type: "{return_type}"'
+            )
         if base:
-            all_types.add(base)
+            method_types.add(base)
+        all_types.update(method_types)
     classes: Set[type[Union[BaseMessage, BaseEnum]]] = set()
     for typ in all_types:
         clss = cls_map(typ)

@@ -108,11 +108,7 @@ class Module(IModule):
             for service_pack in self._services
             for method_pack in service_pack.methods
         ]
-        # modificar map_sevivce_classes para usar extract request
-        # adicionar opção usando derived classes\
-        # fazer caster de bytes para JSON
-        # testar pydantic
-        # em main de makeproto, pegar all_cls do settings\/
+
         return map_service_classes(all_methods)
 
     @property

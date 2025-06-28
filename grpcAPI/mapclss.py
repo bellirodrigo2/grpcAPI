@@ -36,6 +36,7 @@ def map_service_classes(
     all_types: Set[type] = set()
 
     for method in methods:
+
         funcargs, return_type = map_func_args(method)
 
         for arg in funcargs:

@@ -4,6 +4,7 @@ from datetime import date, datetime, time
 from typing import Any, Dict, List
 from uuid import UUID
 
+import orjson
 from typemapping import get_func_args
 
 from grpcAPI.ctxinject.model import ModelFieldInject
@@ -206,6 +207,31 @@ class TestValidation(unittest.TestCase):
         data = {"foo": "bar"}
         self.assertEqual(
             modelinj.validate(json.dumps(data), basetype=Dict[str, Any]), data
+        )
+
+        with self.assertRaises(ValueError):
+            modelinj.validate("no json", basetype=Dict[str, Any])
+
+    def test_validate_bytesjson(self) -> None:
+        class Model:
+            x: bytes
+
+        def func(
+            arg: Dict[str, Any] = ModelFieldInject(
+                model=Model,
+                field="x",
+            )
+        ) -> None:
+            return
+
+        args = get_func_args(func)
+        modelinj = args[0].getinstance(ModelFieldInject)
+        self.assertFalse(modelinj.has_validate)
+        inject_validation(func)
+        self.assertTrue(modelinj.has_validate)
+        data = {"foo": "bar"}
+        self.assertEqual(
+            modelinj.validate(orjson.dumps(data), basetype=Dict[str, Any]), data
         )
 
         with self.assertRaises(ValueError):

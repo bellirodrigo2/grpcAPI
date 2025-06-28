@@ -7,8 +7,7 @@ from grpcAPI.app import ProtoModel
 from grpcAPI.ctxinject.model import ModelFieldInject
 from grpcAPI.ctxinject.sigcheck import func_signature_check
 from grpcAPI.ctxinject.validate import inject_validation
-from grpcAPI.types import Context, Stream
-from grpcAPI.types.message import is_BaseMessage
+from grpcAPI.types import Context, Stream, is_BaseMessage
 
 
 class FromContext(ModelFieldInject):
@@ -57,7 +56,12 @@ def extract_request(func: Callable[..., Any]) -> List[Type[Any]]:
         if is_BaseMessage(arg.basetype):
             requests.add(arg.basetype)
         elif instance is not None:
-            requests.add(instance.model)
+            model = instance.model
+            if not isinstance(model, type) or not issubclass(model, ProtoModel):
+                raise TypeError(
+                    f'On function "{func.__name__}", argument "{arg.name}", FromRequest uses an invalid model: "{model}"'
+                )
+            requests.add(model)
 
     return list(requests)
 

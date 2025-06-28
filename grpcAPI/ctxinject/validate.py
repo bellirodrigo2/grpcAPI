@@ -14,6 +14,7 @@ from typing import (
 )
 from uuid import UUID
 
+import orjson
 from typemapping import get_field_type, get_func_args
 
 from grpcAPI.ctxinject.constrained import (
@@ -120,6 +121,13 @@ def constrained_json(
     # raise ValueError(str(e))
 
 
+def constrained_bytejson(
+    value: bytes,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    return orjson.loads(value)
+
+
 arg_proc: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = {
     (str, str): constrained_str,
     (int, int): constrained_num,
@@ -131,6 +139,7 @@ arg_proc: Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]] = {
     (str, datetime): constrained_datetime,
     (str, UUID): constrained_uuid,
     (str, dict): constrained_json,
+    (bytes, dict): constrained_bytejson,
 }
 
 

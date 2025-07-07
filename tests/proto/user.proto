@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package userpack;
+
+import "inner/inner.proto";
+import "other.proto";
+import "google/protobuf/timestamp.proto";
+
+
+message User {
+    UserCode code = 1;
+    inner.InnerMessage age = 2;
+    google.protobuf.Timestamp time = 6;
+    string affilliation = 3;
+    string name = 4 [deprecated = true];
+    Other other = 10;
+        oneof occupation {
+        string employee = 16;
+        string school = 17;
+        bool inactive = 18;
+    }
+    map<string, string> dict = 19;
+    repeated Other others = 20;
+}
+
+enum UserCode {
+    EMPLOYEE = 0;
+    SCHOOL = -247;
+    INACTIVE = 1;
+}

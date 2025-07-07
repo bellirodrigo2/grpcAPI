@@ -1,0 +1,21 @@
+[compile]
+version = 3
+maxchar_per_line = 80
+always_format = true
+name_case = "no_transform"
+output_dir = "grpcAPI/proto"
+[run]
+proto_dir = './proto'
+host = '0.0.0.0'
+port = 50051
+block_wait = true
+health_checking = true
+reflection = true
+
+[[run.server_options]]
+key = "grpc.max_concurrent_streams"
+value = 100
+
+[[run.server_options]]
+key = "grpc.keepalive_time_ms"
+value = 10000

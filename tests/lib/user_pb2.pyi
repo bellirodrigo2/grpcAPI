@@ -11,6 +11,7 @@ import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
 import google.protobuf.timestamp_pb2
 import inner.inner_pb2
+import multi.inner.class_pb2
 import other_pb2
 import sys
 import typing
@@ -70,6 +71,7 @@ class User(google.protobuf.message.Message):
     INACTIVE_FIELD_NUMBER: builtins.int
     DICT_FIELD_NUMBER: builtins.int
     OTHERS_FIELD_NUMBER: builtins.int
+    MSG_FIELD_NUMBER: builtins.int
     code: global___UserCode.ValueType
     affilliation: builtins.str
     name: builtins.str
@@ -86,6 +88,8 @@ class User(google.protobuf.message.Message):
     def dict(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
     def others(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[other_pb2.Other]: ...
+    @property
+    def msg(self) -> multi.inner.class_pb2.ClassMsg: ...
     def __init__(
         self,
         *,
@@ -100,9 +104,10 @@ class User(google.protobuf.message.Message):
         inactive: builtins.bool = ...,
         dict: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         others: collections.abc.Iterable[other_pb2.Other] | None = ...,
+        msg: multi.inner.class_pb2.ClassMsg | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["age", b"age", "employee", b"employee", "inactive", b"inactive", "occupation", b"occupation", "other", b"other", "school", b"school", "time", b"time"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["affilliation", b"affilliation", "age", b"age", "code", b"code", "dict", b"dict", "employee", b"employee", "inactive", b"inactive", "name", b"name", "occupation", b"occupation", "other", b"other", "others", b"others", "school", b"school", "time", b"time"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["age", b"age", "employee", b"employee", "inactive", b"inactive", "msg", b"msg", "occupation", b"occupation", "other", b"other", "school", b"school", "time", b"time"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["affilliation", b"affilliation", "age", b"age", "code", b"code", "dict", b"dict", "employee", b"employee", "inactive", b"inactive", "msg", b"msg", "name", b"name", "occupation", b"occupation", "other", b"other", "others", b"others", "school", b"school", "time", b"time"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["occupation", b"occupation"]) -> typing.Literal["employee", "school", "inactive"] | None: ...
 
 global___User = User

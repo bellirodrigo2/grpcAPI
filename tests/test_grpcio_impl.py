@@ -1,7 +1,11 @@
 from typing import Annotated, Any, AsyncIterator, Callable, List, Optional, Type
 
-from grpcAPI.adaptors.impl import extract_request, extract_response, validate_signature
-from grpcAPI.types import Context, Depends, FromContext, FromRequest, Message
+from grpcAPI.adaptors.grpcio_impl import (
+    extract_request,
+    extract_response,
+    validate_signature_pass,
+)
+from grpcAPI.types import BaseContext, Depends, FromContext, FromRequest, Message
 
 
 def getdb() -> str:
@@ -18,23 +22,23 @@ async def handler1(
     return req.name
 
 
-async def handler2(req: MyRequest, ctx: Context) -> str:
+async def handler2(req: MyRequest, ctx: BaseContext) -> str:
     return req.name + ctx.peer()
 
 
-async def handler3(req: MyRequest, ctx: Context, db: str = Depends(getdb)) -> str:
+async def handler3(req: MyRequest, ctx: BaseContext, db: str = Depends(getdb)) -> str:
     return req.name + ctx.peer() + db
 
 
 async def handler4(
     req: Annotated[MyRequest, "request"],
-    ctx: Context,
+    ctx: BaseContext,
     db: Annotated[str, Depends(getdb)],
 ) -> str:
     return req.name + ctx.peer() + db
 
 
-async def handler5(req: AsyncIterator[MyRequest], ctx: Context) -> str:
+async def handler5(req: AsyncIterator[MyRequest], ctx: BaseContext) -> str:
     names = ""
     async for mr in req:
         names += mr.name
@@ -94,7 +98,7 @@ def run_tests(
     else:
         assert extract_response(func) == expected_res
 
-    assert len(validate_signature(func)) == validate_errors
+    assert len(validate_signature_pass(func)) == validate_errors
 
 
 def test_handler1() -> None:

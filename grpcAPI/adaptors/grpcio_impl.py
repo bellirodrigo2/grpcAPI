@@ -1,12 +1,71 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from types import ModuleType
 from typing import Any, Callable, List, Optional, Set, Type, get_args, get_origin
 
-from ctxinject.validate import func_signature_validation
+from ctxinject.sigcheck import func_signature_check
 from makeproto import ILabeledMethod, IMetaType
 from typemapping import get_func_args, map_return_type
 
-from grpcAPI.types import Context, FromRequest, Message
+from grpcAPI.interface import IServiceModule
+from grpcAPI.types import BaseContext, FromRequest, Message
+
+
+class GrpcioServiceModule(IServiceModule):
+
+    def __init__(self, module: ModuleType) -> None:
+        self.module = module
+
+    def get_service_baseclass(self, service_name: str) -> Optional[Type[Any]]:
+        return getattr(self.module, f"{service_name}Servicer", None)
+
+    @classmethod
+    def proto_to_pymodule(cls, name: str) -> str:
+        module_name = name.replace(".proto", "_pb2_grpc.py")
+        return module_name
+
+
+def validate_signature_pass(func: Callable[..., Any]) -> List[str]:
+    """Implementarion for MethodSigValidation using grpcio and ctxinject"""
+    return func_signature_check(func, [Message, BaseContext], AsyncIterator)
+
+
+def label_method(
+    func: Callable[..., Any],
+    package: str,
+    module: str,
+    service: str,
+    method_name: str,
+    comment: str,
+    description: str,
+    options: List[str],
+    tags: List[str],
+) -> "LabeledMethod":
+    """Implementation for MakeLabeledMethod for grpcio and typemapping"""
+
+    request_args = extract_request(func)
+    requests = [type_to_metatype(arg) for arg in request_args]
+
+    response_arg = extract_response(func)
+
+    if response_arg is None:
+        response_type = None
+    else:
+        response_type = type_to_metatype(response_arg)
+
+    return LabeledMethod(
+        name=method_name,
+        method=func,
+        package=package,
+        module=module,
+        service=service,
+        comments=comment,
+        description=description,
+        request_types=requests,
+        response_types=response_type,
+        options=options,
+        tags=tags,
+    )
 
 
 @dataclass
@@ -32,43 +91,6 @@ class MetaType(IMetaType):
     origin: Optional[Type[Any]]
     package: str
     proto_path: str
-
-
-def label_method(
-    func: Callable[..., Any],
-    package: str,
-    module: str,
-    service: str,
-    method_name: str,
-    comment: str,
-    description: str,
-    options: List[str],
-    tags: List[str],
-) -> LabeledMethod:
-
-    request_args = extract_request(func)
-    requests = [type_to_metatype(arg) for arg in request_args]
-
-    response_arg = extract_response(func)
-
-    if response_arg is None:
-        response_type = None
-    else:
-        response_type = type_to_metatype(response_arg)
-
-    return LabeledMethod(
-        name=method_name,
-        method=func,
-        package=package,
-        module=module,
-        service=service,
-        comments=comment,
-        description=description,
-        request_types=requests,
-        response_types=response_type,
-        options=options,
-        tags=tags,
-    )
 
 
 def type_to_metatype(varinfo: Type[Any]) -> IMetaType:
@@ -103,15 +125,15 @@ def extract_request(func: Callable[..., Any]) -> List[Type[Any]]:
 
     for arg in funcargs:
         instance = arg.getinstance(FromRequest)
-        if get_message(arg.basetype):
-            requests.add(arg.basetype)
-        elif instance is not None:
+        if instance is not None:
             model = instance.model
             if not is_message(model):
                 raise TypeError(
                     f'On function "{func.__name__}", argument "{arg.name}", FromRequest uses an invalid model: "{model}"'
                 )
             requests.add(model)
+        elif get_message(arg.basetype):
+            requests.add(arg.basetype)
 
     return list(requests)
 
@@ -143,7 +165,3 @@ def get_message(tgt: Optional[Type[Any]]) -> Optional[type[Any]]:
     if is_message(basetype):
         return basetype
     return None
-
-
-def validate_signature(func: Callable[..., Any]) -> List[str]:
-    return func_signature_validation(func, [Message, Context], AsyncIterator)

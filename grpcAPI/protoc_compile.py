@@ -137,4 +137,11 @@ def list_proto_files(base_dir: Path) -> List[str]:
 
 
 if __name__ == "__main__":
-    compile_protoc(Path("./tests/proto"), Path("./tests/lib2"), True, True, True)
+    compile_protoc(
+        Path("./tests/proto"),
+        Path("./tests/lib"),
+        True,
+        False,
+        True,
+        files=["multi/inner/class.proto", "user.proto"],
+    )

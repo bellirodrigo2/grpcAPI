@@ -16,21 +16,7 @@ from makeproto import ILabeledMethod, IService
 
 from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
 from grpcAPI.funclabel import set_label
-
-type MakeLabeledMethod = Callable[
-    [
-        Callable[..., Any],
-        str,
-        str,
-        str,
-        str,
-        str,
-        str,
-        List[str],
-        List[str],
-    ],
-    ILabeledMethod,
-]
+from grpcAPI.interface import MakeLabeledMethod
 
 
 class BaseService(IService):

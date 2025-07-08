@@ -1,12 +1,11 @@
-from collections import defaultdict
-from pathlib import Path
 from typing import List
 
 import pytest
 
+from grpcAPI.adaptors.grpcio_impl import validate_signature_pass
 from grpcAPI.app import BaseService
 from grpcAPI.proto_build import compile_service, pack_protos
-from tests.conftest import assert_content
+from tests.conftest import assert_content, root
 
 
 def test_basic_content(basic_proto: BaseService) -> None:
@@ -29,8 +28,7 @@ def test_basic_content(basic_proto: BaseService) -> None:
 def test_basic(basic_proto: BaseService) -> None:
 
     services = {"": [basic_proto]}
-    root = Path("./tests/proto")
-    pack = pack_protos(services=services, root_dir=Path("./tests/proto"))
+    pack = pack_protos(services=services, root_dir=root)
     assert pack == {"service.proto"}
     all_items_recursive = [
         str(f.relative_to(root).as_posix())
@@ -46,7 +44,6 @@ def test_basic(basic_proto: BaseService) -> None:
 def test_basic_overwirte(basic_proto: BaseService) -> None:
 
     services = {"": [basic_proto]}
-    root = Path("./tests/proto")
     pack_protos(services=services, root_dir=root)
     with pytest.raises(FileExistsError):
         pack_protos(services=services, root_dir=root, overwrite=False)
@@ -58,7 +55,6 @@ def test_complex(complex_proto: List[BaseService]) -> None:
 
     services = {"": [service1, service2], "pack3": [service3]}
 
-    root = Path("./tests/proto")
     pack = pack_protos(services=services, root_dir=root)
     assert pack == {"pack3/mod3.proto", "service.proto"}
     all_items_recursive = [
@@ -71,3 +67,23 @@ def test_complex(complex_proto: List[BaseService]) -> None:
     assert "service.proto" in all_items_recursive
     assert "inner/inner.proto" in all_items_recursive
     assert "pack3/mod3.proto" in all_items_recursive
+
+
+def test_inject(inject_proto: BaseService) -> None:
+
+    services = {"": [inject_proto]}
+    pack = pack_protos(
+        services=services,
+        root_dir=root,
+        # custompassmethod=validate_signature_pass
+    )
+    assert pack == {"service.proto"}
+    all_items_recursive = [
+        str(f.relative_to(root).as_posix())
+        for f in list(root.rglob("*"))
+        if f.is_file()
+    ]
+    assert "other.proto" in all_items_recursive
+    assert "user.proto" in all_items_recursive
+    assert "service.proto" in all_items_recursive
+    assert "inner/inner.proto" in all_items_recursive

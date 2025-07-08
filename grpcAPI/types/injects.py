@@ -4,7 +4,7 @@ from ctxinject.model import Depends as inner_Depends
 from ctxinject.model import ModelFieldInject
 
 from grpcAPI.types import Message
-from grpcAPI.types.context import Context
+from grpcAPI.types.context import BaseContext
 
 
 class Depends(inner_Depends):
@@ -13,7 +13,7 @@ class Depends(inner_Depends):
 
 class FromContext(ModelFieldInject):
     def __init__(self, field: Optional[str] = None, **meta: Any):
-        super().__init__(model=Context, field=field, **meta)
+        super().__init__(model=BaseContext, field=field, **meta)
 
 
 class FromRequest(ModelFieldInject):

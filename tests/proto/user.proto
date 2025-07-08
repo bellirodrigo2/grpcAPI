@@ -4,6 +4,7 @@ package userpack;
 
 import "inner/inner.proto";
 import "other.proto";
+import "multi/inner/class.proto";
 import "google/protobuf/timestamp.proto";
 
 
@@ -21,6 +22,7 @@ message User {
     }
     map<string, string> dict = 19;
     repeated Other others = 20;
+    ClassMsg msg = 21;
 }
 
 enum UserCode {

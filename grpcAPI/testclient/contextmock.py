@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from grpcAPI.exceptionhandler import ErrorCode
 from grpcAPI.testclient.tracker import Tracker
-from grpcAPI.types.context import Context
+from grpcAPI.types.context import SyncContext as Context
 
 std_auth_context = {
     "x509_common_name": [b"default-client"],

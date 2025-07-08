@@ -1,6 +1,6 @@
 import atexit
 from pathlib import Path
-from typing import Set
+from typing import List, Set
 
 # --- Global registries for cleanup ---
 _created_files: Set[Path] = set()
@@ -38,17 +38,12 @@ def cleanup_registered() -> None:
             pass
 
 
-from pathlib import Path
-from typing import List
-
-from grpcAPI.files_sentinel import register_path
-
-
-def ensure_dirs(path: Path) -> None:
+def ensure_dirs(path: Path, clean: bool = True) -> None:
     """
     Ensure that `path` exists as a directory (mkdir -p).
-    Any directory actually created (i.e. that did not exist before)
-    is passed to `register_path`, so it can be cleaned up later.
+    If clean flag is true, any directory actually created
+    (i.e. that did not exist before) is passed to
+    `register_path`, so it can be cleaned up later.
     """
     to_create: List[Path] = []
     current = path
@@ -61,7 +56,8 @@ def ensure_dirs(path: Path) -> None:
     # Now create from top-down
     for directory in reversed(to_create):
         directory.mkdir()
-        register_path(directory)
+        if clean:
+            register_path(directory)
 
 
 atexit.register(cleanup_registered)

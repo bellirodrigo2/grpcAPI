@@ -1,16 +1,16 @@
 import shutil
 import sys
 import tempfile
-from collections import defaultdict
 from pathlib import Path
-from typing import Any, AsyncIterator, Dict, Generator, List
+from typing import Any, AsyncIterator, Generator, List
 
 import pytest
-from makeproto import IService, compile_service
+from typing_extensions import Annotated
 
-from grpcAPI.adaptors.impl import label_method
+from grpcAPI.adaptors.grpcio_impl import label_method
 from grpcAPI.app import BaseService
-from grpcAPI.protoc_compile import compile_protoc
+from grpcAPI.types.injects import Depends, FromContext, FromRequest
+from tests.lib.inner.inner_pb2 import InnerMessage
 
 # Add 'tests/lib' to sys.path for import resolution
 lib_path = Path(__file__).parent / "lib"
@@ -19,60 +19,14 @@ from google.protobuf.descriptor_pb2 import DescriptorProto
 from google.protobuf.timestamp_pb2 import Timestamp
 
 from tests.lib.other_pb2 import Other
-from tests.lib.user_pb2 import User
+from tests.lib.user_pb2 import User, UserCode
 
-
-def assert_createds(temp_dir: Path, expected_num: int, print_: bool = False) -> None:
-    lib_dir = temp_dir / "lib"
-    assert lib_dir.exists(), "'lib' directory was not created"
-    assert lib_dir.is_dir(), "'lib' is not a directory"
-
-    py_files = list(lib_dir.rglob("*.py*"))  # recursive
-    assert py_files, "No .py files were generated"
-    assert len(py_files) == expected_num
-    if print_:
-        for file in py_files:
-            print(file)
-
-
-def write_proto(temp_dir: Path, protofile_str: str, filename: str) -> None:
-    assert temp_dir.exists()
-    assert any(temp_dir.iterdir())
-
-    service_path = temp_dir / "proto" / "service"
-    service_path.mkdir(parents=True, exist_ok=True)
-
-    with open(service_path / filename, "w") as file:
-        file.write(protofile_str)
+root = Path("./tests/proto")
 
 
 def assert_content(protofile_str: str, content: List[str]) -> None:
     for line in content:
         assert line in protofile_str
-
-
-def compile_and_write_protos(
-    services: Dict[str, List[IService]], dst_dir: Path
-) -> None:
-    protodict = defaultdict(dict)
-    proto_stream = compile_service(services)
-
-    if proto_stream:
-        for proto in proto_stream:
-            protodict[proto.package][proto.filename] = proto.content
-
-    for package, file_dict in protodict.items():
-        for filename, proto_str in file_dict.items():
-            print(filename)
-            write_proto(dst_dir, proto_str, f"{filename}.proto")
-
-
-def compile_write_protoc_assert(
-    services: Dict[str, List[IService]], temp_dir: Path, expected_files: int
-) -> None:
-    compile_and_write_protos(services, temp_dir)
-    compile_protoc(temp_dir, "proto", "lib", False, True, False)
-    assert_createds(temp_dir, expected_files)
 
 
 @pytest.fixture
@@ -136,6 +90,41 @@ def complex_proto(basic_proto: BaseService) -> List[BaseService]:
         pass
 
     return [basic_proto, serviceapi2, serviceapi3]
+
+
+@pytest.fixture
+def inject_proto() -> BaseService:
+
+    serviceapi = BaseService(name="injected", label_method=label_method)
+
+    async def get_db() -> str:
+        return "sqlite"
+
+    @serviceapi
+    async def unary(
+        code: Annotated[UserCode, FromRequest(User)],
+        age: InnerMessage = FromRequest(User),
+        db: str = Depends(get_db),
+    ) -> User:
+        pass
+
+    @serviceapi
+    async def clientstream(req: AsyncIterator[User]) -> Other:
+        pass
+
+    @serviceapi
+    async def serverstream(
+        name: Annotated[str, FromRequest(Other, "name")], peer: str = FromContext()
+    ) -> AsyncIterator[User]:
+        yield User()
+
+    @serviceapi
+    async def bilateral(
+        req: AsyncIterator[Other], fromctx: str = FromContext(field="peer")
+    ) -> AsyncIterator[User]:
+        yield User()
+
+    return serviceapi
 
 
 @pytest.fixture

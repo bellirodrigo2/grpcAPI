@@ -2,8 +2,8 @@ from typing import List
 
 import pytest
 
-from grpcAPI.adaptors.grpcio_impl import validate_signature_pass
 from grpcAPI.app import BaseService
+from grpcAPI.grpcio_adaptor.makeproto_pass import validate_signature_pass
 from grpcAPI.proto_build import compile_service, pack_protos
 from tests.conftest import assert_content, root
 

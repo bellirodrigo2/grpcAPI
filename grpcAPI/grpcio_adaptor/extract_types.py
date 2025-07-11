@@ -1,48 +1,27 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from types import ModuleType
-from typing import Any, Callable, List, Optional, Set, Type, get_args, get_origin
 
-from ctxinject.sigcheck import func_signature_check
-from makeproto import ILabeledMethod, IMetaType
+from makeproto import IMetaType
 from typemapping import get_func_args, map_return_type
+from typing_extensions import (
+    Any,
+    Callable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    get_args,
+    get_origin,
+)
 
-from grpcAPI.interface import IServiceModule
-from grpcAPI.types import BaseContext, FromRequest, Message
-
-
-class GrpcioServiceModule(IServiceModule):
-
-    def __init__(self, module: ModuleType) -> None:
-        self.module = module
-
-    def get_service_baseclass(self, service_name: str) -> Optional[Type[Any]]:
-        return getattr(self.module, f"{service_name}Servicer", None)
-
-    @classmethod
-    def proto_to_pymodule(cls, name: str) -> str:
-        module_name = name.replace(".proto", "_pb2_grpc.py")
-        return module_name
+from grpcAPI.types import FromRequest, Message
 
 
-def validate_signature_pass(func: Callable[..., Any]) -> List[str]:
-    """Implementarion for MethodSigValidation using grpcio and ctxinject"""
-    return func_signature_check(func, [Message, BaseContext], AsyncIterator)
-
-
-def label_method(
+def extract_request_response_type(
     func: Callable[..., Any],
-    package: str,
-    module: str,
-    service: str,
-    method_name: str,
-    comment: str,
-    description: str,
-    options: List[str],
-    tags: List[str],
-) -> "LabeledMethod":
-    """Implementation for MakeLabeledMethod for grpcio and typemapping"""
-
+) -> Tuple[List[IMetaType], Optional[IMetaType]]:
+    """Implementation for ExtractMetaType for grpcio and typemapping"""
     request_args = extract_request(func)
     requests = [type_to_metatype(arg) for arg in request_args]
 
@@ -52,36 +31,7 @@ def label_method(
         response_type = None
     else:
         response_type = type_to_metatype(response_arg)
-
-    return LabeledMethod(
-        name=method_name,
-        method=func,
-        package=package,
-        module=module,
-        service=service,
-        comments=comment,
-        description=description,
-        request_types=requests,
-        response_types=response_type,
-        options=options,
-        tags=tags,
-    )
-
-
-@dataclass
-class LabeledMethod(ILabeledMethod):
-    name: str
-    method: Callable[..., Any]
-    package: str
-    module: str
-    service: str
-    comments: str
-    description: str
-    options: List[str]
-    tags: List[str]
-
-    request_types: List[IMetaType]
-    response_types: Optional[IMetaType]
+    return requests, response_type
 
 
 @dataclass

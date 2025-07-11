@@ -28,55 +28,21 @@ def pack_protos(
     if not proto_stream:
         raise Exception("Service .proto file compilation failed")
 
-    with tempfile.TemporaryDirectory() as tmp_dir_str:
-        tmp_dir = Path(tmp_dir_str)
-        generated_files: Set[str] = set()
-
-        for proto in proto_stream:
-            file_path = f"{proto.filename}.proto"
-            if proto.package:
-                file_path = f"{proto.package}/{file_path}"
-
-            write_proto(
-                proto_str=proto.content,
-                dst_dir=tmp_dir,
-                file_path=file_path,
-                overwrite=overwrite,
-                clean=False,  # no need to clean up temporary file
-            )
-            generated_files.add(file_path)
-
-        ensure_dirs(out_dir, clean_services)
-        copy_new_files(tmp_dir, out_dir, overwrite=overwrite)
-
-        if clean_services:
-            for rel_path in generated_files:
-                register_path(out_dir / rel_path)
-
-        return generated_files
-
-
-def copy_new_files(
-    src_dir: Path, dst_dir: Path, overwrite: bool = False, clean: bool = True
-) -> None:
-    """
-    Recursively copy all files from src_dir to dst_dir, preserving structure.
-    """
-    for src_file in src_dir.rglob("*"):
-        if not src_file.is_file():
-            continue
-
-        relative_path = src_file.relative_to(src_dir)
-        dst_file = dst_dir / relative_path
-
-        ensure_dirs(dst_file.parent, clean)
-
-        if dst_file.exists() and not overwrite:
-            raise FileExistsError(
-                f"File {dst_file} already exists and overwrite is False"
-            )
-
-        shutil.copy2(src_file, dst_file)
+    generated_files: Set[str] = set()
+    for proto in proto_stream:
+        file_path = f"{proto.filename}.proto"
+        if proto.package:
+            file_path = f"{proto.package}/{file_path}"
+        write_proto(
+            proto_str=proto.content,
+            dst_dir=out_dir,
+            file_path=file_path,
+            overwrite=overwrite,
+            clean=clean_services,
+        )
+        register_path(out_dir / file_path)
+        generated_files.add(file_path)
+    return generated_files
 
 
 def write_proto(

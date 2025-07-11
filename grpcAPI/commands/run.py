@@ -1,92 +1,168 @@
 import asyncio
-from contextlib import asynccontextmanager
+import os
+import sys
+from collections.abc import AsyncIterator
+from logging import getLogger
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Union
+
+from typing_extensions import Any, Dict, List, Optional, Type
 
 from grpcAPI.app import App
-from grpcAPI.persutil.versioning import get_current_version
-from grpcAPI.proto_load import load_proto_temp_lifespan
-from grpcAPI.server import IServer, Server
-from grpcAPI.service_provider import load_services
+from grpcAPI.grpcio_adaptor.async_server import GRPCAIOServer
+from grpcAPI.grpcio_adaptor.extract_types import extract_request_response_type
+from grpcAPI.grpcio_adaptor.imodule import GrpcioServiceModule
+from grpcAPI.grpcio_adaptor.make_method import make_method_async
+from grpcAPI.grpcio_adaptor.makeproto_pass import validate_signature_pass
+from grpcAPI.grpcio_adaptor.server_plugins.health_check import HealthCheckPlugin
+from grpcAPI.grpcio_adaptor.server_plugins.reflection import ReflectionPlugin
+from grpcAPI.proto_build import pack_protos
+from grpcAPI.proto_load import load_proto
+from grpcAPI.service_provider import provide_service
 from grpcAPI.settings.utils import combine_settings, load_app
-
-
-def define_path(settings: Dict[str, str], version: Union[str, int, None]) -> Path:
-
-    src_dir = Path(settings.get("proto_dir", "./grpcAPI/proto"))
-
-    if version is None:
-        version = f"V{get_current_version(src_dir)}"
-    if isinstance(version, int):
-        version = f"V{version}"
-    version = version.upper()
-    src_path = src_dir / version
-    if not src_path.exists():
-        raise ValueError(f'Can´t find version "{version}" on Source Path: "{src_path}"')
-    return src_path
-
-
-def make_server(settings: Dict[str, Any]) -> IServer:
-
-    block_wait = settings.get("block_wait", True)
-    options = [
-        (item["key"], item["value"]) for item in settings.get("server_options", [])
-    ]
-    health_check = settings.get("health_checking", True)
-    reflection = settings.get("reflection", True)
-
-    return Server(
-        modules={},
-        block_wait=block_wait,
-        options=options,
-        health_check=health_check,
-        reflection=reflection,
-    )
 
 
 async def run_app(
     app_path: str,
     user_settings: Dict[str, Any],
-    version: Union[str, int, None],
     host: str,
     port: int,
 ) -> None:
 
-    settings = combine_settings(user_settings, "run")
-
-    src_path = define_path(settings, version)
-
     load_app(app_path)
     app = App()
 
-    @asynccontextmanager
-    async def lifespan(server: Server) -> AsyncGenerator[Any, Any]:
-        with load_proto_temp_lifespan(src_path) as modules:
+    settings = combine_settings(user_settings)
 
-            server.modules = modules
+    root_str: Optional[str] = settings.get("root_path", None)
+    if not root_str:
+        root_str = os.environ.get("PYTHONPATH")
+        if not root_str:
+            raise RuntimeError
+    root_path = Path(root_str)
+    proto_str: str = settings.get("proto_rel_path", "proto")
+    proto_path = root_path / proto_str
+    if not proto_path.exists():
+        raise FileNotFoundError
 
-            services = load_services(app, modules)
-            for service in services:
-                server.add_service(service)
+    lib_str: str = settings.get("lib_rel_path", "lib")
+    lib_path = root_path / lib_str
+    if not lib_path.exists():
+        raise FileNotFoundError(str(lib_path.absolute()))
 
-            if app.lifespan is None:
-                yield
-            else:
-                async with app.lifespan(server):
-                    yield
+    overwrite = False
+    clean_services = True
 
-    server = make_server(settings)
-    await server.start(host, port, lifespan=lifespan)
+    pack = pack_protos(
+        services=app.services,
+        root_dir=proto_path,
+        custompassmethod=validate_signature_pass,
+        overwrite=overwrite,
+        clean_services=clean_services,
+    )
+    default_logger = getLogger(__name__)
+
+    sys.path.insert(0, str(lib_path.resolve()))
+
+    modules_dict = load_proto(
+        root_dir=proto_path,
+        files=list(pack),
+        dst=lib_path,
+        logger=default_logger,
+        module_factory=GrpcioServiceModule,
+    )
+    service_classes: List[Type[Any]] = []
+    for services in app.services.values():
+        for service in services:
+            module_package = modules_dict.get(service.package, {})
+            for service_module in module_package.values():
+                service_class = provide_service(
+                    service=service,
+                    module=service_module,
+                    make_method=make_method_async,
+                    overrides=app.dependency_overrides,
+                    exception_registry=app._exception_handlers,
+                )
+                service_classes.append(service_class)
+    server_settings = settings.get("server", None)
+    plugins_config = server_settings.get("plugins", None)
+    if plugins_config:
+        plugins = []
+        # create plugins and configure
+    else:
+        plugins = []
+
+    server = GRPCAIOServer(
+        options=[],
+        plugins=[HealthCheckPlugin(), ReflectionPlugin()],
+        settings=settings,
+    )
+    for service_cls in service_classes:
+        server.add_service(service_cls)
+    await server.start(host, port)
 
 
 if __name__ == "__main__":
+    from google.protobuf.descriptor_pb2 import DescriptorProto
+    from google.protobuf.timestamp_pb2 import Timestamp
 
-    asyncio.run(
-        run_app(
-            "./tests/test_app_helper.py",
-            {"proto_dir": "./example/userpack/proto"},
-            None,
-            "0.0.0.0",
-            50051,
-        )
+    from grpcAPI.app import BaseService
+    from grpcAPI.lib.other_pb2 import Other
+    from grpcAPI.lib.user_pb2 import User
+
+    serviceapi2 = BaseService(
+        name="service2", extract_metatypes=extract_request_response_type
     )
+
+    @serviceapi2
+    async def unary(req: User) -> DescriptorProto:
+        return DescriptorProto()
+
+    @serviceapi2
+    async def clientstream(req: AsyncIterator[DescriptorProto]) -> Other:
+        return Other()
+
+    class AsyncUserIterator:
+        def __init__(self) -> None:
+            self._data = [User(), User()]
+            self._index = 0
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self) -> User:
+            if self._index >= len(self._data):
+                raise StopAsyncIteration
+            value = self._data[self._index]
+            self._index += 1
+            return value
+
+    class AsyncTimeIterator:
+        def __init__(self) -> None:
+            self._data = [Timestamp(), Timestamp()]
+            self._index = 0
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self) -> User:
+            if self._index >= len(self._data):
+                raise StopAsyncIteration
+            value = self._data[self._index]
+            self._index += 1
+            return value
+
+    @serviceapi2
+    async def serverstream(req: Other) -> AsyncIterator[Timestamp]:
+        it = AsyncTimeIterator()
+        async for u in it:
+            yield u
+
+    @serviceapi2
+    async def bilateral(req: AsyncIterator[Timestamp]) -> AsyncIterator[User]:
+        it = AsyncUserIterator()
+        async for u in it:
+            yield u
+
+    app = App()
+    app.add_service(serviceapi2)
+    asyncio.run(run_app("./grpcAPI/funclabel.py", {}, "0.0.0.0", 50051))

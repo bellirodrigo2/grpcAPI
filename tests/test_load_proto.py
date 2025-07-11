@@ -1,10 +1,9 @@
 import shutil
 from pathlib import Path
-from types import ModuleType
 from typing import List
 
-from grpcAPI.adaptors.grpcio_impl import GrpcioServiceModule
 from grpcAPI.app import BaseService
+from grpcAPI.grpcio_adaptor.imodule import GrpcioServiceModule
 from grpcAPI.interface import IServiceModule
 from grpcAPI.proto_build import pack_protos
 from grpcAPI.proto_load import load_proto

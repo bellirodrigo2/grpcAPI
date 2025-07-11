@@ -1,6 +1,9 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from logging import Logger
-from typing import (
+
+from makeproto import ILabeledMethod, IMetaType, IService
+from typing_extensions import (
     Any,
     AsyncGenerator,
     Callable,
@@ -12,41 +15,56 @@ from typing import (
     Type,
 )
 
-from makeproto import ILabeledMethod, IService
-
 from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
 from grpcAPI.funclabel import set_label
-from grpcAPI.interface import MakeLabeledMethod
+from grpcAPI.interface import ExtractMetaType
+from grpcAPI.singleton import SingletonMeta
+
+
+@dataclass
+class LabeledMethod(ILabeledMethod):
+    name: str
+    method: Callable[..., Any]
+    package: str
+    module: str
+    service: str
+    comments: str
+    description: str
+    options: List[str]
+    tags: List[str]
+
+    request_types: List[IMetaType]
+    response_types: Optional[IMetaType]
 
 
 class BaseService(IService):
 
     def __init__(
         self,
-        label_method: MakeLabeledMethod,
+        extract_metatypes: ExtractMetaType,
         name: str,
         options: Optional[List[str]] = None,
         comments: str = "",
         module: str = "service",
         package: str = "",
-        process_service: Optional[Callable[["BaseService"], None]] = None,
+        # process_service: Optional[Callable[["BaseService"], None]] = None,
     ) -> None:
         self.name = name
-        self.__label_method = label_method
+        self.__extract_metatypes = extract_metatypes
         self.options = options or []
         self.comments = comments
         self.module = module
         self.package = package
         self.__methods: List[ILabeledMethod] = []
-        self.__process_service = process_service
+        # self.__process_service = process_service
 
     @property
     def methods(self) -> List[ILabeledMethod]:
         return list(self.__methods)
 
-    def process_service(self) -> None:
-        if self.__process_service is not None:
-            self.__process_service(self)
+    # def process_service(self) -> None:
+    # if self.__process_service is not None:
+    # self.__process_service(self)
 
     def __call__(
         self,
@@ -64,18 +82,21 @@ class BaseService(IService):
         options = options or []
 
         set_label(func, self.package, self.module, self.name, method_name)
-
-        labeled_method = self.__label_method(
-            func,
-            self.package,
-            self.module,
-            self.name,
-            method_name,
-            comment,
-            description,
-            options,
-            tags,
+        requests, response_type = self.__extract_metatypes(func)
+        labeled_method = LabeledMethod(
+            name=method_name,
+            method=func,
+            package=self.package,
+            module=self.module,
+            service=self.name,
+            comments=comment,
+            description=description,
+            request_types=requests,
+            response_types=response_type,
+            options=options,
+            tags=tags,
         )
+
         self.__methods.append(labeled_method)
         return func
 
@@ -87,21 +108,19 @@ type Lifespan = Callable[[Any], AsyncGenerator[None, None]]
 type CastDict = Dict[Tuple[Type[Any], Type[Any]], Callable[..., Any]]
 
 
-class App:
+class App(metaclass=SingletonMeta):
 
     def __init__(
         self,
-        caster: CastDict,
-        add_casting: Optional[Callable[[Callable[..., Any]], CastDict]] = None,
+        caster: Optional[CastDict] = None,
+        process_service: Optional[Callable[["App", BaseService], None]] = None,
         lifespan: Optional[Lifespan] = None,
         logger: Optional[Logger] = None,
-        error_log: Optional[Callable[[str, Exception], None]] = None,
     ) -> None:
         self.lifespan = lifespan
         self._logger = logger
-        self._error_log = error_log
-        self._add_casting = add_casting
-        self._caster = caster
+        self.__process_service = process_service
+        self._caster = caster or {}
 
         self._services: DefaultDict[str, List[IService]] = defaultdict(list)
         self.dependency_overrides: DependencyRegistry = {}
@@ -115,21 +134,14 @@ class App:
     def services(self) -> Dict[str, List[IService]]:
         return dict(self._services)
 
-    def _add_casting_models(self, methods: List[ILabeledMethod]) -> None:
-        funcs = [func.method for func in methods]
-        if self._add_casting is not None:
-            for func in funcs:
-                models = self._add_casting(func)
-                self._caster.update(models)
-
     def add_service(self, service: BaseService) -> None:
         for existing_service in self._services[service.package]:
             if existing_service.name == service.name:
                 raise KeyError(
                     f"Service '{service.name}' already registered in package '{service.package}', module '{existing_service.module}'"
                 )
-        service.process_service()
-        self._add_casting_models(service.methods)
+        if self.__process_service is not None:
+            self.__process_service(self, service)
         self._services[service.package].append(service)
 
     def add_exception_handler(
@@ -152,6 +164,21 @@ class App:
         return decorator
 
 
+def base_process_service(
+    app: App,
+    service: BaseService,
+    format_name: Callable[[str], str],
+    format_comment: Callable[[BaseService], str],
+    transform_func: Callable[[Callable[..., Any]], Callable[..., Any]],
+) -> None:
+
+    service.name = format_name(service.name)
+    service.comments = format_comment(service)
+    for method in service.methods:
+        transform_func(method.method)
+
+
+# modificar a função acima...extrair castings e passar para app
 # to be moved to grpcAPI-pydantic
 # def get_models(func: Callable[..., Any], from_type: T, to_subclass: U) -> List[U]:
 #     models: List[U] = []

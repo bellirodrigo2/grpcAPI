@@ -1,0 +1,11 @@
+{
+  "root_path": "./",
+  "proto_rel_path": "grpcAPI/proto",
+  "lib_rel_path": "grpcAPI/lib",
+  "server": {
+    "plugins": {
+      "healt_check": {},
+      "reflection": {}
+    }
+  }
+}

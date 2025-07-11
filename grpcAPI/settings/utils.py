@@ -1,63 +1,112 @@
 import importlib.util
+import json
 import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import toml
+import yaml
 
-str_settings_path = "./grpcAPI/settings/config.toml"
+DEFAULT_CONFIG_PATH = Path("./grpcAPI/settings/config.json")
+
+
+def resolve_config_path(
+    cli_arg: Optional[str] = None, env_var: str = "GRPCAPI_CONFIG"
+) -> Optional[Path]:
+    """
+    Resolves the configuration file path with the following priority:
+    1. CLI argument
+    2. Environment variable
+    3. Default path (if exists)
+    """
+    if cli_arg:
+        return Path(cli_arg)
+
+    env_path = os.getenv(env_var)
+    if env_path:
+        return Path(env_path)
+
+    if DEFAULT_CONFIG_PATH.exists():
+        return DEFAULT_CONFIG_PATH
+
+    return None
+
+
+def load_file_by_extension(path: Path) -> Dict[str, Any]:
+    """
+    Loads and parses a config file based on its file extension.
+    Supports: .toml, .yaml/.yml, .json
+    """
+    try:
+        ext = path.suffix.lower()
+        with path.open("r", encoding="utf-8") as f:
+            if ext == ".toml":
+                return toml.load(f)
+            elif ext in (".yaml", ".yml"):
+                return yaml.safe_load(f)
+            elif ext == ".json":
+                return json.load(f)
+            else:
+                raise ValueError("Unsupported config file format: {}".format(ext))
+    except Exception as e:
+        print("⚠️  Failed to parse config:", str(e))
+        return {}
 
 
 def load_config(
     config_arg: Optional[str] = None, field: Optional[str] = None
 ) -> Dict[str, Any]:
-    std = Path(str_settings_path)
-    if config_arg is not None:
-        config_path = Path(config_arg)
-    elif os.getenv("GRPCAPI_CONFIG"):
-        config_path = Path(os.getenv("GRPCAPI_CONFIG"))
-    elif std.exists():
-        config_path = std
-    else:
-        config_path = None
+    """
+    Loads the configuration and optionally extracts a specific section.
+    """
+    config_path = resolve_config_path(config_arg)
 
     if config_path and config_path.exists():
-        print(f"Loading config from {config_path}")
-        settings = toml.load(config_path)
-        if field is not None and field in settings:
-            return settings.get(field, {})
-        return settings
-    else:
-        print("No config found, using defaults")
-        return {}
+        print("🔧 Loading config from:", config_path)
+        settings = load_file_by_extension(config_path)
+        return settings.get(field, {}) if field else settings
+
+    print("⚠️  No config found. Using defaults.")
+    return {}
 
 
 def combine_settings(
     user_settings: Dict[str, Any],
     field: Optional[str] = None,
-    std_settings_path: str = str_settings_path,
+    default_path: Path = DEFAULT_CONFIG_PATH,
 ) -> Dict[str, Any]:
+    """
+    Merges default settings with user-provided settings.
+    If 'field' is defined, merges only that section.
+    """
+    default_settings = load_file_by_extension(default_path)
 
-    std_settings: Dict[str, Any] = toml.load(std_settings_path)
-    std_settings = std_settings.get(field)
+    if field:
+        default_settings = default_settings.get(field, {})
+        user_settings = user_settings.get(field, {})
 
-    if field in user_settings:
-        user_settings = user_settings.get(field)
-    return {**std_settings, **user_settings}
+    return {**default_settings, **user_settings}
 
 
 def load_app(app_path: str) -> None:
-    spec = importlib.util.spec_from_file_location("app_module", app_path)
+    """
+    Dynamically imports a Python module from the given file path.
+    """
+    path = Path(app_path)
+    if not path.exists():
+        raise FileNotFoundError("❌ App path not found: {}".format(app_path))
+
+    spec = importlib.util.spec_from_file_location("app_module", path)
     if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load app module from {app_path}")
+        raise ImportError("❌ Could not load module from: {}".format(app_path))
+
     app_module = importlib.util.module_from_spec(spec)
     sys.modules["app_module"] = app_module
-
     spec.loader.exec_module(app_module)
+    print("✅ App loaded:", app_path)
 
 
 if __name__ == "__main__":
-
     config = load_config()
     print(config)

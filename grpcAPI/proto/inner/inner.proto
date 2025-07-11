@@ -1,0 +1,5 @@
+syntax = "proto3";
+package inner;
+message InnerMessage {
+    int64 age = 2;
+}

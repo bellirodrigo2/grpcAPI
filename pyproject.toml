@@ -12,7 +12,11 @@ dependencies = [
     "ctxinject @ git+https://github.com/bellirodrigo2/ctxinject.git@main",
     "typemapping @ git+https://github.com/bellirodrigo2/typemapping.git@main",
     "grpcio", 
-    "grpcio-tools"
+    "grpcio-tools",
+    "grpcio-health-checking",
+    "grpcio-reflection",
+    "toml",
+    "pyyaml"
 ]
 
 [project.optional-dependencies]

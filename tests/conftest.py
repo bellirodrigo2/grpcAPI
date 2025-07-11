@@ -7,8 +7,8 @@ from typing import Any, AsyncIterator, Generator, List
 import pytest
 from typing_extensions import Annotated
 
-from grpcAPI.adaptors.grpcio_impl import label_method
 from grpcAPI.app import BaseService
+from grpcAPI.grpcio_adaptor.extract_types import extract_request_response_type
 from grpcAPI.types.injects import Depends, FromContext, FromRequest
 from tests.lib.inner.inner_pb2 import InnerMessage
 
@@ -31,7 +31,7 @@ def assert_content(protofile_str: str, content: List[str]) -> None:
 
 @pytest.fixture
 def serviceapi() -> BaseService:
-    return BaseService(name="service1", label_method=label_method)
+    return BaseService(name="service1", extract_metatypes=extract_request_response_type)
 
 
 @pytest.fixture
@@ -59,7 +59,9 @@ def basic_proto(serviceapi: BaseService) -> BaseService:
 @pytest.fixture
 def complex_proto(basic_proto: BaseService) -> List[BaseService]:
 
-    serviceapi2 = BaseService(name="service2", label_method=label_method)
+    serviceapi2 = BaseService(
+        name="service2", extract_metatypes=extract_request_response_type
+    )
 
     @serviceapi2
     async def unary(req: User) -> DescriptorProto:
@@ -78,7 +80,10 @@ def complex_proto(basic_proto: BaseService) -> List[BaseService]:
         yield User()
 
     serviceapi3 = BaseService(
-        name="service3", package="pack3", module="mod3", label_method=label_method
+        name="service3",
+        package="pack3",
+        module="mod3",
+        extract_metatypes=extract_request_response_type,
     )
 
     @serviceapi3
@@ -95,7 +100,9 @@ def complex_proto(basic_proto: BaseService) -> List[BaseService]:
 @pytest.fixture
 def inject_proto() -> BaseService:
 
-    serviceapi = BaseService(name="injected", label_method=label_method)
+    serviceapi = BaseService(
+        name="injected", extract_metatypes=extract_request_response_type
+    )
 
     async def get_db() -> str:
         return "sqlite"

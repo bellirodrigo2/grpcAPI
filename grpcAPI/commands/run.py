@@ -5,19 +5,15 @@ from collections.abc import AsyncIterator
 from logging import getLogger
 from pathlib import Path
 
-from typing_extensions import Any, Dict, List, Optional, Type
+from typing_extensions import Any, Dict, Optional
 
 from grpcAPI.app import App
 from grpcAPI.grpcio_adaptor.async_server import GRPCAIOServer
-from grpcAPI.grpcio_adaptor.extract_types import extract_request_response_type
-from grpcAPI.grpcio_adaptor.imodule import GrpcioServiceModule
-from grpcAPI.grpcio_adaptor.make_method import make_method_async
-from grpcAPI.grpcio_adaptor.makeproto_pass import validate_signature_pass
 from grpcAPI.grpcio_adaptor.server_plugins.health_check import HealthCheckPlugin
 from grpcAPI.grpcio_adaptor.server_plugins.reflection import ReflectionPlugin
 from grpcAPI.proto_build import pack_protos
 from grpcAPI.proto_load import load_proto
-from grpcAPI.service_provider import provide_service
+from grpcAPI.service_provider import provide_services
 from grpcAPI.settings.utils import combine_settings, load_app
 
 
@@ -55,7 +51,6 @@ async def run_app(
     pack = pack_protos(
         services=app.services,
         root_dir=proto_path,
-        custompassmethod=validate_signature_pass,
         overwrite=overwrite,
         clean_services=clean_services,
     )
@@ -68,21 +63,8 @@ async def run_app(
         files=list(pack),
         dst=lib_path,
         logger=default_logger,
-        module_factory=GrpcioServiceModule,
     )
-    service_classes: List[Type[Any]] = []
-    for services in app.services.values():
-        for service in services:
-            module_package = modules_dict.get(service.package, {})
-            for service_module in module_package.values():
-                service_class = provide_service(
-                    service=service,
-                    module=service_module,
-                    make_method=make_method_async,
-                    overrides=app.dependency_overrides,
-                    exception_registry=app._exception_handlers,
-                )
-                service_classes.append(service_class)
+
     server_settings = settings.get("server", None)
     plugins_config = server_settings.get("plugins", None)
     if plugins_config:
@@ -96,8 +78,15 @@ async def run_app(
         plugins=[HealthCheckPlugin(), ReflectionPlugin()],
         settings=settings,
     )
-    for service_cls in service_classes:
+    services = [item for sublist in app.services.values() for item in sublist]
+    for service_cls in provide_services(
+        services=services,
+        modules=modules_dict,
+        overrides=app.dependency_overrides,
+        exception_registry=app._exception_handlers,
+    ):
         server.add_service(service_cls)
+
     await server.start(host, port)
 
 
@@ -105,12 +94,12 @@ if __name__ == "__main__":
     from google.protobuf.descriptor_pb2 import DescriptorProto
     from google.protobuf.timestamp_pb2 import Timestamp
 
-    from grpcAPI.app import BaseService
+    from grpcAPI.grpcapi import APIService
     from grpcAPI.lib.other_pb2 import Other
     from grpcAPI.lib.user_pb2 import User
 
-    serviceapi2 = BaseService(
-        name="service2", extract_metatypes=extract_request_response_type
+    serviceapi2 = APIService(
+        name="service2",
     )
 
     @serviceapi2

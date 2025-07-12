@@ -8,7 +8,7 @@ import pytest
 from typing_extensions import Annotated
 
 from grpcAPI.app import BaseService
-from grpcAPI.grpcio_adaptor.extract_types import extract_request_response_type
+from grpcAPI.extract_types import extract_request_response_type
 from grpcAPI.types.injects import Depends, FromContext, FromRequest
 from tests.lib.inner.inner_pb2 import InnerMessage
 

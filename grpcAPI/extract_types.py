@@ -15,6 +15,7 @@ from typing_extensions import (
     get_origin,
 )
 
+from grpcAPI.config import GET_PACKAGE, GET_PROTOFILE_PATH
 from grpcAPI.types import FromRequest, Message
 
 
@@ -49,8 +50,8 @@ def type_to_metatype(varinfo: Type[Any]) -> IMetaType:
     origin = get_origin(varinfo)
     basetype = varinfo if origin is None else get_args(varinfo)[0]
 
-    package = get_package(basetype)
-    proto_path = get_protofile_relative_path(basetype)
+    package = GET_PACKAGE(basetype)
+    proto_path = GET_PROTOFILE_PATH(basetype)
 
     return MetaType(
         argtype=argtype,
@@ -59,14 +60,6 @@ def type_to_metatype(varinfo: Type[Any]) -> IMetaType:
         package=package,
         proto_path=proto_path,
     )
-
-
-def get_protofile_relative_path(cls: Type[Any]) -> str:
-    return cls.DESCRIPTOR.file.name
-
-
-def get_package(cls: Type[Any]) -> str:
-    return cls.DESCRIPTOR.file.package
 
 
 def extract_request(func: Callable[..., Any]) -> List[Type[Any]]:

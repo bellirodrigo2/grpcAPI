@@ -1,19 +1,19 @@
-import shutil
-import tempfile
+from functools import partial
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from makeproto import IService, compile_service
 
+from grpcAPI.config import VALIDATE_SIGNATURE_PASS
 from grpcAPI.files_sentinel import ensure_dirs, register_path
 from grpcAPI.interface import MethodSigValidation
 
 
-def pack_protos(
+def pack_protos_(
     services: Dict[str, List[IService]],
     root_dir: Path,
+    custompassmethod: MethodSigValidation,
     out_dir: Optional[Path] = None,
-    custompassmethod: MethodSigValidation = lambda x: [],
     overwrite: bool = True,
     clean_services: bool = True,
 ) -> Set[str]:
@@ -56,3 +56,6 @@ def write_proto(
 
     with open(abs_file_path, "w") as f:
         f.write(proto_str)
+
+
+pack_protos = partial(pack_protos_, custompassmethod=VALIDATE_SIGNATURE_PASS)

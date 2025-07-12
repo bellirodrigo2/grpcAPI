@@ -1,11 +1,31 @@
-from types import ModuleType
-from typing import Tuple
+from functools import partial
+from typing import Generator, List
 
 from makeproto import IService
 from typing_extensions import Any, Callable, Dict, Type
 
+from grpcAPI.config import MAKE_METHOD_ASYNC
 from grpcAPI.exceptionhandler import ExceptionRegistry
 from grpcAPI.interface import IServiceModule, MakeMethod
+
+
+def provide_services_(
+    services: List[IService],
+    modules: Dict[str, Dict[str, IServiceModule]],
+    make_method: MakeMethod,
+    overrides: Dict[Callable[..., Any], Callable[..., Any]],
+    exception_registry: ExceptionRegistry,
+) -> Generator[Type[Any], Any, None]:
+    for service in services:
+        module_package = modules.get(service.package, {})
+        for service_module in module_package.values():
+            yield provide_service(
+                service=service,
+                module=service_module,
+                make_method=make_method,
+                overrides=overrides,
+                exception_registry=exception_registry,
+            )
 
 
 def provide_service(
@@ -26,9 +46,4 @@ def provide_service(
     return type(service.name, (baseclass,), methods)
 
 
-class classproperty:
-    def __init__(self, fget) -> None:
-        self.fget = classmethod(fget)
-
-    def __get__(self, obj, owner) -> Any:
-        return self.fget.__get__(obj, owner)()
+provide_services = partial(provide_services_, make_method=MAKE_METHOD_ASYNC)

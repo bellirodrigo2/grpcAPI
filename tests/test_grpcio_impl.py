@@ -1,6 +1,6 @@
 from typing import Annotated, Any, AsyncIterator, Callable, List, Optional, Type
 
-from grpcAPI.grpcio_adaptor.extract_types import extract_request, extract_response
+from grpcAPI.extract_types import extract_request, extract_response
 from grpcAPI.grpcio_adaptor.makeproto_pass import validate_signature_pass
 from grpcAPI.types import BaseContext, Depends, FromContext, FromRequest, Message
 

@@ -1,17 +1,19 @@
 import importlib.util
 from collections import defaultdict
+from functools import partial
 from logging import Logger
 from pathlib import Path
 from types import ModuleType
 
 from typing_extensions import Dict, List, Tuple, Type
 
+from grpcAPI.config import SERVICE_MODULE
 from grpcAPI.files_sentinel import register_path
 from grpcAPI.interface import IServiceModule
 from grpcAPI.protoc_compile import compile_protoc
 
 
-def load_proto(
+def load_proto_(
     root_dir: Path,
     files: List[str],
     dst: Path,
@@ -73,3 +75,6 @@ def import_module_from_path(module_name: str, path: Path) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+load_proto = partial(load_proto_, module_factory=SERVICE_MODULE)

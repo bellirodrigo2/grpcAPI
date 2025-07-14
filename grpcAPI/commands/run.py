@@ -1,27 +1,25 @@
 import asyncio
-import os
-import sys
 from collections.abc import AsyncIterator
-from logging import getLogger
-from pathlib import Path
+from functools import partial
 
-from typing_extensions import Any, Dict, Optional
+from typing_extensions import Any, Dict
 
 from grpcAPI.app import App
-from grpcAPI.grpcio_adaptor.async_server import GRPCAIOServer
-from grpcAPI.grpcio_adaptor.server_plugins.health_check import HealthCheckPlugin
-from grpcAPI.grpcio_adaptor.server_plugins.reflection import ReflectionPlugin
-from grpcAPI.proto_build import pack_protos
-from grpcAPI.proto_load import load_proto
+from grpcAPI.config import SERVER_FACTORY
+from grpcAPI.grpcapi import GrpcAPI
+from grpcAPI.interfaces import SeverFactory
+from grpcAPI.module_loader import load_app_modules
+from grpcAPI.plugins.factory import get_plugin
 from grpcAPI.service_provider import provide_services
 from grpcAPI.settings.utils import combine_settings, load_app
 
 
-async def run_app(
+async def run_app_(
     app_path: str,
     user_settings: Dict[str, Any],
     host: str,
     port: int,
+    server_factory: SeverFactory,
 ) -> None:
 
     load_app(app_path)
@@ -29,55 +27,21 @@ async def run_app(
 
     settings = combine_settings(user_settings)
 
-    root_str: Optional[str] = settings.get("root_path", None)
-    if not root_str:
-        root_str = os.environ.get("PYTHONPATH")
-        if not root_str:
-            raise RuntimeError
-    root_path = Path(root_str)
-    proto_str: str = settings.get("proto_rel_path", "proto")
-    proto_path = root_path / proto_str
-    if not proto_path.exists():
-        raise FileNotFoundError
+    modules_dict = load_app_modules(app, settings)
 
-    lib_str: str = settings.get("lib_rel_path", "lib")
-    lib_path = root_path / lib_str
-    if not lib_path.exists():
-        raise FileNotFoundError(str(lib_path.absolute()))
+    server_settings = settings.get("server", {})
+    plugins_config = server_settings.get("plugins", {})
+    plugins = [get_plugin(plugin_name) for plugin_name in plugins_config]
 
-    overwrite = False
-    clean_services = True
-
-    pack = pack_protos(
-        services=app.services,
-        root_dir=proto_path,
-        overwrite=overwrite,
-        clean_services=clean_services,
-    )
-    default_logger = getLogger(__name__)
-
-    sys.path.insert(0, str(lib_path.resolve()))
-
-    modules_dict = load_proto(
-        root_dir=proto_path,
-        files=list(pack),
-        dst=lib_path,
-        logger=default_logger,
-    )
-
-    server_settings = settings.get("server", None)
-    plugins_config = server_settings.get("plugins", None)
-    if plugins_config:
-        plugins = []
-        # create plugins and configure
-    else:
-        plugins = []
-
-    server = GRPCAIOServer(
+    server = server_factory(
         options=[],
-        plugins=[HealthCheckPlugin(), ReflectionPlugin()],
+        plugins=plugins,
         settings=settings,
     )
+    for plugin in plugins:
+        name = plugin.plugin_name
+        plugin.configure(server, plugins_config[name])
+
     services = [item for sublist in app.services.values() for item in sublist]
     for service_cls in provide_services(
         services=services,
@@ -87,14 +51,16 @@ async def run_app(
     ):
         server.add_service(service_cls)
 
-    await server.start(host, port)
+    await server.start(host, port, None)
 
+
+run_app = partial(run_app_, server_factory=SERVER_FACTORY)
 
 if __name__ == "__main__":
     from google.protobuf.descriptor_pb2 import DescriptorProto
     from google.protobuf.timestamp_pb2 import Timestamp
 
-    from grpcAPI.grpcapi import APIService
+    from grpcAPI.app import APIService
     from grpcAPI.lib.other_pb2 import Other
     from grpcAPI.lib.user_pb2 import User
 
@@ -152,6 +118,6 @@ if __name__ == "__main__":
         async for u in it:
             yield u
 
-    app = App()
+    app = GrpcAPI()
     app.add_service(serviceapi2)
     asyncio.run(run_app("./grpcAPI/funclabel.py", {}, "0.0.0.0", 50051))

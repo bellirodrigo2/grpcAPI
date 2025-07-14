@@ -1,14 +1,17 @@
 import importlib.util
 import json
+import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
 
 import toml
 import yaml
+from typing_extensions import Any, Dict, Optional
 
 DEFAULT_CONFIG_PATH = Path("./grpcAPI/settings/config.json")
+
+logger = logging.getLogger(__name__)
 
 
 def resolve_config_path(
@@ -50,7 +53,7 @@ def load_file_by_extension(path: Path) -> Dict[str, Any]:
             else:
                 raise ValueError("Unsupported config file format: {}".format(ext))
     except Exception as e:
-        print("⚠️  Failed to parse config:", str(e))
+        logger.error(f"Failed to parse config: {str(e)}")
         return {}
 
 
@@ -63,11 +66,11 @@ def load_config(
     config_path = resolve_config_path(config_arg)
 
     if config_path and config_path.exists():
-        print("🔧 Loading config from:", config_path)
+        logger.info(f"Loading config from: {config_path}")
         settings = load_file_by_extension(config_path)
         return settings.get(field, {}) if field else settings
 
-    print("⚠️  No config found. Using defaults.")
+    logger.info("No config found. Using defaults.")
     return {}
 
 
@@ -104,9 +107,9 @@ def load_app(app_path: str) -> None:
     app_module = importlib.util.module_from_spec(spec)
     sys.modules["app_module"] = app_module
     spec.loader.exec_module(app_module)
-    print("✅ App loaded:", app_path)
+    logger.info(f"App loaded: {app_path}")
 
 
 if __name__ == "__main__":
     config = load_config()
-    print(config)
+    logger.info(config)

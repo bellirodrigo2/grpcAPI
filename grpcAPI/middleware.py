@@ -1,6 +1,6 @@
 from typing import Any, Awaitable, Callable
 
-from grpcAPI.types.context import Context
+from grpcAPI.context import Context
 
 type Middleware = Callable[[Any, Context, Callable[[], Awaitable[Any]]], Awaitable[Any]]
 

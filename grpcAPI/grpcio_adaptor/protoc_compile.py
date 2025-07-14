@@ -141,5 +141,5 @@ if __name__ == "__main__":
         True,
         False,
         True,
-        # files=["multi/inner/class.proto", "user.proto"],
+        files=["account.proto"],
     )

@@ -1,9 +1,10 @@
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
+from grpcAPI.context import AsyncContext
+from grpcAPI.context import SyncContext as Context
 from grpcAPI.exceptionhandler import ErrorCode
 from grpcAPI.testclient.tracker import Tracker
-from grpcAPI.types.context import SyncContext as Context
 
 std_auth_context = {
     "x509_common_name": [b"default-client"],
@@ -11,7 +12,7 @@ std_auth_context = {
 }
 
 
-class ContextMock(Context):
+class ContextMock(AsyncContext):
     def __init__(
         self,
         peer: str = "127.0.0.1:12345",
@@ -68,14 +69,14 @@ class ContextMock(Context):
     def trailing_metadata(self) -> Sequence[Any]:
         return self._trailing_metadata  # não precisa track, pois não está na interface
 
-    def abort(self, code: Any, details: str) -> None:
+    async def abort(self, code: Any, details: str) -> None:
         self.tracker.abort(code, details)
         self._aborted = True
         self._abort_code = code
         self._abort_details = details
         raise RuntimeError(f"gRPC aborted with code={code}, details={details}")
 
-    def abort_with_status(self, status: ErrorCode) -> None:
+    async def abort_with_status(self, status: ErrorCode) -> None:
         self.tracker.abort_with_status(status)
         self._aborted = True
         self._abort_code = getattr(status, "code", None)
@@ -102,7 +103,7 @@ class ContextMock(Context):
     def details(self) -> Optional[str]:
         return self._details
 
-    def cancel(self) -> None:
+    async def cancel(self) -> None:
         self.tracker.cancel()
         self._cancelled = True
         for cb in self._callbacks:
@@ -132,7 +133,7 @@ class ContextMock(Context):
         self.tracker.disable_next_message_compression()
         raise NotImplementedError
 
-    def send_initial_metadata(
+    async def send_initial_metadata(
         self, initial_metadata: Sequence[Tuple[str, str]]
     ) -> None:
         self.tracker.send_initial_metadata(initial_metadata)

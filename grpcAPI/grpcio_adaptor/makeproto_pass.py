@@ -3,16 +3,20 @@ from collections.abc import AsyncIterator
 from ctxinject.sigcheck import func_signature_check
 from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 from typemapping import get_func_args
-from typing_extensions import Any, Callable, List
+from typing_extensions import Any, Callable, List, Optional, Tuple, Type
 
 from grpcAPI.grpcio_adaptor.protobut_typing import inject_proto_typing
 from grpcAPI.types import BaseContext, FromRequest, Message
 
 
-def validate_signature_pass(func: Callable[..., Any]) -> List[str]:
-    """Implementarion for MethodSigValidation using grpcio and ctxinject"""
+def validate_signature_pass(
+    func: Callable[..., Any],
+    type_cast: Optional[List[Tuple[Type[Any], Type[Any]]]] = None,
+) -> List[str]:
     inject_typing(func)
-    return func_signature_check(func, [Message, BaseContext], AsyncIterator)
+    return func_signature_check(
+        func, [Message, BaseContext], AsyncIterator, True, type_cast
+    )
 
 
 def inject_typing(transform_func: Callable[..., Any]) -> Callable[..., Any]:

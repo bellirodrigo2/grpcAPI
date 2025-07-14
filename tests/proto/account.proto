@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package account;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+message AccountInput {
+    string name=1;
+    string email=2;
+    google.protobuf.Struct payload = 3;
+    google.protobuf.ListValue itens = 4;
+}
+
+
+message Account{
+    string id=1;
+    google.protobuf.Timestamp created_at = 2;
+}

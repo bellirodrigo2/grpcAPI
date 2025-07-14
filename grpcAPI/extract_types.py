@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from functools import partial
 
 from makeproto import IMetaType
 from typemapping import get_func_args, map_return_type
@@ -16,13 +17,13 @@ from typing_extensions import (
 )
 
 from grpcAPI.config import GET_PACKAGE, GET_PROTOFILE_PATH
+from grpcAPI.interfaces import GetPackage, GetProtofilePath
 from grpcAPI.types import FromRequest, Message
 
 
 def extract_request_response_type(
     func: Callable[..., Any],
 ) -> Tuple[List[IMetaType], Optional[IMetaType]]:
-    """Implementation for ExtractMetaType for grpcio and typemapping"""
     request_args = extract_request(func)
     requests = [type_to_metatype(arg) for arg in request_args]
 
@@ -44,14 +45,16 @@ class MetaType(IMetaType):
     proto_path: str
 
 
-def type_to_metatype(varinfo: Type[Any]) -> IMetaType:
+def type_to_metatype_(
+    varinfo: Type[Any], get_package: GetPackage, get_protofile_path: GetProtofilePath
+) -> IMetaType:
 
     argtype = varinfo
     origin = get_origin(varinfo)
     basetype = varinfo if origin is None else get_args(varinfo)[0]
 
-    package = GET_PACKAGE(basetype)
-    proto_path = GET_PROTOFILE_PATH(basetype)
+    package = get_package(basetype)
+    proto_path = get_protofile_path(basetype)
 
     return MetaType(
         argtype=argtype,
@@ -60,6 +63,11 @@ def type_to_metatype(varinfo: Type[Any]) -> IMetaType:
         package=package,
         proto_path=proto_path,
     )
+
+
+type_to_metatype = partial(
+    type_to_metatype_, get_package=GET_PACKAGE, get_protofile_path=GET_PROTOFILE_PATH
+)
 
 
 def extract_request(func: Callable[..., Any]) -> List[Type[Any]]:

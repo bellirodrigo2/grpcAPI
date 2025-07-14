@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing_extensions import Any, Type
 
 
 def get_protofile_relative_path(cls: Type[Any]) -> str:

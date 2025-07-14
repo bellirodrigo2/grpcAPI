@@ -1,19 +1,21 @@
-from typing_extensions import List
+from typing import Any, List, Optional
 
-from grpcAPI.app import BaseService
-from grpcAPI.extract_types import extract_request_response_type
+from makeproto import IService
+
+from grpcAPI.app import App, Lifespan
+from grpcAPI.inject_validation import StdValidator
 
 
-class APIService(BaseService):
-
-    def __init__(
-        self,
-        name: str,
-        options: List[str] | None = None,
-        comments: str = "",
-        module: str = "service",
-        package: str = "",
-    ) -> None:
-        super().__init__(
-            extract_request_response_type, name, options, comments, module, package
-        )
+def GrpcAPI(
+    service_classes: Optional[List[IService]] = None,
+    interceptors: Optional[List[Any]] = None,
+    lifespan: Optional[Lifespan] = None,
+) -> App:
+    service_classes = service_classes or []
+    interceptors = interceptors or []
+    return App(
+        service_classes=service_classes,
+        interceptors=interceptors,
+        lifespan=lifespan,
+        _validator=StdValidator(),
+    )

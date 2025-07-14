@@ -1,15 +1,19 @@
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
-from typing_extensions import Any, Dict, Optional
+from typing_extensions import Any, Mapping, Optional
 
-from grpcAPI.server import IServerContext, IServerPlugin
+from grpcAPI.interfaces import ServerContext, ServerPlugin
+from grpcAPI.plugins import factory
 
 
-class HealthCheckPlugin(IServerPlugin):
-    def __init__(self) -> None:
+class HealthCheckPlugin(ServerPlugin):
+    def __init__(
+        self,
+    ) -> None:
+        self.plugin_name = "health_check"
         self._enabled = False
         self._servicer: Optional[health.HealthServicer] = None
 
-    def configure(self, context: IServerContext, settings: Dict[str, Any]) -> None:
+    def configure(self, context: ServerContext, settings: Mapping[str, Any]) -> None:
         self._enabled = settings.get("health_check", True)
         if self._enabled:
             self._servicer = health.HealthServicer()
@@ -23,3 +27,7 @@ class HealthCheckPlugin(IServerPlugin):
 
     def on_start(self) -> None:
         return
+
+
+def register() -> None:
+    factory.register("health_check", HealthCheckPlugin)

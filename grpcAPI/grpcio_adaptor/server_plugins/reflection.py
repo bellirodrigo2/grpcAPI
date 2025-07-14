@@ -1,16 +1,18 @@
 from grpc_reflection.v1alpha import reflection
-from typing_extensions import Any, Dict, Optional
+from typing_extensions import Any, Mapping, Optional
 
-from grpcAPI.server import IServerContext, IServerPlugin
+from grpcAPI.interfaces import ServerContext, ServerPlugin
+from grpcAPI.plugins import factory
 
 
-class ReflectionPlugin(IServerPlugin):
+class ReflectionPlugin(ServerPlugin):
     def __init__(self) -> None:
         self._enabled = False
-        self._context: Optional[IServerContext] = None
+        self.plugin_name = "reflection"
+        self._context: Optional[ServerContext] = None
         self._services: list[str] = []
 
-    def configure(self, context: IServerContext, settings: Dict[str, Any]) -> None:
+    def configure(self, context: ServerContext, settings: Mapping[str, Any]) -> None:
         self._enabled = settings.get("reflection", True)
         self._context = context
 
@@ -25,3 +27,7 @@ class ReflectionPlugin(IServerPlugin):
                 "grpc.health.v1.Health",
             ]
             reflection.enable_server_reflection(services, self._context.grpc_server)
+
+
+def register() -> None:
+    factory.register("reflection", ReflectionPlugin)

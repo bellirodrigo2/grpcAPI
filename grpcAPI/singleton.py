@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type
+from typing_extensions import Any, Dict, Type
 
 
 class SingletonMeta(type):

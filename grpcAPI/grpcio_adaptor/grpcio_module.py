@@ -2,10 +2,10 @@ from types import ModuleType
 
 from typing_extensions import Any, Callable, Optional, Type
 
-from grpcAPI.interface import IServiceModule
+from grpcAPI.interfaces import ServiceModule
 
 
-class GrpcioServiceModule(IServiceModule):
+class GrpcioServiceModule(ServiceModule):
 
     def __init__(self, module: ModuleType) -> None:
         self.module = module
@@ -20,3 +20,7 @@ class GrpcioServiceModule(IServiceModule):
     def proto_to_pymodule(cls, name: str) -> str:
         module_name = name.replace(".proto", "_pb2_grpc.py")
         return module_name
+
+    @classmethod
+    def make(cls, module: ModuleType) -> "ServiceModule":
+        return GrpcioServiceModule(module)

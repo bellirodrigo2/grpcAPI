@@ -1,18 +1,30 @@
 from functools import partial
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
-from makeproto import IService, compile_service
+from makeproto import compile_service
+from typing_extensions import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+)
 
+from grpcAPI.app import APIService
 from grpcAPI.config import VALIDATE_SIGNATURE_PASS
 from grpcAPI.files_sentinel import ensure_dirs, register_path
-from grpcAPI.interface import MethodSigValidation
+from grpcAPI.interfaces import ValidateSignaturePass
 
 
 def pack_protos_(
-    services: Dict[str, List[IService]],
+    services: Dict[str, List[APIService]],
     root_dir: Path,
-    custompassmethod: MethodSigValidation,
+    custompassmethod: ValidateSignaturePass,
+    type_cast: Sequence[Tuple[Type[Any], Type[Any]]],
     out_dir: Optional[Path] = None,
     overwrite: bool = True,
     clean_services: bool = True,
@@ -20,9 +32,12 @@ def pack_protos_(
 
     out_dir = out_dir or root_dir
 
+    def compilepass(func: Callable[..., Any]) -> List[str]:
+        return custompassmethod(func, type_cast)
+
     proto_stream = compile_service(
         services=services,
-        custompassmethod=custompassmethod,
+        custompassmethod=compilepass,
         version=3,
     )
     if not proto_stream:

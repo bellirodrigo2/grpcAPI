@@ -1,8 +1,6 @@
 from collections import defaultdict
-from dataclasses import dataclass
-from logging import Logger
 
-from makeproto import ILabeledMethod, IMetaType, IService
+from makeproto import IService
 from typing_extensions import (
     Any,
     AsyncGenerator,
@@ -16,55 +14,33 @@ from typing_extensions import (
 )
 
 from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
+from grpcAPI.extract_types import extract_request_response_type
 from grpcAPI.funclabel import set_label
-from grpcAPI.interface import ExtractMetaType
+from grpcAPI.interfaces import Validator
 from grpcAPI.singleton import SingletonMeta
+from grpcAPI.types import LabeledMethod
 
 
-@dataclass
-class LabeledMethod(ILabeledMethod):
-    name: str
-    method: Callable[..., Any]
-    package: str
-    module: str
-    service: str
-    comments: str
-    description: str
-    options: List[str]
-    tags: List[str]
-
-    request_types: List[IMetaType]
-    response_types: Optional[IMetaType]
-
-
-class BaseService(IService):
+class APIService(IService):
 
     def __init__(
         self,
-        extract_metatypes: ExtractMetaType,
         name: str,
         options: Optional[List[str]] = None,
         comments: str = "",
         module: str = "service",
         package: str = "",
-        # process_service: Optional[Callable[["BaseService"], None]] = None,
     ) -> None:
         self.name = name
-        self.__extract_metatypes = extract_metatypes
         self.options = options or []
         self.comments = comments
         self.module = module
         self.package = package
-        self.__methods: List[ILabeledMethod] = []
-        # self.__process_service = process_service
+        self.__methods: List[LabeledMethod] = []
 
     @property
-    def methods(self) -> List[ILabeledMethod]:
+    def methods(self) -> List[LabeledMethod]:
         return list(self.__methods)
-
-    # def process_service(self) -> None:
-    # if self.__process_service is not None:
-    # self.__process_service(self)
 
     def __call__(
         self,
@@ -82,7 +58,7 @@ class BaseService(IService):
         options = options or []
 
         set_label(func, self.package, self.module, self.name, method_name)
-        requests, response_type = self.__extract_metatypes(func)
+        requests, response_type = extract_request_response_type(func)
         labeled_method = LabeledMethod(
             name=method_name,
             method=func,
@@ -112,36 +88,33 @@ class App(metaclass=SingletonMeta):
 
     def __init__(
         self,
-        caster: Optional[CastDict] = None,
-        process_service: Optional[Callable[["App", BaseService], None]] = None,
-        lifespan: Optional[Lifespan] = None,
-        logger: Optional[Logger] = None,
+        service_classes: List[IService],
+        interceptors: List[Any],
+        lifespan: Optional[Lifespan],
+        _validator: Validator,
     ) -> None:
+        self._service_classes = service_classes
+        self._interceptors = interceptors
         self.lifespan = lifespan
-        self._logger = logger
-        self.__process_service = process_service
-        self._caster = caster or {}
 
         self._services: DefaultDict[str, List[IService]] = defaultdict(list)
         self.dependency_overrides: DependencyRegistry = {}
         self._exception_handlers: ExceptionRegistry = {}
-
-    @property
-    def casting_dict(self) -> Dict[Tuple[type[Any], Type[Any]], Callable[..., Any]]:
-        return self._caster
+        self._validator = _validator
 
     @property
     def services(self) -> Dict[str, List[IService]]:
         return dict(self._services)
 
-    def add_service(self, service: BaseService) -> None:
+    def add_service(self, service: APIService) -> None:
         for existing_service in self._services[service.package]:
             if existing_service.name == service.name:
                 raise KeyError(
                     f"Service '{service.name}' already registered in package '{service.package}', module '{existing_service.module}'"
                 )
-        if self.__process_service is not None:
-            self.__process_service(self, service)
+        if self._validator:
+            for method in service.methods:
+                self._validator.inject_validation(method.method)
         self._services[service.package].append(service)
 
     def add_exception_handler(
@@ -162,20 +135,6 @@ class App(metaclass=SingletonMeta):
             return func
 
         return decorator
-
-
-def base_process_service(
-    app: App,
-    service: BaseService,
-    format_name: Callable[[str], str],
-    format_comment: Callable[[BaseService], str],
-    transform_func: Callable[[Callable[..., Any]], Callable[..., Any]],
-) -> None:
-
-    service.name = format_name(service.name)
-    service.comments = format_comment(service)
-    for method in service.methods:
-        transform_func(method.method)
 
 
 # modificar a função acima...extrair castings e passar para app

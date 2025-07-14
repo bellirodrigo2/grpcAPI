@@ -4,8 +4,53 @@
   "lib_rel_path": "grpcAPI/lib",
   "server": {
     "plugins": {
-      "healt_check": {},
+      "health_check": {},
       "reflection": {}
+    }
+  },
+  "logger": {
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+      "short": {
+        "format": "[%(asctime)s]: %(message)s"
+      },
+      "default": {
+        "format": "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s"
+      },
+      "detailed": {
+        "format": "[%(asctime)s] [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
+      }
+    },
+    "handlers": {
+      "console": {
+        "class": "logging.StreamHandler",
+        "level": "DEBUG",
+        "formatter": "short"
+      },
+      "file": {
+        "class": "logging.FileHandler",
+        "filename": "app.log",
+        "mode": "a",
+        "level": "INFO",
+        "formatter": "default"
+      }
+    },
+    "loggers": {
+      "grpcAPI": {
+        "handlers": ["console"],
+        "level": "ERROR",
+        "propagate": false
+      },
+      "grpcAPI.server": {
+        "level": "INFO",
+        "handlers": ["console"],
+        "propagate": false
+      }
+    },
+    "root": {
+      "handlers": ["console"],
+      "level": "WARNING"
     }
   }
 }

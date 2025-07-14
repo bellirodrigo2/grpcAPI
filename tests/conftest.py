@@ -1,23 +1,25 @@
 import shutil
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from typing import Any, AsyncIterator, Generator, List
 
 import pytest
 from typing_extensions import Annotated
 
-from grpcAPI.app import BaseService
-from grpcAPI.extract_types import extract_request_response_type
-from grpcAPI.types.injects import Depends, FromContext, FromRequest
+from grpcAPI.app import APIService
+from grpcAPI.types import Depends, FromContext, FromRequest
 from tests.lib.inner.inner_pb2 import InnerMessage
 
 # Add 'tests/lib' to sys.path for import resolution
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
 from google.protobuf.descriptor_pb2 import DescriptorProto
+from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 
+from tests.lib.account_pb2 import Account, AccountInput
 from tests.lib.other_pb2 import Other
 from tests.lib.user_pb2 import User, UserCode
 
@@ -30,12 +32,12 @@ def assert_content(protofile_str: str, content: List[str]) -> None:
 
 
 @pytest.fixture
-def serviceapi() -> BaseService:
-    return BaseService(name="service1", extract_metatypes=extract_request_response_type)
+def serviceapi() -> APIService:
+    return APIService(name="service1")
 
 
 @pytest.fixture
-def basic_proto(serviceapi: BaseService) -> BaseService:
+def basic_proto(serviceapi: APIService) -> APIService:
 
     @serviceapi
     async def unary(req: User) -> User:
@@ -57,11 +59,9 @@ def basic_proto(serviceapi: BaseService) -> BaseService:
 
 
 @pytest.fixture
-def complex_proto(basic_proto: BaseService) -> List[BaseService]:
+def complex_proto(basic_proto: APIService) -> List[APIService]:
 
-    serviceapi2 = BaseService(
-        name="service2", extract_metatypes=extract_request_response_type
-    )
+    serviceapi2 = APIService(name="service2")
 
     @serviceapi2
     async def unary(req: User) -> DescriptorProto:
@@ -79,11 +79,10 @@ def complex_proto(basic_proto: BaseService) -> List[BaseService]:
     async def bilateral(req: AsyncIterator[Timestamp]) -> AsyncIterator[User]:
         yield User()
 
-    serviceapi3 = BaseService(
+    serviceapi3 = APIService(
         name="service3",
         package="pack3",
         module="mod3",
-        extract_metatypes=extract_request_response_type,
     )
 
     @serviceapi3
@@ -98,11 +97,9 @@ def complex_proto(basic_proto: BaseService) -> List[BaseService]:
 
 
 @pytest.fixture
-def inject_proto() -> BaseService:
+def inject_proto() -> APIService:
 
-    serviceapi = BaseService(
-        name="injected", extract_metatypes=extract_request_response_type
-    )
+    serviceapi = APIService(name="injected")
 
     async def get_db() -> str:
         return "sqlite"
@@ -130,6 +127,22 @@ def inject_proto() -> BaseService:
         req: AsyncIterator[Other], fromctx: str = FromContext(field="peer")
     ) -> AsyncIterator[User]:
         yield User()
+
+    return serviceapi
+
+
+@pytest.fixture
+def functional_service() -> APIService:
+    serviceapi = APIService(name="functional")
+
+    @serviceapi
+    async def create_account(
+        name: Annotated[str, FromRequest(AccountInput)],
+        email: str = FromRequest(AccountInput),
+        # adicionar fromrequest de struct, listvalue e timestamp para datetime
+    ) -> Account:
+        created_at = datetime.now()
+        return Account(id=0, created_at=created_at)
 
     return serviceapi
 

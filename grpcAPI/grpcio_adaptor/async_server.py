@@ -1,3 +1,5 @@
+import logging
+
 import grpc
 from typing_extensions import (
     Any,
@@ -10,15 +12,16 @@ from typing_extensions import (
     Type,
 )
 
-from grpcAPI.interface import IServiceModule
-from grpcAPI.server import IServerContext, IServerPlugin
+from grpcAPI.interfaces import ServerContext, ServerPlugin, ServiceModule
+
+logger = logging.getLogger("grpcAPI.server")
 
 
-class GRPCAIOServer(IServerContext):
+class GRPCAIOServer(ServerContext):
     def __init__(
         self,
         options: List[Tuple[str, Any]],
-        plugins: Optional[List[IServerPlugin]] = None,
+        plugins: Optional[List[ServerPlugin]] = None,
         settings: Optional[Dict[str, Any]] = None,
         block_wait: bool = True,
     ) -> None:
@@ -40,7 +43,7 @@ class GRPCAIOServer(IServerContext):
 
     def add_service(self, service: Type[Any]) -> None:
         instance = service()
-        service_grpc: IServiceModule = instance._get_module_()
+        service_grpc: ServiceModule = instance._get_module()
         add_server = service_grpc.get_add_server(service.__name__)
         add_server(instance, self._grpc_server)
 
@@ -51,7 +54,7 @@ class GRPCAIOServer(IServerContext):
             plugin.on_start()
 
         await self._grpc_server.start()
-        print("✅ Server started:")
+        logger.info("Server started:")
         if self._block_wait:
             await self._grpc_server.wait_for_termination()
 
@@ -60,15 +63,25 @@ class GRPCAIOServer(IServerContext):
         host: str = "0.0.0.0",
         port: int = 50051,
         lifespan: Optional[
-            Callable[[IServerContext], AsyncGenerator[None, None]]
+            Callable[[ServerContext], AsyncGenerator[None, None]]
         ] = None,
     ) -> None:
         self._grpc_server.add_insecure_port(f"{host}:{port}")
+        logger.info(f"Starting server at: host: {host}, port: {port}")
 
         if lifespan:
             async with lifespan(self):
-                print(f"Starting server at: host: {host}, port: {port}")
                 await self._start()
         else:
-            print(f"Starting server at: host: {host}, port: {port}")
             await self._start()
+
+
+def grpcaio_server_factory(
+    options: List[Tuple[str, Any]],
+    plugins: Optional[List["ServerPlugin"]] = None,
+    settings: Optional[Dict[str, Any]] = None,
+    block_wait: bool = True,
+) -> ServerContext:
+    return GRPCAIOServer(
+        options=options, plugins=plugins, settings=settings, block_wait=block_wait
+    )

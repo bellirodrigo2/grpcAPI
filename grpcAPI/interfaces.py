@@ -4,6 +4,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import List
 
+from makeproto import IService
 from typing_extensions import (
     Any,
     Callable,
@@ -15,6 +16,11 @@ from typing_extensions import (
     Type,
     runtime_checkable,
 )
+
+
+class ProcessService(Protocol):
+
+    def __call__(self, service: IService) -> None: ...
 
 
 class Labeled(Protocol):

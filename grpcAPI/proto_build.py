@@ -7,7 +7,6 @@ from typing_extensions import (
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
     Sequence,
     Set,
@@ -18,8 +17,7 @@ from typing_extensions import (
 from grpcAPI.app import APIService
 from grpcAPI.config import VALIDATE_SIGNATURE_PASS
 from grpcAPI.files_sentinel import ensure_dirs, register_path
-from grpcAPI.format_service import format_service
-from grpcAPI.interfaces import ValidateSignaturePass
+from grpcAPI.interfaces import ProcessService, ValidateSignaturePass
 
 
 def pack_protos_(
@@ -27,8 +25,7 @@ def pack_protos_(
     root_dir: Path,
     custompassmethod: ValidateSignaturePass,
     type_cast: Sequence[Tuple[Type[Any], Type[Any]]],
-    case: Optional[Literal["snake", "camel", "pascal", "none"]] = None,
-    max_char_line: Optional[int] = None,
+    process_services: Optional[List[ProcessService]] = None,
     out_dir: Optional[Path] = None,
     overwrite: bool = True,
     clean_services: bool = True,
@@ -36,12 +33,12 @@ def pack_protos_(
 
     out_dir = out_dir or root_dir
 
-    max_char_line = max_char_line or 80
-    case = case or "none"
+    process_services = process_services or []
 
     for service_list in services.values():
         for service in service_list:
-            format_service(service, max_char_line, case)
+            for proc in process_services:
+                proc(service)
 
     def compilepass(func: Callable[..., Any]) -> List[str]:
         return custompassmethod(func, type_cast)

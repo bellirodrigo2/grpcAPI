@@ -4,15 +4,25 @@ from makeproto import IService
 from typing_extensions import Literal
 
 from grpcAPI.app import APIService
-from grpcAPI.interfaces import Labeled
+from grpcAPI.interfaces import Labeled, ProcessService
 from grpcAPI.types import LabeledMethod
 
 
-def format_service(
-    service: IService, max_char: int, case: Literal["snake", "camel", "pascal", "none"]
-) -> None:
-    format_comment(service, max_char, "* ")
-    format_title(service, case)
+class FormatService(ProcessService):
+
+    def __init__(
+        self,
+        max_char: int,
+        case: Literal["snake", "camel", "pascal", "none"],
+        start_char: str = "",
+    ) -> None:
+        self.max_char = max_char
+        self.start_char = start_char or "* "
+        self.case = case
+
+    def __call__(self, service: IService) -> None:
+        format_comment(service, self.max_char, self.start_char)
+        format_title(service, self.case)
 
 
 def format_comment(service: IService, max_char: int, start_char: str) -> None:

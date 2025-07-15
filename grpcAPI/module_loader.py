@@ -5,7 +5,8 @@ from pathlib import Path
 from typing_extensions import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from grpcAPI.app import App
-from grpcAPI.interfaces import ServiceModule
+from grpcAPI.interfaces import ProcessService, ServiceModule
+from grpcAPI.process_service.format_service import FormatService
 from grpcAPI.proto_build import pack_protos
 from grpcAPI.proto_load import load_proto
 from grpcAPI.singleton import SingletonMeta
@@ -24,6 +25,7 @@ class ModuleLoader(metaclass=SingletonMeta):
         self,
         app: App,
         settings: Dict[str, Any],
+        process_services: Optional[List[ProcessService]] = None,
     ) -> None:
         self.app = app
 
@@ -31,16 +33,22 @@ class ModuleLoader(metaclass=SingletonMeta):
 
         clean_services, overwrite = get_compile_proto_settings(settings)
 
-        max_char, title_case = get_format_settings(settings)
-
         type_cast = app._validator.casting_list
+
+        max_char, title_case = get_format_settings(settings)
+        max_char = max_char or 80
+        title_case = title_case or "none"
+
+        formatter = FormatService(max_char, title_case)
+
+        process_services = process_services or []
+        process_services.append(formatter)
 
         pack = pack_protos(
             services=app.services,
             root_dir=proto_path,
             overwrite=overwrite,
-            max_char_line=max_char,
-            case=title_case,
+            process_services=process_services,
             clean_services=clean_services,
             type_cast=type_cast,
         )

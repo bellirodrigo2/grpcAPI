@@ -11,6 +11,7 @@ from typing_extensions import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
@@ -30,7 +31,13 @@ class APIService(IService):
         comments: str = "",
         module: str = "service",
         package: str = "",
+        title: Optional[str] = None,
+        description: str = "",
+        tags: Optional[List[str]] = None,
     ) -> None:
+        self.title = title or name
+        self.description = description
+        self.tags = tags or []
         self.name = name
         self.options = options or []
         self.comments = comments
@@ -42,7 +49,7 @@ class APIService(IService):
     def methods(self) -> List[LabeledMethod]:
         return list(self.__methods)
 
-    def __call__(
+    def _register_method(
         self,
         func: Callable[..., Any],
         title: Optional[str] = None,
@@ -51,15 +58,17 @@ class APIService(IService):
         comment: Optional[str] = None,
         options: Optional[List[str]] = None,
     ) -> Callable[..., Any]:
-
         comment = comment or func.__doc__ or ""
-        method_name = title or func.__name__
+        title = title or func.__name__
+        method_name = func.__name__
         tags = tags or []
         options = options or []
 
         set_label(func, self.package, self.module, self.name, method_name)
         requests, response_type = extract_request_response_type(func)
+
         labeled_method = LabeledMethod(
+            title=title,
             name=method_name,
             method=func,
             package=self.package,
@@ -72,9 +81,35 @@ class APIService(IService):
             options=options,
             tags=tags,
         )
-
         self.__methods.append(labeled_method)
         return func
+
+    def __call__(
+        self,
+        func: Optional[Callable[..., Any]] = None,
+        *,
+        title: Optional[str] = None,
+        description: str = "",
+        tags: Optional[List[str]] = None,
+        comment: Optional[str] = None,
+        options: Optional[List[str]] = None,
+    ) -> Union[Callable[..., Any], Callable[[Callable[..., Any]], Callable[..., Any]]]:
+        if func is not None and callable(func):
+            # Called as @serviceapi
+            return self._register_method(func)
+        else:
+            # Called as @serviceapi(...)
+            def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
+                return self._register_method(
+                    f,
+                    title=title,
+                    description=description,
+                    tags=tags,
+                    comment=comment,
+                    options=options,
+                )
+
+            return decorator
 
 
 type DependencyRegistry = Dict[Callable[..., Any], Callable[..., Any]]
@@ -112,9 +147,8 @@ class App(metaclass=SingletonMeta):
                 raise KeyError(
                     f"Service '{service.name}' already registered in package '{service.package}', module '{existing_service.module}'"
                 )
-        if self._validator:
-            for method in service.methods:
-                self._validator.inject_validation(method.method)
+        for method in service.methods:
+            self._validator.inject_validation(method.method)
         self._services[service.package].append(service)
 
     def add_exception_handler(

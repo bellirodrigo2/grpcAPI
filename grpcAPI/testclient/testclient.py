@@ -1,5 +1,6 @@
 import inspect
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+
+from typing_extensions import Any, Callable, Dict, Optional, Tuple
 
 from grpcAPI.app import App
 from grpcAPI.context import AsyncContext
@@ -10,6 +11,8 @@ from grpcAPI.testclient import ContextMock
 
 
 class TestClient:
+    __test__ = False
+
     def __init__(self, app: App, settings: Dict[str, Any]) -> None:
 
         module_loader = ModuleLoader(app, settings)
@@ -25,24 +28,19 @@ class TestClient:
             instance = service_cls()
             self.services[instance._get_label()] = instance
 
-    async def run(
+    async def run_by_label(
         self,
-        func: Callable[..., Any],
+        package: str,
+        service_name: str,
+        method_name: str,
         request: Any,
         context: Optional[AsyncContext] = None,
     ) -> Any:
 
         context = context or ContextMock()
-
-        label = get_label(func)
-        if label is None:
-            raise Exception(
-                f'Function "{func.__name__}" is not linked to a grpcAPI module'
-            )
-        package, module, service_name, method_name = label
         service = self.services.get((package, service_name), None)
         if service is None:
-            raise KeyError(f'No service found: "{package}/{module}/{service_name}"')
+            raise KeyError(f'No service found: "{package}/{service_name}"')
 
         method = getattr(service, method_name)
 
@@ -51,3 +49,21 @@ class TestClient:
             response = await response
 
         return response
+
+    async def run(
+        self,
+        func: Callable[..., Any],
+        request: Any,
+        context: Optional[AsyncContext] = None,
+    ) -> Any:
+
+        label = get_label(func)
+        if label is None:
+            raise Exception(
+                f'Function "{func.__name__}" is not linked to a grpcAPI module'
+            )
+        package, _, service_name, method_name = label
+
+        return await self.run_by_label(
+            package, service_name, method_name, request, context
+        )

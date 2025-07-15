@@ -29,8 +29,9 @@ class ModuleLoader(metaclass=SingletonMeta):
 
         proto_path, lib_path = get_proto_lib_path(settings)
 
-        overwrite = False
-        clean_services = True
+        clean_services, overwrite = get_compile_proto_settings(settings)
+
+        max_char, title_case = get_format_settings(settings)
 
         type_cast = app._validator.casting_list
 
@@ -38,6 +39,8 @@ class ModuleLoader(metaclass=SingletonMeta):
             services=app.services,
             root_dir=proto_path,
             overwrite=overwrite,
+            max_char_line=max_char,
+            case=title_case,
             clean_services=clean_services,
             type_cast=type_cast,
         )
@@ -55,22 +58,39 @@ class ModuleLoader(metaclass=SingletonMeta):
         return self._modules
 
 
+def get_compile_proto_settings(
+    settings: Dict[str, Any],
+) -> Tuple[bool, bool]:
+    compile_settings = settings.get("compile_proto", {})
+    clean_services = compile_settings.get("clean_services", True)
+    ovewrite = compile_settings.get("ovewrite", False)
+    return clean_services, ovewrite
+
+
+def get_format_settings(
+    settings: Dict[str, Any],
+) -> Tuple[Optional[int], Optional[str]]:
+    format_settings = settings.get("format", {})
+    max_char = format_settings.get("max_char_per_line", None)
+    case = format_settings.get("case", None)
+    return max_char, case
+
+
 def get_proto_lib_path(
     settings: Dict[str, Any],
 ) -> Tuple[Path, Path]:
-    root_str: Optional[str] = settings.get("root_path", None)
-    if not root_str:
-        root_str = os.environ.get("PYTHONPATH")
-        if not root_str:
-            raise RuntimeError
-    root_path = Path(root_str)
-    proto_str: str = settings.get("proto_rel_path", "proto")
+
+    path_settings = settings.get("path", {})
+
+    root_path = Path("./").resolve()
+
+    proto_str: str = path_settings.get("proto_path", "proto")
     proto_path = root_path / proto_str
     if not proto_path.exists():
-        raise FileNotFoundError
+        raise FileNotFoundError(str(proto_path))
 
-    lib_str: str = settings.get("lib_rel_path", "lib")
+    lib_str: str = path_settings.get("lib_path", "lib")
     lib_path = root_path / lib_str
     if not lib_path.exists():
-        raise FileNotFoundError(str(lib_path.absolute()))
+        raise FileNotFoundError(str(lib_path))
     return proto_path, lib_path

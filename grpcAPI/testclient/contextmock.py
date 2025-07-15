@@ -67,7 +67,7 @@ class ContextMock(AsyncContext):
         self._trailing_metadata = metadata
 
     def trailing_metadata(self) -> Sequence[Any]:
-        return self._trailing_metadata  # não precisa track, pois não está na interface
+        return self._trailing_metadata  # not part of interface, no tracking required
 
     async def abort(self, code: Any, details: str) -> None:
         self.tracker.abort(code, details)

@@ -16,6 +16,10 @@ from grpcAPI.grpcio_adaptor.makeproto_pass import validate_signature_pass
 
 VALIDATE_SIGNATURE_PASS = validate_signature_pass
 
+from grpcAPI.grpcio_adaptor.inject_validation import StdValidator
+
+STD_VALIDATOR = StdValidator
+
 from grpcAPI.grpcio_adaptor.protoc_compile import compile_protoc
 
 COMPILE_PROTO = compile_protoc

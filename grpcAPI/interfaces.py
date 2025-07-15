@@ -2,6 +2,7 @@ from collections.abc import AsyncGenerator
 from logging import Logger
 from pathlib import Path
 from types import ModuleType
+from typing import List
 
 from typing_extensions import (
     Any,
@@ -14,6 +15,13 @@ from typing_extensions import (
     Type,
     runtime_checkable,
 )
+
+
+class Labeled(Protocol):
+    comments: str
+    title: str
+    description: str
+    tags: List[str]
 
 
 @runtime_checkable

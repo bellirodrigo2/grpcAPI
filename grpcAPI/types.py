@@ -25,6 +25,7 @@ class FromRequest(ModelFieldInject):
 
 @dataclass
 class LabeledMethod(ILabeledMethod):
+    title: str
     name: str
     method: Callable[..., Any]
     package: str

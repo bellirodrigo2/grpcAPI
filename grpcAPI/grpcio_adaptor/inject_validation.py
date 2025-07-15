@@ -1,12 +1,13 @@
 from datetime import datetime
 
 from ctxinject.validate import arg_proc
-from ctxinject.validate import inject_validation as ctinject_inject_validation
+from ctxinject.validate import inject_validation as ctxinject_inject_validation
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 from typing_extensions import Any, Callable, Dict, List, Tuple, Type
 
+from grpcAPI.grpcio_adaptor.makeproto_pass import inject_typing
 from grpcAPI.interfaces import Validator
 
 argproc = arg_proc
@@ -24,7 +25,8 @@ class StdValidator(Validator):
         return list(self.argproc.keys())
 
     def inject_validation(self, func: Callable[..., Any]) -> None:
-        ctinject_inject_validation(func, self.argproc)
+        inject_typing(func)
+        ctxinject_inject_validation(func, self.argproc)
 
 
 def convert_timestamp(
@@ -51,6 +53,7 @@ def convert_struct(
     value: Struct,
     **kwargs: Any,
 ) -> Dict[str, Any]:
+
     d = MessageToDict(value)
 
     min_items = kwargs.get("min_items", None)
@@ -63,6 +66,7 @@ def convert_struct(
     return d
 
 
+argproc[(Struct, Dict[str, Any])] = None
 argproc[(Struct, dict)] = convert_struct
 
 
@@ -70,9 +74,7 @@ def convert_list(
     value: ListValue,
     **kwargs: Any,
 ) -> List[Any]:
-    temp = MessageToDict(value)
-
-    lst: List[Any] = temp["values"]
+    lst = MessageToDict(value)
 
     min_items = kwargs.get("min_items", None)
     max_items = kwargs.get("max_items", None)
@@ -84,4 +86,5 @@ def convert_list(
     return lst
 
 
-argproc[(Struct, list)] = convert_list
+argproc[(ListValue, List[Any])] = None
+argproc[(ListValue, list)] = convert_list

@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 from makeproto import IService
 
 from grpcAPI.app import App, Lifespan
-from grpcAPI.inject_validation import StdValidator
+from grpcAPI.config import STD_VALIDATOR
 
 
 def GrpcAPI(
@@ -17,5 +17,5 @@ def GrpcAPI(
         service_classes=service_classes,
         interceptors=interceptors,
         lifespan=lifespan,
-        _validator=StdValidator(),
+        _validator=STD_VALIDATOR(),
     )

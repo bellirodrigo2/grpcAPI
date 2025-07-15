@@ -4,7 +4,6 @@ from collections import defaultdict
 from functools import partial
 from pathlib import Path
 from types import ModuleType
-from typing import Callable
 
 from typing_extensions import Dict, List, Tuple, Type
 

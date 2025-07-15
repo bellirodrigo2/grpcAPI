@@ -39,7 +39,7 @@ def provide_service(
         methods[labeledmethod.name] = method
 
     methods["_get_module"] = lambda _: module
-    methods["_get_label"] = lambda _: service.package, service.name
+    methods["_get_label"] = lambda _: (service.package, service.name)
     baseclass = module.get_service_baseclass(service.name)
     return type(service.name, (baseclass,), methods)
 
@@ -67,7 +67,7 @@ def make_method_async(
 
     async def method(self: Any, request: Any, context: AsyncContext) -> Any:
         try:
-            ctx = {req_t: request, AsyncContext: context}
+            ctx = {req_t.argtype: request, AsyncContext: context}
             kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
             response = await func(**kwargs)
             return response
@@ -87,7 +87,7 @@ def make_method_async(
 
     async def stream_method(self: Any, request: Any, context: AsyncContext) -> Any:
         try:
-            ctx = {req_t: request, AsyncContext: context}
+            ctx = {req_t.argtype: request, AsyncContext: context}
             kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
             async for resp in func(**kwargs):
                 yield resp

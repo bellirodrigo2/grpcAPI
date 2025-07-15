@@ -3,14 +3,16 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, AsyncIterator, Generator, List
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Any, AsyncIterator, Dict, Generator, List
 
-from grpcAPI.app import APIService
+from grpcAPI.app import APIService, App
+from grpcAPI.context import AsyncContext
+from grpcAPI.grpcapi import GrpcAPI
+from grpcAPI.settings.utils import combine_settings
+from grpcAPI.testclient.testclient import TestClient
 from grpcAPI.types import Depends, FromContext, FromRequest
-from tests.lib.inner.inner_pb2 import InnerMessage
 
 # Add 'tests/lib' to sys.path for import resolution
 lib_path = Path(__file__).parent / "lib"
@@ -18,12 +20,35 @@ sys.path.insert(0, str(lib_path.resolve()))
 from google.protobuf.descriptor_pb2 import DescriptorProto
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
+from google.protobuf.wrappers_pb2 import StringValue
 
-from tests.lib.account_pb2 import Account, AccountInput
+from tests.lib.account_pb2 import Account, AccountCreated, AccountInput
+from tests.lib.inner.inner_pb2 import InnerMessage
 from tests.lib.other_pb2 import Other
 from tests.lib.user_pb2 import User, UserCode
 
 root = Path("./tests/proto")
+
+
+@pytest.fixture
+def temp_dir() -> Generator[Path, Any, None]:
+    source_dir = Path("tests/proto")
+
+    temp_dir = Path(tempfile.mkdtemp())
+    # print(f"[SETUP] Move files from '{source_dir}' to '{temp_dir}'")
+
+    temp_proto = temp_dir / "proto"
+    temp_proto.mkdir(parents=True, exist_ok=True)
+
+    if source_dir.exists():
+        shutil.copytree(source_dir, temp_proto, dirs_exist_ok=True)
+    else:
+        raise FileNotFoundError(f"Source folder not found: {source_dir}")
+
+    yield temp_dir
+
+    # print(f"[TEARDOWN] Cleaning temporary folder {temp_dir}")
+    shutil.rmtree(temp_dir)
 
 
 def assert_content(protofile_str: str, content: List[str]) -> None:
@@ -131,38 +156,104 @@ def inject_proto() -> APIService:
     return serviceapi
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def functional_service() -> APIService:
-    serviceapi = APIService(name="functional")
+    serviceapi = APIService(
+        module="account_service",
+        name="functional",
+        comments="This is a functional example of a service implementation",
+        title="Functional Service",
+        description="Service with function implementation",
+        tags=["account", "test"],
+    )
 
-    @serviceapi
+    @serviceapi(
+        title="Create Account",
+        description="Create an account by giving a name, email, payload and itens",
+        comment="Return the new account id and creation timestamp",
+        tags=["account", "creator", "test"],
+    )
     async def create_account(
         name: Annotated[str, FromRequest(AccountInput)],
         email: str = FromRequest(AccountInput),
-        # adicionar fromrequest de struct, listvalue e timestamp para datetime
-    ) -> Account:
-        created_at = datetime.now()
-        return Account(id=0, created_at=created_at)
+        payload: Dict[str, Any] = FromRequest(AccountInput),
+        itens: List[Any] = FromRequest(AccountInput),
+    ) -> AccountCreated:
+
+        created_at = datetime(2020, 1, 1)
+        ts = Timestamp()
+        ts.FromDatetime(created_at)
+        country = payload["country"]
+        return AccountCreated(
+            id=f"id:{name}-{email}-{country}-{itens[0]}", created_at=ts
+        )
+
+    @serviceapi
+    async def get_accounts(
+        values: ListValue, context: AsyncContext
+    ) -> AsyncIterator[Account]:
+
+        for v in values:
+            if v == "foo":
+                context.peer()
+            if v == "bar":
+                context.set_code("bar")
+            if v == "abort":
+                await context.abort(35, "abort")
+            yield Account(name=v, email=f"{v}@email.com")
+
+    @serviceapi
+    async def get_by_ids(ids: AsyncIterator[StringValue]) -> AsyncIterator[Account]:
+
+        async for id in ids:
+            yield Account(
+                id=id.value, name=f"account{id.value}", email=f"{id.value}@email.com"
+            )
+
+    @serviceapi
+    async def get_emails(ids: AsyncIterator[StringValue]) -> ListValue:
+
+        emails = ListValue()
+        async for id in ids:
+            emails.extend([id])
+        return emails
 
     return serviceapi
 
 
-@pytest.fixture
-def temp_dir() -> Generator[Path, Any, None]:
-    source_dir = Path("tests/proto")
+@pytest.fixture(scope="session")
+def app_fixture(functional_service: APIService) -> App:
 
-    temp_dir = Path(tempfile.mkdtemp())
-    # print(f"[SETUP] Move files from '{source_dir}' to '{temp_dir}'")
+    app = GrpcAPI()
+    app.add_service(functional_service)
+    return app
 
-    temp_proto = temp_dir / "proto"
-    temp_proto.mkdir(parents=True, exist_ok=True)
 
-    if source_dir.exists():
-        shutil.copytree(source_dir, temp_proto, dirs_exist_ok=True)
-    else:
-        raise FileNotFoundError(f"Source folder not found: {source_dir}")
+@pytest.fixture(scope="session")
+def testclient_fixture(app_fixture: App) -> TestClient:
+    settings = combine_settings(
+        {
+            "path": {
+                "proto_path": "tests/proto",
+                "lib_path": "tests/lib",
+            },
+            "compile_proto": {"clean_services": True},
+        }
+    )
+    return TestClient(app_fixture, settings)
 
-    yield temp_dir
 
-    # print(f"[TEARDOWN] Cleaning temporary folder {temp_dir}")
-    shutil.rmtree(temp_dir)
+class AsyncIt:
+    def __init__(self, data: List[Any]) -> None:
+        self._data = data
+        self._index = 0
+
+    def __aiter__(self) -> "AsyncIt":
+        return self
+
+    async def __anext__(self) -> Any:
+        if self._index >= len(self._data):
+            raise StopAsyncIteration
+        value = self._data[self._index]
+        self._index += 1
+        return value

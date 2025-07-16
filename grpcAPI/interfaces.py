@@ -2,25 +2,34 @@ from collections.abc import AsyncGenerator
 from logging import Logger
 from pathlib import Path
 from types import ModuleType
-from typing import List
 
 from makeproto import IService
 from typing_extensions import (
     Any,
+    AsyncIterator,
+    Awaitable,
     Callable,
+    List,
     Mapping,
     Optional,
     Protocol,
     Sequence,
     Tuple,
     Type,
+    TypeVar,
     runtime_checkable,
 )
+
+from grpcAPI.context import AsyncContext
 
 
 class ProcessService(Protocol):
 
     def __call__(self, service: IService) -> None: ...
+
+
+class ProcessServiceFactory(Protocol):
+    def __call__(self, settings: Mapping[str, Any]) -> ProcessService: ...
 
 
 class Labeled(Protocol):
@@ -60,6 +69,7 @@ class SeverFactory(Protocol):
     def __call__(
         self,
         options: Sequence[Tuple[str, Any]],
+        middlewares: Optional[Sequence["Middleware"]] = None,
         plugins: Optional[Sequence["ServerPlugin"]] = None,
         settings: Optional[Mapping[str, Any]] = None,
         block_wait: bool = True,
@@ -125,3 +135,38 @@ class Validator(Protocol):
     def casting_list(self) -> Sequence[Tuple[Type[Any], Type[Any]]]: ...
 
     def inject_validation(self, func: Callable[..., Any]) -> None: ...
+
+
+Req = TypeVar("Req")
+Res = TypeVar("Res")
+
+
+class Middleware(Protocol):
+    async def intercept_unary(
+        self,
+        call_next: Callable[[Req, AsyncContext], Awaitable[Res]],
+        request: Req,
+        context: AsyncContext,
+    ) -> Res: ...
+
+    async def intercept_client_stream(
+        self,
+        call_next: Callable[[AsyncIterator[Req], AsyncContext], Awaitable[Res]],
+        request_iterator: AsyncIterator[Req],
+        context: AsyncContext,
+    ) -> Res: ...
+
+    async def intercept_server_stream(
+        self,
+        call_next: Callable[[Req, AsyncContext], AsyncIterator[Res]],
+        request: Req,
+        context: AsyncContext,
+        # details: grpc.HandlerCallDetails,
+    ) -> AsyncIterator[Res]: ...
+
+    async def intercept_bilateral_stream(
+        self,
+        call_next: Callable[[AsyncIterator[Req], AsyncContext], AsyncIterator[Res]],
+        request_iterator: AsyncIterator[Req],
+        context: AsyncContext,
+    ) -> AsyncIterator[Res]: ...

@@ -1,12 +1,9 @@
-import asyncio
-from collections.abc import AsyncIterator
 from functools import partial
 
 from typing_extensions import Any, Dict
 
 from grpcAPI.app import App
 from grpcAPI.config import SERVER_FACTORY
-from grpcAPI.grpcapi import GrpcAPI
 from grpcAPI.interfaces import SeverFactory
 from grpcAPI.module_loader import load_app_modules
 from grpcAPI.plugins.factory import get_plugin
@@ -33,9 +30,12 @@ async def run_app_(
     plugins_config = server_settings.get("plugins", {})
     plugins = [get_plugin(plugin_name) for plugin_name in plugins_config]
 
+    middlewares = [middleware() for middleware in set(app._middleware)]
+
     server = server_factory(
         options=[],
         plugins=plugins,
+        middlewares=middlewares,
         settings=settings,
     )
     for plugin in plugins:

@@ -12,6 +12,7 @@ from typing_extensions import (
     Type,
 )
 
+from grpcAPI.grpcio_adaptor.interceptor import AioInterceptor
 from grpcAPI.interfaces import ServerContext, ServerPlugin, ServiceModule
 
 logger = logging.getLogger("grpcAPI.server")
@@ -20,12 +21,15 @@ logger = logging.getLogger("grpcAPI.server")
 class GRPCAIOServer(ServerContext):
     def __init__(
         self,
-        options: List[Tuple[str, Any]],
+        options: Optional[List[Tuple[str, Any]]] = None,
+        middlewares: Optional[List[AioInterceptor]] = None,
         plugins: Optional[List[ServerPlugin]] = None,
         settings: Optional[Dict[str, Any]] = None,
         block_wait: bool = True,
     ) -> None:
-        self._grpc_server = grpc.aio.server(options=options)
+        options = options or []
+        middlewares = middlewares or []
+        self._grpc_server = grpc.aio.server(options=options, interceptors=middlewares)
         self._plugins = plugins or []
         self._settings = settings or {}
         self._block_wait = block_wait

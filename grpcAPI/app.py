@@ -17,7 +17,7 @@ from typing_extensions import (
 from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
 from grpcAPI.extract_types import extract_request_response_type
 from grpcAPI.funclabel import set_label
-from grpcAPI.interfaces import Validator
+from grpcAPI.interfaces import Middleware, ProcessServiceFactory, Validator
 from grpcAPI.singleton import SingletonMeta
 from grpcAPI.types import LabeledMethod
 
@@ -124,18 +124,20 @@ class App(metaclass=SingletonMeta):
     def __init__(
         self,
         service_classes: List[IService],
-        interceptors: List[Any],
+        middleware: List[Type[Middleware]],
         lifespan: Optional[Lifespan],
         _validator: Validator,
+        _process_service_factories: List[ProcessServiceFactory],
     ) -> None:
         self._service_classes = service_classes
-        self._interceptors = interceptors
+        self._middleware = middleware
         self.lifespan = lifespan
 
         self._services: DefaultDict[str, List[IService]] = defaultdict(list)
         self.dependency_overrides: DependencyRegistry = {}
         self._exception_handlers: ExceptionRegistry = {}
         self._validator = _validator
+        self._process_service_factories = _process_service_factories
 
     @property
     def services(self) -> Dict[str, List[IService]]:
@@ -150,6 +152,16 @@ class App(metaclass=SingletonMeta):
         for method in service.methods:
             self._validator.inject_validation(method.method)
         self._services[service.package].append(service)
+
+    def add_middleware(self, middleware: Type[Middleware]) -> None:
+        self._middleware.append(middleware)
+
+    def middleware(self) -> Callable[[Type[Middleware]], Type[Middleware]]:
+        def decorator(cls: Type[Middleware]) -> Type[Middleware]:
+            self.add_middleware(cls)
+            return cls
+
+        return decorator
 
     def add_exception_handler(
         self,

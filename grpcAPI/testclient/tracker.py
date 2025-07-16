@@ -1,6 +1,7 @@
 import inspect
-from typing import Any, Dict, Type
 from unittest.mock import MagicMock
+
+from typing_extensions import Any, Dict, Type
 
 
 class Tracker:

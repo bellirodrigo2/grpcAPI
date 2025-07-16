@@ -17,7 +17,8 @@
 
   "format": {
     "max_char_per_line": 80,
-    "case": "None"
+    "case": "none",
+    "comment_style": "multiline"
   },
 
   "logger": {

@@ -1,34 +1,91 @@
 from inflection import camelize
 from inflection import underscore as snake_case
 from makeproto import IService
-from typing_extensions import Literal
+from typing_extensions import Any, List, Literal, Mapping, Optional, Tuple
 
-from grpcAPI.app import APIService
-from grpcAPI.interfaces import Labeled, ProcessService
-from grpcAPI.types import LabeledMethod
+from grpcAPI.interfaces import Labeled, ProcessService, ProcessServiceFactory
+
+
+class FormatServiceFactory(ProcessServiceFactory):
+    def __call__(self, settings: Mapping[str, Any]) -> "FormatService":
+
+        max_char, title_case, comment_strategy = get_format_settings(settings)
+        max_char = max_char or 80
+        title_case = title_case or "none"
+        comment_strategy = comment_strategy or "multiline"
+
+        return FormatService(max_char, title_case, comment_strategy)
+
+
+def get_format_settings(
+    settings: Mapping[str, Any],
+) -> Tuple[Optional[int], Optional[str], Optional[str]]:
+    format_settings = settings.get("format", {})
+    max_char = format_settings.get("max_char_per_line", None)
+    case = format_settings.get("case", None)
+    comment_strategy = format_settings.get("comment_style", None)
+    return max_char, case, comment_strategy
 
 
 class FormatService(ProcessService):
 
     def __init__(
         self,
-        max_char: int,
-        case: Literal["snake", "camel", "pascal", "none"],
-        start_char: str = "",
+        max_char: int = 80,
+        case: Literal["snake", "camel", "pascal", "none"] = "none",
+        strategy: Literal["singleline", "multiline"] = "multiline",
     ) -> None:
         self.max_char = max_char
-        self.start_char = start_char or "* "
         self.case = case
+        if "multi" in strategy:
+            self.open_char = "/*\n"
+            self.close_char = "*/\n"
+            self.start_char = "*"
+            self.end_char = "*"
+            self.fill_char = "*"
+        else:
+            self.open_char = ""
+            self.close_char = ""
+            self.start_char = "//"
+            self.end_char = ""
+            self.fill_char = " "
 
     def __call__(self, service: IService) -> None:
-        format_comment(service, self.max_char, self.start_char)
+        format_comment(
+            service=service,
+            max_char=self.max_char,
+            open_char=self.open_char,
+            close_char=self.close_char,
+            start_char=self.start_char,
+            end_char=self.end_char,
+            fill_char=self.fill_char,
+        )
         format_title(service, self.case)
 
 
-def format_comment(service: IService, max_char: int, start_char: str) -> None:
-    service.comments = format_method_comment(service, max_char, start_char)
+def format_comment(
+    service: IService,
+    max_char: int,
+    open_char: str,
+    close_char: str,
+    start_char: str,
+    end_char: str,
+    fill_char: str,
+) -> None:
+    def format(labeled: Labeled) -> str:
+        return format_method_comment(
+            method=labeled,
+            max_char=max_char,
+            open_char=open_char,
+            close_char=close_char,
+            start_char=start_char,
+            end_char=end_char,
+            fill_char=fill_char,
+        )
+
+    service.comments = format(labeled=service)
     for method in service.methods:
-        method.comments = format_method_comment(method, max_char, start_char)
+        method.comments = format(labeled=method)
 
 
 def format_title(
@@ -59,32 +116,68 @@ def pascal_case(val: str) -> str:
     return camelize(val, True)
 
 
-def format_method_comment(method: Labeled, max_char: int, start_char: str) -> str:
-    line0 = "/*\n"
-    title = start_char + "Method: " + method.title + "\n"
-    space1 = start_char + "\n"
-    descriptor = (
-        start_char
-        + "Description: "
-        + format_multiline(method.description, max_char, "")
-        + "\n"
-    )
-    space2 = start_char + "\n"
-    tags = format_multiline("Tags: " + str(method.tags), max_char, "* ") + "\n"
-    space3 = start_char + "\n"
-    comment = format_multiline(method.comments, max_char, start_char)
-    linef = "\n*/"
+def format_method_comment(
+    method: Labeled,
+    max_char: int,
+    open_char: str,
+    close_char: str,
+    start_char: str,
+    end_char: str,
+    fill_char: str,
+) -> str:
+    def format(text: str) -> str:
+        return format_multiline(text, max_char, start_char, end_char) + "\n"
+
+    def space_line() -> str:
+        n = max_char - len(start_char) - len(end_char)
+        return start_char + n * fill_char + end_char + "\n"
+
+    title = format(" Title: " + method.title)
+    spaceline = space_line()
+    descriptor = format(" Description: " + method.description)
+    tags = format(" Tags: " + str(method.tags))
+
+    request_types = getattr(method, "request_types", [])
+    if request_types:
+        request = format(f" Request: {str(request_types[0])}")
+    else:
+        request = ""
+
+    response_types = getattr(method, "response_types", [])
+
+    if response_types:
+        response = format(f" Response: {str(response_types)}")
+    else:
+        response = ""
+
+    comment = format(method.comments)
     return "".join(
-        [line0, title, space1, descriptor, space2, tags, space3, comment, linef]
+        [
+            open_char,
+            title,
+            spaceline,
+            descriptor,
+            spaceline,
+            tags,
+            spaceline,
+            request,
+            response,
+            spaceline if request else "",
+            comment,
+            close_char,
+        ]
     )
 
 
-def format_multiline(text: str, max_char: int, start_char: str) -> str:
+def format_multiline(text: str, max_char: int, start_char: str, end_char: str) -> str:
     text = text.replace("\n", " ")
-    max_len = max_char - 1
+    count = (
+        0 if not start_char else len(start_char) + 0 if not end_char else len(end_char)
+    )
+    max_len = max_char - count
 
     words = text.split()
-    lines = []
+    lines: List[str] = []
     current_line = ""
 
     for word in words:
@@ -100,36 +193,8 @@ def format_multiline(text: str, max_char: int, start_char: str) -> str:
     if current_line:
         lines.append(current_line)
 
-    formatted_lines = [start_char + line for line in lines]
+    formatted_lines = [
+        (start_char + line).ljust(max_char, " ") + end_char for line in lines
+    ]
 
     return "\n".join(formatted_lines)
-
-
-if __name__ == "__main__":
-    text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
-
-    service = APIService(name="Teste", comments=text)
-    print(format_service_comment(service, 80, "* "))
-
-    method = LabeledMethod(
-        "teste",
-        lambda: "foo",
-        "",
-        "",
-        "",
-        text,
-        "this method is intended to solve a problem",
-        [],
-        [
-            "foo",
-            "bar",
-            "consectetur",
-            "dfqwdkwqodkqwokdowqkdwq",
-            "ewofweofweofwef",
-            "hello",
-            "world",
-        ],
-        [],
-        None,
-    )
-    print(format_method_comment(method, 80, "* "))

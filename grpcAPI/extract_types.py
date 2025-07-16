@@ -44,6 +44,15 @@ class MetaType(IMetaType):
     package: str
     proto_path: str
 
+    def __str__(self) -> str:
+        cls = self.basetype
+        cls_name = f"{cls.__module__}.{cls.__qualname__}"
+        if self.origin is None:
+            final_str = cls_name
+        else:
+            final_str = f"{self.origin.__name__}[{cls_name}]"
+        return f"<{final_str}>"
+
 
 def type_to_metatype_(
     varinfo: Type[Any], get_package: GetPackage, get_protofile_path: GetProtofilePath

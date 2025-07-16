@@ -1,0 +1,82 @@
+/* "Generated .proto file" */
+
+syntax = "proto3";
+
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/struct.proto";
+import "account.proto";
+
+
+/*
+*Title: Functional Service                                                      *
+********************************************************************************
+*Description: Service with function implementation                              *
+********************************************************************************
+*Tags: ['account', 'test']                                                      *
+********************************************************************************
+*This is a functional example of a service implementation                       *
+*/
+
+service functional {
+/*
+*Title: Create Account                                                          *
+********************************************************************************
+*Description: Create an account by giving a name, email, payload and itens      *
+********************************************************************************
+*Tags: ['account', 'creator', 'test']                                           *
+********************************************************************************
+*Request: <account_pb2.AccountInput>                                            *
+*Response: <account_pb2.AccountCreated>                                         *
+********************************************************************************
+*Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor *
+*incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis     *
+*nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.  *
+*Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu*
+*fugiat nulla pariatur.                                                         *
+*/
+
+rpc create_account(account.AccountInput) returns (account.AccountCreated);
+/*
+*Title: get_accounts                                                            *
+********************************************************************************
+*Description:                                                                   *
+********************************************************************************
+*Tags: []                                                                       *
+********************************************************************************
+*Request: <google.protobuf.struct_pb2.ListValue>                                *
+*Response: <AsyncIterator[account_pb2.Account]>                                 *
+********************************************************************************
+
+*/
+
+rpc get_accounts(google.protobuf.ListValue) returns (stream account.Account);
+/*
+*Title: get_by_ids                                                              *
+********************************************************************************
+*Description:                                                                   *
+********************************************************************************
+*Tags: []                                                                       *
+********************************************************************************
+*Request: <AsyncIterator[google.protobuf.wrappers_pb2.StringValue]>             *
+*Response: <AsyncIterator[account_pb2.Account]>                                 *
+********************************************************************************
+
+*/
+
+rpc get_by_ids(stream google.protobuf.StringValue) returns (stream account.Account);
+/*
+*Title: get_emails                                                              *
+********************************************************************************
+*Description:                                                                   *
+********************************************************************************
+*Tags: []                                                                       *
+********************************************************************************
+*Request: <AsyncIterator[google.protobuf.wrappers_pb2.StringValue]>             *
+*Response: <google.protobuf.struct_pb2.ListValue>                               *
+********************************************************************************
+
+*/
+
+rpc get_emails(stream google.protobuf.StringValue) returns (google.protobuf.ListValue);
+}

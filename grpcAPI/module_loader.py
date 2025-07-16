@@ -1,12 +1,10 @@
-import os
 import sys
 from pathlib import Path
 
-from typing_extensions import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing_extensions import Any, Dict, List, Optional, Tuple
 
 from grpcAPI.app import App
-from grpcAPI.interfaces import ProcessService, ServiceModule
-from grpcAPI.process_service.format_service import FormatService
+from grpcAPI.interfaces import ProcessServiceFactory, ServiceModule
 from grpcAPI.proto_build import pack_protos
 from grpcAPI.proto_load import load_proto
 from grpcAPI.singleton import SingletonMeta
@@ -25,7 +23,7 @@ class ModuleLoader(metaclass=SingletonMeta):
         self,
         app: App,
         settings: Dict[str, Any],
-        process_services: Optional[List[ProcessService]] = None,
+        process_service_factory: Optional[List[ProcessServiceFactory]] = None,
     ) -> None:
         self.app = app
 
@@ -35,14 +33,11 @@ class ModuleLoader(metaclass=SingletonMeta):
 
         type_cast = app._validator.casting_list
 
-        max_char, title_case = get_format_settings(settings)
-        max_char = max_char or 80
-        title_case = title_case or "none"
-
-        formatter = FormatService(max_char, title_case)
-
-        process_services = process_services or []
-        process_services.append(formatter)
+        process_service_factory = process_service_factory or []
+        process_service_factory.extend(app._process_service_factories)
+        process_services = [
+            factory(settings) for factory in set(process_service_factory)
+        ]
 
         pack = pack_protos(
             services=app.services,
@@ -73,15 +68,6 @@ def get_compile_proto_settings(
     clean_services = compile_settings.get("clean_services", True)
     ovewrite = compile_settings.get("ovewrite", False)
     return clean_services, ovewrite
-
-
-def get_format_settings(
-    settings: Dict[str, Any],
-) -> Tuple[Optional[int], Optional[str]]:
-    format_settings = settings.get("format", {})
-    max_char = format_settings.get("max_char_per_line", None)
-    case = format_settings.get("case", None)
-    return max_char, case
 
 
 def get_proto_lib_path(

@@ -166,11 +166,12 @@ def functional_service() -> APIService:
         description="Service with function implementation",
         tags=["account", "test"],
     )
+    text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
 
     @serviceapi(
         title="Create Account",
         description="Create an account by giving a name, email, payload and itens",
-        comment="Return the new account id and creation timestamp",
+        comment=text,
         tags=["account", "creator", "test"],
     )
     async def create_account(
@@ -238,6 +239,7 @@ def testclient_fixture(app_fixture: App) -> TestClient:
                 "lib_path": "tests/lib",
             },
             "compile_proto": {"clean_services": True},
+            "format": {"case": "none", "comment_style": "multiline"},
         }
     )
     return TestClient(app_fixture, settings)

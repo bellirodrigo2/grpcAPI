@@ -1,5 +1,6 @@
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
+from typing_extensions import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from grpcAPI.context import AsyncContext
 from grpcAPI.context import SyncContext as Context

@@ -8,13 +8,11 @@
     "overwrite": false
   },
 
-  "server": {
-    "plugins": {
-      "health_check": {},
-      "reflection": {}
-    }
+  "server": {},
+  "plugins": {
+    "health_check": true,
+    "reflection": true
   },
-
   "format": {
     "max_char_per_line": 80,
     "case": "none",

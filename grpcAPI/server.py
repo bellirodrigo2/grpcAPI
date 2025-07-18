@@ -1,5 +1,9 @@
+from typing import Any, AsyncGenerator, Callable, Dict
+
 import grpc
 from typing_extensions import List, Optional, Protocol, Sequence
+
+from grpcAPI.app import Middleware
 
 
 class ServerPlugin(Protocol):
@@ -40,8 +44,17 @@ class ServerWrapper:
     ) -> int:
         return self._server.add_secure_port(address, server_credentials)
 
-    async def start(self) -> None:
-        return await self._server.start()
+    async def start(
+        self,
+        lifespan: Optional[
+            Callable[["ServerWrapper"], AsyncGenerator[None, None]]
+        ] = None,
+    ) -> None:
+        if lifespan:
+            async with lifespan(self):
+                await self._server.start()
+        else:
+            await self._server.start()
 
     async def stop(self, grace: Optional[float]) -> None:
         return await self._server.stop(grace)
@@ -53,3 +66,18 @@ class ServerWrapper:
         return self._server.add_registered_method_handlers(
             service_name, method_handlers
         )
+
+
+# Sequence[Tuple[str, Any]]
+
+
+def make_server(
+    server_settings: Dict[str, Any],
+    middlewares: Optional[List[Middleware]],
+    # migration_thread_pool: Optional[Executor] = None,
+    # maximum_concurrent_rpcs: Optional[int] = None,
+    # compression: Optional[grpc.Compression] = None,
+) -> ServerWrapper:
+    options = server_settings.items()
+    server = grpc.aio.server(interceptors=middlewares, options=options)
+    return ServerWrapper(server, [])

@@ -1,55 +1,87 @@
-from functools import partial
+import logging
+from pathlib import Path
+from typing import Tuple
 
 from typing_extensions import Any, Dict
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import App
-from grpcAPI.config import SERVER_FACTORY
-from grpcAPI.interfaces import SeverFactory
-from grpcAPI.module_loader import load_app_modules
+from grpcAPI.proto_build2 import make_protos, write_protos
+from grpcAPI.protoc_compile import compile_protoc
+from grpcAPI.server import ServerWrapper, make_server
 from grpcAPI.server_plugins.factory import get_plugin
-from grpcAPI.server_plugins.plugins import reflection
-from grpcAPI.service_provider import provide_services
 from grpcAPI.settings.utils import combine_settings, load_app
 
+logger = logging.getLogger(__name__)
 
-async def run_app_(
+
+async def run_app(
     app_path: str,
     user_settings: Dict[str, Any],
     host: str,
     port: int,
-    server_factory: SeverFactory,
 ) -> None:
 
     load_app(app_path)
     app = App()
 
     settings = combine_settings(user_settings)
+    plugins_settings = settings.get("plugins", {})
+
+    lint = True
+    reflection = "reflection" in plugins_settings
+
+    if lint or reflection:
+        proto_files = make_protos(app.services, app._casting_list)
+        if reflection:
+            proto_path, lib_path = get_proto_lib_path(settings)
+            # processar se for None, fazer no temp
+            clean_services, overwrite = get_compile_proto_settings(settings)
+            files = write_protos(proto_files, proto_path, overwrite, clean_services)
+            compile_protoc(Path("./"), lib_path, True, False, False, files, logger)
 
     server_settings = settings.get("server", {})
     middlewares = [middleware() for middleware in set(app._middleware)]
 
-    lint = True
-    reflection = "reflection" in server_settings.get("plugins", {})
-
-    # if reflection_plugin...should compile service .proto files for python_out only
-    if lint or reflection:
-        # makeproto compile_service
-        if reflection:
-            # write to the same dir package/module.proto
-            # track to delete on atexit, package dir if not exist before, and .proto
-            proto_path = settings.get("proto_path", "proto")
-            # protoc compile python_out the service .protos on tempdir
-            pass
-        pass
-
     server = make_server(server_settings, middlewares)
 
-    services = [item for sublist in app.services.values() for item in sublist]
+    plugins = [get_plugin(plugin_name) for plugin_name in plugins_settings.keys()]
+    for plugin in plugins:
+        server.register_plugin(plugin)
 
+    services = [item for sublist in app.services.values() for item in sublist]
     for service in services:
         add_to_server(
             service, server, app.dependency_overrides, app._exception_handlers
         )
+    lifespan = app.lifespan
+    await server.start(host, port, lifespan)
 
-    await server.start(host, port, None)
+
+def get_compile_proto_settings(
+    settings: Dict[str, Any],
+) -> Tuple[bool, bool]:
+    compile_settings = settings.get("compile_proto", {})
+    clean_services = compile_settings.get("clean_services", True)
+    ovewrite = compile_settings.get("ovewrite", False)
+    return clean_services, ovewrite
+
+
+def get_proto_lib_path(
+    settings: Dict[str, Any],
+) -> Tuple[Path, Path]:
+
+    path_settings = settings.get("path", {})
+
+    root_path = Path("./").resolve()
+
+    proto_str: str = path_settings.get("proto_path", "proto")
+    proto_path = root_path / proto_str
+    if not proto_path.exists():
+        raise FileNotFoundError(str(proto_path))
+
+    lib_str: str = path_settings.get("lib_path", "lib")
+    lib_path = root_path / lib_str
+    if not lib_path.exists():
+        raise FileNotFoundError(str(lib_path))
+    return proto_path, lib_path

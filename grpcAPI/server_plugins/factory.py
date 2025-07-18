@@ -1,7 +1,7 @@
 from typing_extensions import Callable
 
 from grpcAPI.interfaces import ServerPlugin
-from grpcAPI.plugins.loader import load_plugins
+from grpcAPI.server_plugins.loader import load_plugins
 
 _get_plugin: dict[str, Callable[..., ServerPlugin]] = {}
 

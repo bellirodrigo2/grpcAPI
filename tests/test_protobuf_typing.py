@@ -1,8 +1,8 @@
 from google.protobuf.timestamp_pb2 import Timestamp
 from typing_extensions import Annotated, Dict, List, get_type_hints
 
-from grpcAPI.grpcio_adaptor.makeproto_pass import validate_signature_pass
-from grpcAPI.grpcio_adaptor.protobut_typing import get_type, inject_proto_typing
+from grpcAPI.makeproto_pass import validate_signature_pass
+from grpcAPI.protobut_typing import get_type, inject_proto_typing
 from grpcAPI.types import Depends, FromRequest
 from tests.lib.inner.inner_pb2 import InnerMessage
 from tests.lib.multi.inner.class_pb2 import ClassMsg

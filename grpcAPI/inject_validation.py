@@ -5,15 +5,23 @@ from ctxinject.validate import inject_validation as ctxinject_inject_validation
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
+from makeproto import IService
 from typing_extensions import Any, Callable, Dict, List, Tuple, Type
 
-from grpcAPI.grpcio_adaptor.makeproto_pass import inject_typing
-from grpcAPI.interfaces import Validator
+from grpcAPI.interfaces import ProcessService
+from grpcAPI.makeproto_pass import inject_typing
 
 argproc = arg_proc
 
+# try:
+# from pydantic import BaseModel # na verdade aqui importa de outro file
+# validator = STD_VALIDATOR()
+# validator = PYDANTIC_VALIDATOR()
+# except ImportError:
+# validator = STD_VALIDATOR()
 
-class StdValidator(Validator):
+
+class StdValidator(ProcessService):
 
     def __init__(
         self,
@@ -24,7 +32,11 @@ class StdValidator(Validator):
     def casting_list(self) -> List[Tuple[Type[Any], Type[Any]]]:
         return list(self.argproc.keys())
 
-    def inject_validation(self, func: Callable[..., Any]) -> None:
+    def __call__(self, service: IService) -> None:
+        for method in service.methods:
+            self._inject_validation(method.method)
+
+    def _inject_validation(self, func: Callable[..., Any]) -> None:
         inject_typing(func)
         ctxinject_inject_validation(func, self.argproc)
 

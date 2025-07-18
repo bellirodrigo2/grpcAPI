@@ -1,15 +1,9 @@
 import pytest
+from google.protobuf.struct_pb2 import Struct
 
 from grpcAPI.testclient.contextmock import ContextMock
 from grpcAPI.testclient.testclient import TestClient
-from tests.conftest import (
-    AccountInput,
-    AsyncIt,
-    ListValue,
-    StringValue,
-    Struct,
-    Timestamp,
-)
+from tests.conftest import AccountInput, AsyncIt, ListValue, StringValue, Timestamp
 
 
 @pytest.mark.asyncio

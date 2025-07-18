@@ -1,10 +1,17 @@
 from makeproto import IService
 from typing_extensions import List, Optional, Type
 
-from grpcAPI.app import App, Lifespan
-from grpcAPI.config import STD_VALIDATOR
-from grpcAPI.interfaces import Middleware
+from grpcAPI.app import App, Lifespan, Middleware
+
+# try:
+# from pydantic import BaseModel # na verdade aqui importa de outro file
+# validator = STD_VALIDATOR()
+# validator = PYDANTIC_VALIDATOR()
+# except ImportError:
+from grpcAPI.inject_validation import StdValidator
 from grpcAPI.process_service.format_service import FormatServiceFactory
+
+validator = StdValidator()
 
 
 def GrpcAPI(
@@ -18,6 +25,6 @@ def GrpcAPI(
         service_classes=service_classes,
         middleware=middlewares,
         lifespan=lifespan,
-        _validator=STD_VALIDATOR(),
-        _process_service_factories=[FormatServiceFactory()],
+        _casting_list=validator.casting_list,
+        _process_service_factories=[FormatServiceFactory(), lambda _: validator],
     )

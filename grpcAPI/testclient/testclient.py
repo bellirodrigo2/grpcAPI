@@ -1,32 +1,45 @@
 import inspect
-
-from typing_extensions import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from grpcAPI.app import App
-from grpcAPI.context import AsyncContext
-from grpcAPI.funclabel import get_label
-from grpcAPI.module_loader import ModuleLoader
-from grpcAPI.service_provider import provide_services
-from grpcAPI.testclient import ContextMock
+from grpcAPI.interfaces import ProcessService
+from grpcAPI.make_method import make_method_async
+from grpcAPI.testclient.contextmock import ContextMock
+from grpcAPI.types import AsyncContext
 
 
 class TestClient:
     __test__ = False
 
-    def __init__(self, app: App, settings: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        app: App,
+        settings: Dict[str, Any],
+        process_service_factory: Optional[
+            List[Callable[[Mapping[str, Any]], ProcessService]]
+        ] = None,
+    ) -> None:
 
-        module_loader = ModuleLoader(app, settings)
+        process_service_factory = process_service_factory or []
+        process_service_factory.extend(app._process_service_factories)
+        process_services = [
+            factory(settings) for factory in set(process_service_factory)
+        ]
+
+        self._services: Dict[Tuple[str, str, str], Callable[..., Any]] = {}
         services = [item for sublist in app.services.values() for item in sublist]
-
-        self.services: Dict[Tuple[str, str], Any] = {}
-        for service_cls in provide_services(
-            services=services,
-            modules=module_loader.modules_dict,
-            overrides=app.dependency_overrides,
-            exception_registry=app._exception_handlers,
-        ):
-            instance = service_cls()
-            self.services[instance._get_label()] = instance
+        for service in services:
+            for proc in process_services:
+                proc(service)
+            for method in service.methods:
+                rpc_method = make_method_async(
+                    labeledmethod=method,
+                    overrides=app.dependency_overrides,
+                    exception_registry=app._exception_handlers,
+                )
+                tuple_id = (service.package, service.name, method.name)
+                self._services[tuple_id] = rpc_method
+                method.method.__label__ = tuple_id
 
     async def run_by_label(
         self,
@@ -38,11 +51,9 @@ class TestClient:
     ) -> Any:
 
         context = context or ContextMock()
-        service = self.services.get((package, service_name), None)
-        if service is None:
-            raise KeyError(f'No service found: "{package}/{service_name}"')
-
-        method = getattr(service, method_name)
+        method = self._services.get((package, service_name, method_name), None)
+        if method is None:
+            raise KeyError(f'No Method Found: "{package}/{service_name}/{method_name}"')
 
         response = method(request, context)
         if inspect.isawaitable(response):
@@ -57,7 +68,7 @@ class TestClient:
         context: Optional[AsyncContext] = None,
     ) -> Any:
 
-        label = get_label(func)
+        label = func.__label__
         if label is None:
             raise Exception(
                 f'Function "{func.__name__}" is not linked to a grpcAPI module'

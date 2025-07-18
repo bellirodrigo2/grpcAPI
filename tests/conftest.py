@@ -1,26 +1,24 @@
-import shutil
+import logging
 import sys
-import tempfile
 from datetime import datetime
 from pathlib import Path
 
 import pytest
-from typing_extensions import Annotated, Any, AsyncIterator, Dict, Generator, List
+import pytest_asyncio
+from google.protobuf.descriptor_pb2 import DescriptorProto
+from google.protobuf.struct_pb2 import ListValue
+from google.protobuf.timestamp_pb2 import Timestamp
+from google.protobuf.wrappers_pb2 import StringValue
+from typing_extensions import Annotated, Any, AsyncIterator, Dict, List
 
 from grpcAPI.app import APIService, App
-from grpcAPI.context import AsyncContext
 from grpcAPI.grpcapi import GrpcAPI
 from grpcAPI.settings.utils import combine_settings
 from grpcAPI.testclient.testclient import TestClient
-from grpcAPI.types import Depends, FromContext, FromRequest
+from grpcAPI.types import AsyncContext, Depends, FromContext, FromRequest
 
-# Add 'tests/lib' to sys.path for import resolution
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
-from google.protobuf.descriptor_pb2 import DescriptorProto
-from google.protobuf.struct_pb2 import ListValue, Struct
-from google.protobuf.timestamp_pb2 import Timestamp
-from google.protobuf.wrappers_pb2 import StringValue
 
 from tests.lib.account_pb2 import Account, AccountCreated, AccountInput
 from tests.lib.inner.inner_pb2 import InnerMessage
@@ -29,26 +27,7 @@ from tests.lib.user_pb2 import User, UserCode
 
 root = Path("./tests/proto")
 
-
-@pytest.fixture
-def temp_dir() -> Generator[Path, Any, None]:
-    source_dir = Path("tests/proto")
-
-    temp_dir = Path(tempfile.mkdtemp())
-    # print(f"[SETUP] Move files from '{source_dir}' to '{temp_dir}'")
-
-    temp_proto = temp_dir / "proto"
-    temp_proto.mkdir(parents=True, exist_ok=True)
-
-    if source_dir.exists():
-        shutil.copytree(source_dir, temp_proto, dirs_exist_ok=True)
-    else:
-        raise FileNotFoundError(f"Source folder not found: {source_dir}")
-
-    yield temp_dir
-
-    # print(f"[TEARDOWN] Cleaning temporary folder {temp_dir}")
-    shutil.rmtree(temp_dir)
+logger = logging.getLogger("grpcAPI.server")
 
 
 def assert_content(protofile_str: str, content: List[str]) -> None:
@@ -57,12 +36,9 @@ def assert_content(protofile_str: str, content: List[str]) -> None:
 
 
 @pytest.fixture
-def serviceapi() -> APIService:
-    return APIService(name="service1")
+def basic_proto() -> APIService:
 
-
-@pytest.fixture
-def basic_proto(serviceapi: APIService) -> APIService:
+    serviceapi = APIService(name="service1")
 
     @serviceapi
     async def unary(req: User) -> User:
@@ -243,6 +219,11 @@ def testclient_fixture(app_fixture: App) -> TestClient:
         }
     )
     return TestClient(app_fixture, settings)
+
+
+@pytest.fixture
+def stringvalue_request() -> List[StringValue]:
+    return [StringValue(value="foo"), StringValue(value="bar")]
 
 
 class AsyncIt:

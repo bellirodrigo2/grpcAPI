@@ -5,8 +5,8 @@ from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 from typemapping import get_func_args
 from typing_extensions import Any, Callable, List, Optional, Tuple, Type
 
-from grpcAPI.grpcio_adaptor.protobut_typing import inject_proto_typing
-from grpcAPI.types import BaseContext, FromRequest, Message
+from grpcAPI.protobut_typing import inject_proto_typing
+from grpcAPI.types import AsyncContext, FromRequest, Message
 
 
 def validate_signature_pass(
@@ -15,7 +15,7 @@ def validate_signature_pass(
 ) -> List[str]:
     inject_typing(func)
     return func_signature_check(
-        func, [Message, BaseContext], AsyncIterator, True, type_cast
+        func, [Message, AsyncContext], AsyncIterator, True, type_cast
     )
 
 

@@ -78,6 +78,22 @@ class User(google.protobuf.message.Message):
         def HasField(self, field_name: typing.Literal["value", b"value"]) -> builtins.bool: ...
         def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
 
+    @typing.final
+    class MapCodesEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: builtins.str
+        value: global___UserCode.ValueType
+        def __init__(
+            self,
+            *,
+            key: builtins.str = ...,
+            value: global___UserCode.ValueType = ...,
+        ) -> None: ...
+        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+
     CODE_FIELD_NUMBER: builtins.int
     AGE_FIELD_NUMBER: builtins.int
     TIME_FIELD_NUMBER: builtins.int
@@ -91,6 +107,8 @@ class User(google.protobuf.message.Message):
     OTHERS_FIELD_NUMBER: builtins.int
     MSG_FIELD_NUMBER: builtins.int
     MAP_MSG_FIELD_NUMBER: builtins.int
+    CODES_FIELD_NUMBER: builtins.int
+    MAP_CODES_FIELD_NUMBER: builtins.int
     code: global___UserCode.ValueType
     affilliation: builtins.str
     name: builtins.str
@@ -111,6 +129,10 @@ class User(google.protobuf.message.Message):
     def msg(self) -> multi.inner.class_pb2.ClassMsg: ...
     @property
     def map_msg(self) -> google.protobuf.internal.containers.MessageMap[builtins.int, inner.inner_pb2.InnerMessage]: ...
+    @property
+    def codes(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___UserCode.ValueType]: ...
+    @property
+    def map_codes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, global___UserCode.ValueType]: ...
     def __init__(
         self,
         *,
@@ -127,9 +149,11 @@ class User(google.protobuf.message.Message):
         others: collections.abc.Iterable[other_pb2.Other] | None = ...,
         msg: multi.inner.class_pb2.ClassMsg | None = ...,
         map_msg: collections.abc.Mapping[builtins.int, inner.inner_pb2.InnerMessage] | None = ...,
+        codes: collections.abc.Iterable[global___UserCode.ValueType] | None = ...,
+        map_codes: collections.abc.Mapping[builtins.str, global___UserCode.ValueType] | None = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["age", b"age", "employee", b"employee", "inactive", b"inactive", "msg", b"msg", "occupation", b"occupation", "other", b"other", "school", b"school", "time", b"time"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["affilliation", b"affilliation", "age", b"age", "code", b"code", "dict", b"dict", "employee", b"employee", "inactive", b"inactive", "map_msg", b"map_msg", "msg", b"msg", "name", b"name", "occupation", b"occupation", "other", b"other", "others", b"others", "school", b"school", "time", b"time"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["affilliation", b"affilliation", "age", b"age", "code", b"code", "codes", b"codes", "dict", b"dict", "employee", b"employee", "inactive", b"inactive", "map_codes", b"map_codes", "map_msg", b"map_msg", "msg", b"msg", "name", b"name", "occupation", b"occupation", "other", b"other", "others", b"others", "school", b"school", "time", b"time"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["occupation", b"occupation"]) -> typing.Literal["employee", "school", "inactive"] | None: ...
 
 global___User = User

@@ -80,5 +80,5 @@ if __name__ == "__main__":
         True,
         False,
         True,
-        files=["account.proto"],
+        # files=["test_server2.proto"],
     )

@@ -1,4 +1,3 @@
-from functools import partial
 from pathlib import Path
 
 from makeproto import compile_service
@@ -15,15 +14,14 @@ from typing_extensions import (
 )
 
 from grpcAPI.app import APIService
-from grpcAPI.config import VALIDATE_SIGNATURE_PASS
 from grpcAPI.files_sentinel import ensure_dirs, register_path
-from grpcAPI.interfaces import ProcessService, ValidateSignaturePass
+from grpcAPI.interfaces import ProcessService
+from grpcAPI.makeproto_pass import validate_signature_pass
 
 
-def pack_protos_(
+def pack_protos(
     services: Dict[str, List[APIService]],
     root_dir: Path,
-    custompassmethod: ValidateSignaturePass,
     type_cast: Sequence[Tuple[Type[Any], Type[Any]]],
     process_services: Optional[List[ProcessService]] = None,
     out_dir: Optional[Path] = None,
@@ -41,7 +39,7 @@ def pack_protos_(
                 proc(service)
 
     def compilepass(func: Callable[..., Any]) -> List[str]:
-        return custompassmethod(func, type_cast)
+        return validate_signature_pass(func, type_cast)
 
     proto_stream = compile_service(
         services=services,
@@ -80,6 +78,3 @@ def write_proto(
 
     with open(abs_file_path, "w") as f:
         f.write(proto_str)
-
-
-pack_protos = partial(pack_protos_, custompassmethod=VALIDATE_SIGNATURE_PASS)

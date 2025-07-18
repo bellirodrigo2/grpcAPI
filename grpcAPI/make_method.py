@@ -1,47 +1,11 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 
 from ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
-from makeproto import ILabeledMethod, IService
-from typing_extensions import Any, Callable, Dict, Generator, List, Type
+from makeproto import ILabeledMethod
+from typing_extensions import Any, Dict
 
-from grpcAPI.context import AsyncContext
 from grpcAPI.exceptionhandler import ExceptionRegistry
-from grpcAPI.interfaces import ServiceModule
-
-
-def provide_services(
-    services: List[IService],
-    modules: Dict[str, Dict[str, ServiceModule]],
-    overrides: Dict[Callable[..., Any], Callable[..., Any]],
-    exception_registry: ExceptionRegistry,
-) -> Generator[Type[Any], Any, None]:
-    for service in services:
-        module_package = modules.get(service.package, {})
-        for service_module in module_package.values():
-            yield provide_service(
-                service=service,
-                module=service_module,
-                overrides=overrides,
-                exception_registry=exception_registry,
-            )
-
-
-def provide_service(
-    service: IService,
-    module: ServiceModule,
-    overrides: Dict[Callable[..., Any], Callable[..., Any]],
-    exception_registry: ExceptionRegistry,
-) -> Type[Any]:
-
-    methods: Dict[str, Callable[..., Any]] = {}
-    for labeledmethod in service.methods:
-        method = make_method_async(labeledmethod, overrides, exception_registry)
-        methods[labeledmethod.name] = method
-
-    methods["_get_module"] = lambda _: module
-    methods["_get_label"] = lambda _: (service.package, service.name)
-    baseclass = module.get_service_baseclass(service.name)
-    return type(service.name, (baseclass,), methods)
+from grpcAPI.types import AsyncContext
 
 
 def make_method_async(
@@ -65,7 +29,7 @@ def make_method_async(
         overrides=overrides,
     )
 
-    async def method(self: Any, request: Any, context: AsyncContext) -> Any:
+    async def method(request: Any, context: AsyncContext) -> Any:
         try:
             ctx = {req_t.argtype: request, AsyncContext: context}
             kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
@@ -85,7 +49,7 @@ def make_method_async(
             else:
                 raise e
 
-    async def stream_method(self: Any, request: Any, context: AsyncContext) -> Any:
+    async def stream_method(request: Any, context: AsyncContext) -> Any:
         try:
             ctx = {req_t.argtype: request, AsyncContext: context}
             kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)

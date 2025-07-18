@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from grpc import aio
 from makeproto import IService
 from typing_extensions import (
     Any,
@@ -8,6 +9,7 @@ from typing_extensions import (
     DefaultDict,
     Dict,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -16,10 +18,11 @@ from typing_extensions import (
 
 from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
 from grpcAPI.extract_types import extract_request_response_type
-from grpcAPI.funclabel import set_label
-from grpcAPI.interfaces import Middleware, ProcessServiceFactory, Validator
+from grpcAPI.interfaces import ProcessService
 from grpcAPI.singleton import SingletonMeta
 from grpcAPI.types import LabeledMethod
+
+type Middleware = aio.ServerInterceptor[Any, Any]
 
 
 class APIService(IService):
@@ -64,7 +67,6 @@ class APIService(IService):
         tags = tags or []
         options = options or []
 
-        set_label(func, self.package, self.module, self.name, method_name)
         requests, response_type = extract_request_response_type(func)
 
         labeled_method = LabeledMethod(
@@ -126,8 +128,8 @@ class App(metaclass=SingletonMeta):
         service_classes: List[IService],
         middleware: List[Type[Middleware]],
         lifespan: Optional[Lifespan],
-        _validator: Validator,
-        _process_service_factories: List[ProcessServiceFactory],
+        _casting_list: List[Tuple[Type[Any], Type[Any]]],
+        _process_service_factories: List[Callable[[Mapping[str, Any]], ProcessService]],
     ) -> None:
         self._service_classes = service_classes
         self._middleware = middleware
@@ -136,7 +138,7 @@ class App(metaclass=SingletonMeta):
         self._services: DefaultDict[str, List[IService]] = defaultdict(list)
         self.dependency_overrides: DependencyRegistry = {}
         self._exception_handlers: ExceptionRegistry = {}
-        self._validator = _validator
+        self._casting_list = _casting_list
         self._process_service_factories = _process_service_factories
 
     @property
@@ -149,8 +151,6 @@ class App(metaclass=SingletonMeta):
                 raise KeyError(
                     f"Service '{service.name}' already registered in package '{service.package}', module '{existing_service.module}'"
                 )
-        for method in service.methods:
-            self._validator.inject_validation(method.method)
         self._services[service.package].append(service)
 
     def add_middleware(self, middleware: Type[Middleware]) -> None:

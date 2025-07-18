@@ -3,10 +3,10 @@ from inflection import underscore as snake_case
 from makeproto import IService
 from typing_extensions import Any, List, Literal, Mapping, Optional, Tuple
 
-from grpcAPI.interfaces import Labeled, ProcessService, ProcessServiceFactory
+from grpcAPI.interfaces import Labeled, ProcessService
 
 
-class FormatServiceFactory(ProcessServiceFactory):
+class FormatServiceFactory:
     def __call__(self, settings: Mapping[str, Any]) -> "FormatService":
 
         max_char, title_case, comment_strategy = get_format_settings(settings)

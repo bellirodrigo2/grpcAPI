@@ -13,7 +13,6 @@ async def safe_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
     result = func(*args, **kwargs)
     if inspect.isawaitable(result):
         await result
-    return
 
 
 def make_method_async(

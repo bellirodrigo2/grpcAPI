@@ -1,5 +1,6 @@
-from typing import Callable, Dict, Tuple, Type
-
 from grpc import StatusCode as ErrorCode
+from typing_extensions import Callable, Dict, Type
 
-ExceptionRegistry = Dict[Type[Exception], Callable[[Exception], Tuple[ErrorCode, str]]]
+from grpcAPI.types import AsyncContext
+
+ExceptionRegistry = Dict[Type[Exception], Callable[[Exception, AsyncContext], None]]

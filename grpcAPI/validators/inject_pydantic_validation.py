@@ -38,14 +38,14 @@ class PydanticValidator(BaseValidator):
     def __init__(self) -> None:
         super().__init__(arg_proc)
 
-    def _inject_validation(self, func: Callable[..., Any]) -> None:
+    def _inject_typing(self, func: Callable[..., Any]) -> None:
+        super()._inject_typing(func)
         models = add_models(func, [str, bytes])
         self.argproc.update(models)
-        super()._inject_validation(func)
 
 
 def parse_json_model(
-    json_str: Union[str, bytes], model_class: Type[BaseModel]
+    json_str: Union[str, bytes], model_class: Type[BaseModel], **kwargs: Any
 ) -> BaseModel:
     return model_class.model_validate_json(json_str)
 
@@ -78,7 +78,7 @@ def get_models(
             fieldname = instance.field or arg.name
             modeltype = get_field_type(instance.model, fieldname)
             if modeltype in from_type:
-                models.append((modeltype, instance.model))
+                models.append((modeltype, arg.basetype))
     return models
 
 

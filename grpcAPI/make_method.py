@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import AsyncIterator, Callable
 
 from ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
@@ -6,6 +7,13 @@ from typing_extensions import Any, Dict
 
 from grpcAPI import ExceptionRegistry
 from grpcAPI.types import AsyncContext
+
+
+async def safe_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+    result = func(*args, **kwargs)
+    if inspect.isawaitable(result):
+        await result
+    return
 
 
 def make_method_async(
@@ -20,7 +28,9 @@ def make_method_async(
         func = labeledmethod.method
         is_stream = labeledmethod.response_types.origin is AsyncIterator
     except (AttributeError, IndexError) as e:
-        raise RuntimeError from e
+        raise type(e)(
+            f"Not able to make method for: {labeledmethod.name}:\n Error:{str(e)}"
+        )
     mapped_ctx = get_mapped_ctx(
         func=func,
         context={req_t.argtype: None, AsyncContext: None},
@@ -38,14 +48,7 @@ def make_method_async(
         except Exception as e:
             exc_handler = exception_registry.get(type(e), None)
             if exc_handler is not None:
-                err_code, err_msg = exc_handler(e)
-                context.set_trailing_metadata(
-                    (
-                        ("error-type", e.__class__.__name__),
-                        # ("custom-detail", "additional info here"),
-                    )
-                )
-                await context.abort(err_code.value, err_msg)
+                await safe_run(exc_handler, e, context)
             else:
                 raise e
 
@@ -58,14 +61,7 @@ def make_method_async(
         except Exception as e:
             exc_handler = exception_registry.get(type(e), None)
             if exc_handler is not None:
-                err_code, err_msg = exc_handler(e)
-                context.set_trailing_metadata(
-                    (
-                        ("error-type", e.__class__.__name__),
-                        # ("custom-detail", "additional info here"),
-                    )
-                )
-                await context.abort(err_code.value, err_msg)
+                await safe_run(exc_handler, e, context)
             else:
                 raise e
 

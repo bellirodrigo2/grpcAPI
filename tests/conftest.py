@@ -8,9 +8,10 @@ import pytest
 from google.protobuf.descriptor_pb2 import DescriptorProto
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
-from google.protobuf.wrappers_pb2 import StringValue
+from google.protobuf.wrappers_pb2 import BytesValue, StringValue
 from typing_extensions import Annotated, Any, AsyncIterator, Dict, List
 
+from grpcAPI import ErrorCode
 from grpcAPI.app import APIService, App
 from grpcAPI.grpcapi import GrpcAPI
 from grpcAPI.settings.utils import combine_settings
@@ -51,10 +52,15 @@ def functional_service() -> APIService:
     )
     async def create_account(
         name: Annotated[str, FromRequest(AccountInput)],
+        context: AsyncContext,
         email: str = FromRequest(AccountInput),
         payload: Dict[str, Any] = FromRequest(AccountInput),
         itens: List[Any] = FromRequest(AccountInput),
     ) -> AccountCreated:
+        if name == "raise":
+            raise NotImplementedError("Not Implemented Test")
+        if name == "abort":
+            await context.abort(35, "abort")
 
         created_at = datetime(2020, 1, 1)
         ts = Timestamp()
@@ -76,6 +82,8 @@ def functional_service() -> APIService:
                 context.set_code("bar")
             if v == "abort":
                 await context.abort(35, "abort")
+            if v == "raise":
+                raise NotImplementedError("Not Implemented Test")
             yield Account(name=v, email=f"{v}@email.com")
 
     @serviceapi
@@ -102,6 +110,14 @@ def app_fixture(functional_service: APIService) -> App:
 
     app = GrpcAPI()
     app.add_service(functional_service)
+
+    @app.exception_handler(NotImplementedError)
+    async def handle_not_implemented(
+        exc: NotImplementedError, context: AsyncContext
+    ) -> None:
+        context.set_code(500)
+        await context.abort(ErrorCode.ABORTED, str(exc))
+
     return app
 
 

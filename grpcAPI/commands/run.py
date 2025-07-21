@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 from typing_extensions import Any, Dict
 
 from grpcAPI.add_to_server import add_to_server
-from grpcAPI.app import App
+from grpcAPI.grpcapi import GrpcAPI
 from grpcAPI.proto_build import make_protos, write_protos
 from grpcAPI.protoc_compile import compile_protoc
 from grpcAPI.server import make_server
@@ -25,7 +25,7 @@ async def run_app(
 ) -> None:
 
     load_app(app_path)
-    app = App()
+    app = GrpcAPI()
 
     settings = combine_settings(user_settings)
 

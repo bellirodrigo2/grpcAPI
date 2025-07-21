@@ -7,8 +7,10 @@ from typing_extensions import Annotated, Dict, List
 
 from grpcAPI.makeproto_pass import validate_signature_pass
 from grpcAPI.types import Depends, FromRequest
+from grpcAPI.validators import BaseValidator
 
 # from grpcAPI.validators import ctxinject_inject_validation, inject_typing
+from grpcAPI.validators.inject_pydantic_validation import PydanticValidator
 from grpcAPI.validators.inject_validation import StdValidator
 from tests.conftest import (
     ClassMsg,
@@ -21,12 +23,8 @@ from tests.conftest import (
 )
 
 
-@pytest.fixture
-def validator() -> StdValidator:
-    return StdValidator()
-
-
-def test_inject_typing(validator: StdValidator) -> None:
+@pytest.mark.parametrize("validator", [StdValidator(), PydanticValidator()])
+def test_inject_typing(validator) -> None:
 
     User.__annotations__ = {}
 
@@ -55,7 +53,8 @@ def test_inject_typing(validator: StdValidator) -> None:
     assert errors == []
 
 
-def test_validate_date(validator: StdValidator) -> None:
+@pytest.mark.parametrize("validator", [StdValidator(), PydanticValidator()])
+def test_validate_date(validator) -> None:
 
     def func(
         time: datetime = FromRequest(
@@ -85,7 +84,8 @@ def test_validate_date(validator: StdValidator) -> None:
         assert modelinj.validate(ts, basetype=datetime) == datetime(2024, 6, 6)
 
 
-def test_validate_struct(validator: StdValidator) -> None:
+@pytest.mark.parametrize("validator", [StdValidator(), PydanticValidator()])
+def test_validate_struct(validator) -> None:
 
     def func(
         dict: Dict[str, Any] = FromRequest(User, min_length=1, max_length=2),

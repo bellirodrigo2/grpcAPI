@@ -22,7 +22,7 @@ from grpcAPI import ErrorCode, ExceptionRegistry
 from grpcAPI.extract_types import extract_request_response_type
 from grpcAPI.process_service import ProcessService
 from grpcAPI.singleton import SingletonMeta
-from grpcAPI.types import LabeledMethod
+from grpcAPI.types import AsyncContext, LabeledMethod
 
 Middleware = aio.ServerInterceptor
 
@@ -179,17 +179,17 @@ class App(metaclass=SingletonMeta):
     def add_exception_handler(
         self,
         exc_type: Type[Exception],
-        handler: Callable[[Exception], Tuple[ErrorCode, str]],
+        handler: Callable[[Exception, AsyncContext], None],
     ) -> None:
         self._exception_handlers[exc_type] = handler
 
     def exception_handler(self, exc_type: Type[Exception]) -> Callable[
-        [Callable[[Exception], Tuple[ErrorCode, str]]],
-        Callable[[Exception], Tuple[ErrorCode, str]],
+        [Callable[[Exception, AsyncContext], None]],
+        Callable[[Exception, AsyncContext], None],
     ]:
         def decorator(
-            func: Callable[[Exception], Tuple[ErrorCode, str]],
-        ) -> Callable[[Exception], Tuple[ErrorCode, str]]:
+            func: Callable[[Exception, AsyncContext], None],
+        ) -> Callable[[Exception, AsyncContext], None]:
             self.add_exception_handler(exc_type, func)
             return func
 

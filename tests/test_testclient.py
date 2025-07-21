@@ -1,6 +1,7 @@
 import pytest
 from google.protobuf.struct_pb2 import Struct
 
+from grpcAPI import ErrorCode
 from grpcAPI.testclient.contextmock import ContextMock
 from grpcAPI.testclient.testclient import TestClient
 from tests.conftest import AccountInput, AsyncIt, ListValue, StringValue, Timestamp
@@ -25,6 +26,39 @@ async def test_unary(testclient_fixture: TestClient) -> None:
     )
     assert resp.id == f"id:{name}-{email}-{country}-{list_[0]}"
     assert resp.created_at == Timestamp(seconds=1577836800)
+
+
+@pytest.mark.asyncio
+async def test_unary_handled_error(testclient_fixture: TestClient) -> None:
+
+    name = "raise"
+    request = AccountInput(name=name)
+    context = ContextMock()
+
+    with pytest.raises(RuntimeError):
+        await testclient_fixture.run_by_label(
+            "", "functional", "create_account", request, context
+        )
+
+    context.tracker.set_code.assert_called_once_with(500)
+    context.tracker.abort.assert_called_once_with(
+        ErrorCode.ABORTED, "Not Implemented Test", ()
+    )
+
+
+@pytest.mark.asyncio
+async def test_unary_unhandled_error(testclient_fixture: TestClient) -> None:
+
+    name = "abort"
+    request = AccountInput(name=name)
+    context = ContextMock()
+
+    with pytest.raises(RuntimeError):
+        await testclient_fixture.run_by_label(
+            "", "functional", "create_account", request, context
+        )
+
+    context.tracker.abort.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -54,6 +88,29 @@ async def test_server_stream(testclient_fixture: TestClient) -> None:
     )
     with pytest.raises(RuntimeError):
         accounts = [acc async for acc in resp]
+
+
+@pytest.mark.asyncio
+async def test_server_stream_with_error(testclient_fixture: TestClient) -> None:
+
+    names = ListValue()
+    list_ = [
+        "raise",
+    ]
+    names.extend(list_)
+
+    context = ContextMock()
+
+    resp = await testclient_fixture.run_by_label(
+        "", "functional", "get_accounts", names, context
+    )
+    with pytest.raises(RuntimeError):
+        accounts = [acc async for acc in resp]
+
+    context.tracker.set_code.assert_called_once_with(500)
+    context.tracker.abort.assert_called_once_with(
+        ErrorCode.ABORTED, "Not Implemented Test", ()
+    )
 
 
 @pytest.mark.asyncio

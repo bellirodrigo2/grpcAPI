@@ -62,6 +62,12 @@ class BaseValidator(ProcessService):
         for method in service.methods:
             self.inject_validation(method.method)
 
-    def inject_validation(self, func: Callable[..., Any]) -> None:
+    def _inject_typing(self, func: Callable[..., Any]) -> None:
         inject_typing(func)
+
+    def _inject_validation(self, func: Callable[..., Any]) -> None:
         ctxinject_inject_validation(func, self.argproc)
+
+    def inject_validation(self, func: Callable[..., Any]) -> None:
+        self._inject_typing(func)
+        self._inject_validation(func)

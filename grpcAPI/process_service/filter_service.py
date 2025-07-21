@@ -1,6 +1,6 @@
 from makeproto import IService
 
-from grpcAPI.interfaces import ProcessService
+from grpcAPI.process_service import ProcessService
 
 
 class FilterService(ProcessService):

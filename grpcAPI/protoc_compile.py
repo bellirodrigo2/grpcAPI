@@ -80,5 +80,4 @@ if __name__ == "__main__":
         True,
         False,
         True,
-        # files=["test_server2.proto"],
     )

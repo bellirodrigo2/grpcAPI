@@ -4,7 +4,7 @@ import grpc
 from makeproto import ILabeledMethod, IService
 from typing_extensions import Any, Callable, Dict, Tuple
 
-from grpcAPI.exceptionhandler import ExceptionRegistry
+from grpcAPI import ExceptionRegistry
 from grpcAPI.make_method import make_method_async
 from grpcAPI.server import ServerWrapper
 
@@ -54,9 +54,7 @@ def add_to_server(
             request_deserializer=req_des,
             response_serializer=resp_ser,
         )
-    service_name = service.name
-    if service.package:
-        service_name = f"{service.package}.{service.name}"
+    service_name = service.qual_name
     generic_handler = grpc.method_handlers_generic_handler(
         service_name, rpc_method_handlers
     )

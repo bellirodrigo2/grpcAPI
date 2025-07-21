@@ -1,14 +1,15 @@
 {
-  "path": {
-    "proto_path": "grpcAPI/proto",
-    "lib_path": "grpcAPI/lib"
-  },
+  "proto_path": "grpcAPI/proto",
+  "lib_path": "grpcAPI/lib",
+  "lint": true,
   "compile_proto": {
     "clean_services": true,
     "overwrite": false
   },
 
-  "server": {},
+  "server": {
+    "options": {}
+  },
   "plugins": {
     "health_check": true,
     "reflection": true

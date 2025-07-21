@@ -73,7 +73,9 @@ def test_timing_and_callbacks(ctx: ContextMock) -> None:
     assert not ctx.done()
     ctx.tracker.done.assert_called_once()
 
-    cb = lambda: None
+    def cb():
+        return None
+
     ctx.add_done_callback(cb)
     ctx.tracker.add_done_callback.assert_called_once_with(cb)
 

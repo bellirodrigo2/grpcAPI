@@ -1,6 +1,5 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from functools import partial
 
 from makeproto import IMetaType
 from typemapping import get_func_args, map_return_type

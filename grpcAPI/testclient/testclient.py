@@ -2,10 +2,16 @@ import inspect
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from grpcAPI.app import App
-from grpcAPI.interfaces import ProcessService
 from grpcAPI.make_method import make_method_async
+from grpcAPI.process_service import ProcessService
+from grpcAPI.proto_build import make_protos
 from grpcAPI.testclient.contextmock import ContextMock
 from grpcAPI.types import AsyncContext
+
+default_test_settings = {
+    "lint": True,
+    "compile_proto": {"clean_services": True, "overwrite": False},
+}
 
 
 class TestClient:
@@ -20,17 +26,21 @@ class TestClient:
         ] = None,
     ) -> None:
 
+        settings = {**settings, **default_test_settings}
+
         process_service_factory = process_service_factory or []
         process_service_factory.extend(app._process_service_factories)
         process_services = [
             factory(settings) for factory in set(process_service_factory)
         ]
-
-        self._services: Dict[Tuple[str, str, str], Callable[..., Any]] = {}
-        services = [item for sublist in app.services.values() for item in sublist]
-        for service in services:
+        for service in app.service_list:
             for proc in process_services:
                 proc(service)
+        if settings["lint"]:
+            make_protos(app.services, app._casting_list)
+
+        self._services: Dict[Tuple[str, str, str], Callable[..., Any]] = {}
+        for service in app.service_list:
             for method in service.methods:
                 rpc_method = make_method_async(
                     labeledmethod=method,

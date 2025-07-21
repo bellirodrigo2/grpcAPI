@@ -1,9 +1,16 @@
 from inflection import camelize
 from inflection import underscore as snake_case
 from makeproto import IService
-from typing_extensions import Any, List, Literal, Mapping, Optional, Tuple
+from typing_extensions import Any, List, Literal, Mapping, Optional, Protocol, Tuple
 
-from grpcAPI.interfaces import Labeled, ProcessService
+from grpcAPI.process_service import ProcessService
+
+
+class Labeled(Protocol):
+    comments: str
+    title: str
+    description: str
+    tags: List[str]
 
 
 class FormatServiceFactory:
@@ -170,31 +177,40 @@ def format_method_comment(
 
 
 def format_multiline(text: str, max_char: int, start_char: str, end_char: str) -> str:
-    text = text.replace("\n", " ")
-    count = (
-        0 if not start_char else len(start_char) + 0 if not end_char else len(end_char)
-    )
-    max_len = max_char - count
+    """
+    Formats the text into multiple lines with a prefix and suffix per line, respecting the maximum line length.
 
+    - Ensures that each line has at most `max_char` characters in total, including `start_char` and `end_char`.
+    - Splits long words if necessary.
+    """
+    text = text.replace("\n", " ").strip()
     words = text.split()
+
+    prefix_len = len(start_char)
+    suffix_len = len(end_char)
+    available_len = max_char - prefix_len - suffix_len
+
+    if available_len <= 0:
+        raise ValueError("max_char too small for given start/end chars.")
+
     lines: List[str] = []
     current_line = ""
 
     for word in words:
-        if current_line:
-            if len(current_line) + 1 + len(word) > max_len:
-                lines.append(current_line)
-                current_line = word
-            else:
-                current_line += " " + word
-        else:
+        while len(word) > available_len:
+            # Quebra palavras muito longas
+            part = word[:available_len]
+            lines.append(f"{start_char}{part.ljust(available_len)}{end_char}")
+            word = word[available_len:]
+
+        if len(current_line) + len(word) + (1 if current_line else 0) > available_len:
+            # Fecha a linha atual e começa nova
+            lines.append(f"{start_char}{current_line.ljust(available_len)}{end_char}")
             current_line = word
+        else:
+            current_line += (" " if current_line else "") + word
 
     if current_line:
-        lines.append(current_line)
+        lines.append(f"{start_char}{current_line.ljust(available_len)}{end_char}")
 
-    formatted_lines = [
-        (start_char + line).ljust(max_char, " ") + end_char for line in lines
-    ]
-
-    return "\n".join(formatted_lines)
+    return "\n".join(lines)

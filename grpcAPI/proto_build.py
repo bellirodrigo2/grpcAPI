@@ -1,11 +1,13 @@
+import sys
 from pathlib import Path
 
 from makeproto import compile_service
+from makeproto.interface import IProtoPackage
 from typing_extensions import (
     Any,
     Callable,
-    Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -15,21 +17,15 @@ from typing_extensions import (
 
 from grpcAPI.app import APIService
 from grpcAPI.files_sentinel import ensure_dirs, register_path
-from grpcAPI.interfaces import ProcessService
 from grpcAPI.makeproto_pass import validate_signature_pass
+from grpcAPI.process_service import ProcessService
 
 
-def pack_protos(
-    services: Dict[str, List[APIService]],
-    root_dir: Path,
+def make_protos(
+    services: Mapping[str, List[APIService]],
     type_cast: Sequence[Tuple[Type[Any], Type[Any]]],
     process_services: Optional[List[ProcessService]] = None,
-    out_dir: Optional[Path] = None,
-    overwrite: bool = True,
-    clean_services: bool = True,
-) -> Set[str]:
-
-    out_dir = out_dir or root_dir
+) -> List[IProtoPackage]:
 
     process_services = process_services or []
 
@@ -47,8 +43,16 @@ def pack_protos(
         version=3,
     )
     if not proto_stream:
-        raise Exception("Service .proto file compilation failed")
+        sys.exit(1)
+    return [proto for proto in proto_stream]
 
+
+def write_protos(
+    proto_stream: List[IProtoPackage],
+    out_dir: Path,
+    overwrite: bool = True,
+    clean_services: bool = True,
+) -> Set[str]:
     generated_files: Set[str] = set()
     for proto in proto_stream:
         file_path = f"{proto.filename}.proto"

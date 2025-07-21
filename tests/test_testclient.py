@@ -15,15 +15,15 @@ async def test_unary(testclient_fixture: TestClient) -> None:
     struct = Struct()
     struct.update({"country": country, "size": 125})
     itens = ListValue()
-    l = ["foo"]
-    itens.extend(l)
+    list_ = ["foo"]
+    itens.extend(list_)
 
     request = AccountInput(name=name, email=email, payload=struct, itens=itens)
 
     resp = await testclient_fixture.run_by_label(
         "", "functional", "create_account", request
     )
-    assert resp.id == f"id:{name}-{email}-{country}-{l[0]}"
+    assert resp.id == f"id:{name}-{email}-{country}-{list_[0]}"
     assert resp.created_at == Timestamp(seconds=1577836800)
 
 
@@ -31,8 +31,8 @@ async def test_unary(testclient_fixture: TestClient) -> None:
 async def test_server_stream(testclient_fixture: TestClient) -> None:
 
     names = ListValue()
-    l = ["foo", "bar"]
-    names.extend(l)
+    list_ = ["foo", "bar"]
+    names.extend(list_)
 
     context = ContextMock()
 
@@ -44,7 +44,7 @@ async def test_server_stream(testclient_fixture: TestClient) -> None:
     context.tracker.peer.assert_called_once()
     context.tracker.set_code.assert_called_once_with("bar")
 
-    for name, acc in zip(l, accounts):
+    for name, acc in zip(list_, accounts):
         assert acc.name == name
         assert acc.email == f"{name}@email.com"
 

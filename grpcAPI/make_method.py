@@ -4,7 +4,7 @@ from ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
 from makeproto import ILabeledMethod
 from typing_extensions import Any, Dict
 
-from grpcAPI.exceptionhandler import ExceptionRegistry
+from grpcAPI import ExceptionRegistry
 from grpcAPI.types import AsyncContext
 
 

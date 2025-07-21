@@ -31,10 +31,13 @@ dev = [
     "flake8-bugbear>=24.12.12",
     "pytest>=7.0.0",
     "pytest-asyncio",
-    "invoke>=2.2.0"
+    "pytest-cov",
+    "pydantic>=2.0",
+    'pydantic[email]'
 ]
 pydantic = [
-    "pydantic>=2.0"
+    "pydantic>=2.0",
+    "pydantic[email]"
 ]
 
 [build-system]

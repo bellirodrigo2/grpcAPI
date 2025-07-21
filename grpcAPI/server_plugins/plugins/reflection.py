@@ -1,8 +1,8 @@
 from grpc_reflection.v1alpha import reflection
 from typing_extensions import Any, Mapping, Optional
 
-from grpcAPI.interfaces import ServerContext, ServerPlugin
-from grpcAPI.server_plugins import factory
+from grpcAPI.process_service import ServerContext, ServerPlugin
+from grpcAPI.server_plugins import loader
 
 
 class ReflectionPlugin(ServerPlugin):
@@ -25,4 +25,4 @@ class ReflectionPlugin(ServerPlugin):
 
 
 def register() -> None:
-    factory.register("reflection", ReflectionPlugin)
+    loader.register("reflection", ReflectionPlugin)

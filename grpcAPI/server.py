@@ -1,21 +1,10 @@
 from typing import Any, AsyncGenerator, Callable, Dict
 
 import grpc
-from typing_extensions import List, Optional, Protocol, Sequence
+from typing_extensions import List, Optional, Sequence
 
 from grpcAPI.app import Middleware
-
-
-class ServerPlugin(Protocol):
-
-    def on_add_service(self, service_name: str, server: "ServerWrapper") -> None:
-        pass
-
-    def on_start(self) -> None:
-        pass
-
-    def on_stop(self) -> None:
-        pass
+from grpcAPI.server_plugins import ServerPlugin
 
 
 class ServerWrapper:

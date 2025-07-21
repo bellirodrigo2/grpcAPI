@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict
 
 from grpc import aio
@@ -11,18 +12,19 @@ from typing_extensions import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
 )
 
-from grpcAPI.exceptionhandler import ErrorCode, ExceptionRegistry
+from grpcAPI import ErrorCode, ExceptionRegistry
 from grpcAPI.extract_types import extract_request_response_type
-from grpcAPI.interfaces import ProcessService
+from grpcAPI.process_service import ProcessService
 from grpcAPI.singleton import SingletonMeta
 from grpcAPI.types import LabeledMethod
 
-type Middleware = aio.ServerInterceptor[Any, Any]
+Middleware = aio.ServerInterceptor
 
 
 class APIService(IService):
@@ -51,6 +53,13 @@ class APIService(IService):
     @property
     def methods(self) -> List[LabeledMethod]:
         return list(self.__methods)
+
+    @property
+    def qual_name(self) -> str:
+        service_name = self.name
+        if self.package:
+            service_name = f"{self.package}.{self.name}"
+        return service_name
 
     def _register_method(
         self,
@@ -114,11 +123,11 @@ class APIService(IService):
             return decorator
 
 
-type DependencyRegistry = Dict[Callable[..., Any], Callable[..., Any]]
+DependencyRegistry = Dict[Callable[..., Any], Callable[..., Any]]
 
-type Lifespan = Callable[[Any], AsyncGenerator[None, None]]
+Lifespan = Callable[[Any], AsyncGenerator[None, None]]
 
-type CastDict = Dict[Tuple[Type[Any], Type[Any]], Callable[..., Any]]
+CastDict = Dict[Tuple[Type[Any], Type[Any]], Callable[..., Any]]
 
 
 class App(metaclass=SingletonMeta):
@@ -142,8 +151,12 @@ class App(metaclass=SingletonMeta):
         self._process_service_factories = _process_service_factories
 
     @property
-    def services(self) -> Dict[str, List[IService]]:
+    def services(self) -> Mapping[str, List[IService]]:
         return dict(self._services)
+
+    @property
+    def service_list(self) -> Sequence[IService]:
+        return list(itertools.chain.from_iterable(self._services.values()))
 
     def add_service(self, service: APIService) -> None:
         for existing_service in self._services[service.package]:
@@ -181,26 +194,3 @@ class App(metaclass=SingletonMeta):
             return func
 
         return decorator
-
-
-# modificar a função acima...extrair castings e passar para app
-# to be moved to grpcAPI-pydantic
-# def get_models(func: Callable[..., Any], from_type: T, to_subclass: U) -> List[U]:
-#     models: List[U] = []
-
-#     return models
-
-
-# def add_model(
-#     func: Callable[..., Any],
-#     from_type: T,
-#     to_subclass: U,
-#     cast: Callable[[T], U],
-# ) -> Dict[Tuple[T, U], Callable[[T], U]]:
-
-#     casts: Dict[Tuple[T, U], Callable[[T], U]] = {}
-#     models = get_models(func, from_type, to_subclass)
-#     for model in models:
-#         key = (from_type, model)
-#         casts[key] = cast
-#     return casts

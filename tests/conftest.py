@@ -1,12 +1,12 @@
+# ruff: noqa: E402
 import logging
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import pytest
-import pytest_asyncio
 from google.protobuf.descriptor_pb2 import DescriptorProto
-from google.protobuf.struct_pb2 import ListValue
+from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.wrappers_pb2 import StringValue
 from typing_extensions import Annotated, Any, AsyncIterator, Dict, List
@@ -15,121 +15,20 @@ from grpcAPI.app import APIService, App
 from grpcAPI.grpcapi import GrpcAPI
 from grpcAPI.settings.utils import combine_settings
 from grpcAPI.testclient.testclient import TestClient
-from grpcAPI.types import AsyncContext, Depends, FromContext, FromRequest
+from grpcAPI.types import AsyncContext, FromRequest
 
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
 
 from tests.lib.account_pb2 import Account, AccountCreated, AccountInput
 from tests.lib.inner.inner_pb2 import InnerMessage
+from tests.lib.multi.inner.class_pb2 import ClassMsg
 from tests.lib.other_pb2 import Other
 from tests.lib.user_pb2 import User, UserCode
 
 root = Path("./tests/proto")
 
 logger = logging.getLogger("grpcAPI.server")
-
-
-def assert_content(protofile_str: str, content: List[str]) -> None:
-    for line in content:
-        assert line in protofile_str
-
-
-@pytest.fixture
-def basic_proto() -> APIService:
-
-    serviceapi = APIService(name="service1")
-
-    @serviceapi
-    async def unary(req: User) -> User:
-        pass
-
-    @serviceapi
-    async def clientstream(req: AsyncIterator[User]) -> Other:
-        pass
-
-    @serviceapi
-    async def serverstream(req: Other) -> AsyncIterator[User]:
-        yield User()
-
-    @serviceapi
-    async def bilateral(req: AsyncIterator[Other]) -> AsyncIterator[User]:
-        yield User()
-
-    return serviceapi
-
-
-@pytest.fixture
-def complex_proto(basic_proto: APIService) -> List[APIService]:
-
-    serviceapi2 = APIService(name="service2")
-
-    @serviceapi2
-    async def unary(req: User) -> DescriptorProto:
-        pass
-
-    @serviceapi2
-    async def clientstream(req: AsyncIterator[DescriptorProto]) -> Other:
-        pass
-
-    @serviceapi2
-    async def serverstream(req: Other) -> AsyncIterator[Timestamp]:
-        yield User()
-
-    @serviceapi2
-    async def bilateral(req: AsyncIterator[Timestamp]) -> AsyncIterator[User]:
-        yield User()
-
-    serviceapi3 = APIService(
-        name="service3",
-        package="pack3",
-        module="mod3",
-    )
-
-    @serviceapi3
-    async def unary(req: User) -> DescriptorProto:
-        pass
-
-    @serviceapi3
-    async def clientstream(req: AsyncIterator[DescriptorProto]) -> Other:
-        pass
-
-    return [basic_proto, serviceapi2, serviceapi3]
-
-
-@pytest.fixture
-def inject_proto() -> APIService:
-
-    serviceapi = APIService(name="injected")
-
-    async def get_db() -> str:
-        return "sqlite"
-
-    @serviceapi
-    async def unary(
-        code: Annotated[UserCode, FromRequest(User)],
-        age: InnerMessage = FromRequest(User),
-        db: str = Depends(get_db),
-    ) -> User:
-        pass
-
-    @serviceapi
-    async def clientstream(req: AsyncIterator[User]) -> Other:
-        pass
-
-    @serviceapi
-    async def serverstream(
-        name: Annotated[str, FromRequest(Other, "name")], peer: str = FromContext()
-    ) -> AsyncIterator[User]:
-        yield User()
-
-    @serviceapi
-    async def bilateral(
-        req: AsyncIterator[Other], fromctx: str = FromContext(field="peer")
-    ) -> AsyncIterator[User]:
-        yield User()
-
-    return serviceapi
 
 
 @pytest.fixture(scope="session")
@@ -210,20 +109,13 @@ def app_fixture(functional_service: APIService) -> App:
 def testclient_fixture(app_fixture: App) -> TestClient:
     settings = combine_settings(
         {
-            "path": {
-                "proto_path": "tests/proto",
-                "lib_path": "tests/lib",
-            },
+            "proto_path": "tests/proto",
+            "lib_path": "tests/lib",
             "compile_proto": {"clean_services": True},
             "format": {"case": "none", "comment_style": "multiline"},
         }
     )
     return TestClient(app_fixture, settings)
-
-
-@pytest.fixture
-def stringvalue_request() -> List[StringValue]:
-    return [StringValue(value="foo"), StringValue(value="bar")]
 
 
 class AsyncIt:

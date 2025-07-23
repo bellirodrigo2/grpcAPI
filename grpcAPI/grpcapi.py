@@ -1,14 +1,14 @@
-from makeproto import IService
 from typing_extensions import List, Optional, Type
 
 from grpcAPI.app import App, Lifespan, Middleware
+from grpcAPI.makeproto import IService
 from grpcAPI.process_service.format_service import FormatServiceFactory
 
 try:
     from grpcAPI.validators.inject_pydantic_validation import (
         PydanticValidator as Validator,
     )
-except ImportError:
+except ImportError:  # pragma: no cover
     from grpcAPI.validators.inject_validation import StdValidator as Validator
 
 validator = Validator()

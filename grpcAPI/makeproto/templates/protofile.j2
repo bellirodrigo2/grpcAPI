@@ -1,0 +1,19 @@
+/* "Generated .proto file" */
+{{ comment }}
+syntax = "{{ syntax }}";
+
+{% if package %}
+package {{ package }};
+{% endif %}
+
+{% for imp in imports %}
+import "{{ imp }}";
+{% endfor %}
+
+{% for option in options %}
+option {{ option }};
+{% endfor %}
+
+{% for service in services %}
+{{ render_service_template(service) }}
+{% endfor %}

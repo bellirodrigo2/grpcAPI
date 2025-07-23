@@ -2,14 +2,16 @@ import inspect
 from collections.abc import AsyncIterator, Callable
 
 from ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
-from makeproto import ILabeledMethod
 from typing_extensions import Any, Dict
 
 from grpcAPI import ExceptionRegistry
+from grpcAPI.makeproto import ILabeledMethod
 from grpcAPI.types import AsyncContext
 
 
-async def safe_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+async def safe_run(
+    func: Callable[..., Any], *args: Any, **kwargs: Any
+) -> None:  # pragma: no cover
     result = func(*args, **kwargs)
     if inspect.isawaitable(result):
         await result

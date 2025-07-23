@@ -1,8 +1,8 @@
 from typing import Any, List, Mapping, Optional, Type
 
 import pytest
-from makeproto import ILabeledMethod
 
+from grpcAPI.makeproto import ILabeledMethod
 from grpcAPI.process_service.format_service import (
     FormatService,
     FormatServiceFactory,

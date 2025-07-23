@@ -1,0 +1,14 @@
+{% if service_comment %}{{ service_comment }}
+{% endif %}service {{ service_name }} {
+{% for method in methods %}
+  {% if method.comment %}{{ method.comment }}
+  {% endif %}rpc {{ method.name }}{% if method.request_stream %}(stream {{ method.request_type }}){% else %}({{ method.request_type }}){% endif %} returns {% if method.response_stream %}(stream {{ method.response_type }}){% else %}({{ method.response_type }}){% endif %}{% if method.options %}
+{
+  {% for option in method.options %}
+    option {{ option }};
+  {% endfor %}
+  };
+  {% else %};
+  {% endif %}
+{% endfor %}
+}

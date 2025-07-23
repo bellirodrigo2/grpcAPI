@@ -1,4 +1,4 @@
-.PHONY: install install_dev test lint format build clean
+.PHONY: install install_dev test test_coverage lint lint_fix format build clean update_dependency
 
 install:
 	@echo "Instaling dependencies..."
@@ -10,11 +10,11 @@ install_dev:
 
 test:
 	@echo "Running tests..."
-	pytest -s
+	pytest -p no:warnings -s
 
 test_coverage:
 	@echo "Running tests with coverage..."
-	pytest --cov=grpcAPI ./tests
+	pytest -p no:warnings --cov=grpcAPI ./tests
 
 lint:
 	@echo "Running linter (ruff)..."

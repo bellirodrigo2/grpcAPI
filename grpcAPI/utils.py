@@ -1,8 +1,8 @@
-from makeproto import IService
 from typemapping import get_func_args
 from typing_extensions import Any, Callable, Sequence
 
 from grpcAPI.app import App
+from grpcAPI.makeproto import IService
 from grpcAPI.types import Depends
 
 

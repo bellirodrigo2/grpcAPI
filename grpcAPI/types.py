@@ -4,7 +4,6 @@ import grpc
 from ctxinject.model import Depends as InnerDepends
 from ctxinject.model import ModelFieldInject
 from google.protobuf.message import Message
-from makeproto import ILabeledMethod, IMetaType
 from typing_extensions import (
     Any,
     Callable,
@@ -19,6 +18,8 @@ from typing_extensions import (
     Type,
     runtime_checkable,
 )
+
+from grpcAPI.makeproto import ILabeledMethod, IMetaType
 
 
 class Depends(InnerDepends):

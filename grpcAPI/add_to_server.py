@@ -1,12 +1,42 @@
 from collections.abc import AsyncIterator
 
 import grpc
-from makeproto import ILabeledMethod, IService
-from typing_extensions import Any, Callable, Dict, Tuple
+from typing_extensions import Any, Callable, Dict, Mapping, Tuple
 
 from grpcAPI import ExceptionRegistry
 from grpcAPI.make_method import make_method_async
+from grpcAPI.makeproto import ILabeledMethod, IService
 from grpcAPI.server import ServerWrapper
+
+
+def add_to_server(
+    service: IService,
+    server: ServerWrapper,
+    overrides: Dict[Callable[..., Any], Callable[..., Any]],
+    exception_registry: ExceptionRegistry,
+) -> Mapping[str, Callable[..., Any]]:
+
+    rpc_method_handlers = {}
+    methods: Dict[str, Callable[..., Any]] = {}
+    for method in service.methods:
+        key = method.name
+        handler = get_handler(method)
+        tgt_method = make_method_async(method, overrides, exception_registry)
+        methods[key] = tgt_method
+        req_des, resp_ser = get_deserializer_serializer(method)
+        rpc_method_handlers[key] = handler(
+            tgt_method,
+            request_deserializer=req_des,
+            response_serializer=resp_ser,
+        )
+    service_name = service.qual_name
+    generic_handler = grpc.method_handlers_generic_handler(
+        service_name, rpc_method_handlers
+    )
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers(service_name, rpc_method_handlers)
+
+    return methods
 
 
 def get_handler(method: ILabeledMethod) -> Callable[..., Any]:
@@ -34,29 +64,3 @@ def get_deserializer_serializer(
         request_type.FromString,
         response_type.SerializeToString,
     )
-
-
-def add_to_server(
-    service: IService,
-    server: ServerWrapper,
-    overrides: Dict[Callable[..., Any], Callable[..., Any]],
-    exception_registry: ExceptionRegistry,
-) -> None:
-
-    rpc_method_handlers = {}
-    for method in service.methods:
-        key = method.name
-        handler = get_handler(method)
-        tgt_method = make_method_async(method, overrides, exception_registry)
-        req_des, resp_ser = get_deserializer_serializer(method)
-        rpc_method_handlers[key] = handler(
-            tgt_method,
-            request_deserializer=req_des,
-            response_serializer=resp_ser,
-        )
-    service_name = service.qual_name
-    generic_handler = grpc.method_handlers_generic_handler(
-        service_name, rpc_method_handlers
-    )
-    server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers(service_name, rpc_method_handlers)

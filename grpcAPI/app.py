@@ -1,8 +1,8 @@
 import itertools
 from collections import defaultdict
+from typing import Iterable
 
 from grpc import aio
-from makeproto import IService
 from typing_extensions import (
     Any,
     AsyncGenerator,
@@ -18,8 +18,9 @@ from typing_extensions import (
     Union,
 )
 
-from grpcAPI import ErrorCode, ExceptionRegistry
+from grpcAPI import ExceptionRegistry
 from grpcAPI.extract_types import extract_request_response_type
+from grpcAPI.makeproto import IService
 from grpcAPI.process_service import ProcessService
 from grpcAPI.singleton import SingletonMeta
 from grpcAPI.types import AsyncContext, LabeledMethod
@@ -39,6 +40,8 @@ class APIService(IService):
         title: Optional[str] = None,
         description: str = "",
         tags: Optional[List[str]] = None,
+        module_level_options: Optional[Iterable[str]] = None,
+        module_level_comments: Optional[Iterable[str]] = None,
     ) -> None:
         self.title = title or name
         self.description = description
@@ -48,6 +51,8 @@ class APIService(IService):
         self.comments = comments
         self.module = module
         self.package = package
+        self.module_level_options = module_level_options or []
+        self.module_level_comments = module_level_comments or []
         self.__methods: List[LabeledMethod] = []
 
     @property

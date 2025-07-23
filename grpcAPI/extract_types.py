@@ -1,7 +1,6 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
-from makeproto import IMetaType
 from typemapping import get_func_args, map_return_type
 from typing_extensions import (
     Any,
@@ -15,6 +14,7 @@ from typing_extensions import (
     get_origin,
 )
 
+from grpcAPI.makeproto import IMetaType
 from grpcAPI.types import FromRequest, Message
 
 

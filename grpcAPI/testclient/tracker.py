@@ -20,4 +20,6 @@ class Tracker:
     def __getattr__(self, name: str) -> MagicMock:
         if name in self._methods:
             return self._methods[name]
-        raise AttributeError(f"'Tracker' object has no attribute '{name}'")
+        raise AttributeError(
+            f"'Tracker' object has no attribute '{name}'"
+        )  # pragma: no cover

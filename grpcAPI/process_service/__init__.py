@@ -1,5 +1,6 @@
-from makeproto import IService
 from typing_extensions import Protocol
+
+from grpcAPI.makeproto import IService
 
 
 class ProcessService(Protocol):

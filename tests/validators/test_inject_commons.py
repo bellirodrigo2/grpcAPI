@@ -7,7 +7,6 @@ from typing_extensions import Annotated, Dict, List
 
 from grpcAPI.makeproto_pass import validate_signature_pass
 from grpcAPI.types import Depends, FromRequest
-from grpcAPI.validators import BaseValidator
 
 # from grpcAPI.validators import ctxinject_inject_validation, inject_typing
 from grpcAPI.validators.inject_pydantic_validation import PydanticValidator
@@ -45,6 +44,7 @@ def test_inject_typing(validator) -> None:
         map_msg: Dict[int, InnerMessage] = FromRequest(User),
         code2: UserCode = FromRequest(User, field="code"),
         codes: List[UserCode] = FromRequest(User),
+        map_codes: Dict[str, UserCode] = FromRequest(User),
         db: str = Depends(get_db),
     ) -> None:
         pass

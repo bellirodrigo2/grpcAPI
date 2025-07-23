@@ -132,12 +132,13 @@ def test_basic_content(basic_proto: APIService) -> None:
         "rpc bilateral(stream Other) returns (stream userpack.User);",
     ]
     proto_stream = make_protos({"pack1": [basic_proto]}, [], [])
-    for proto in proto_stream:
+    proto_list = list(proto_stream)
+    for proto in proto_list:
         assert_content(proto.content, contents)
 
     def run_write_protos() -> Set[str]:
         return write_protos(
-            proto_stream=proto_stream,
+            proto_stream=proto_list,
             out_dir=root,
             overwrite=False,
             clean_services=True,

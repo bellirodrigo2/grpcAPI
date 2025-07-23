@@ -1,8 +1,8 @@
 from inflection import camelize
 from inflection import underscore as snake_case
-from makeproto import IService
 from typing_extensions import Any, List, Literal, Mapping, Optional, Protocol, Tuple
 
+from grpcAPI.makeproto import IService
 from grpcAPI.process_service import ProcessService
 
 

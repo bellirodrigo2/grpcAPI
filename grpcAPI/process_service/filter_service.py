@@ -1,5 +1,4 @@
-from makeproto import IService
-
+from grpcAPI.makeproto import IService
 from grpcAPI.process_service import ProcessService
 
 

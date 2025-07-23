@@ -1,3 +1,6 @@
+from typing import Any as Any
+from typing import Dict
+
 import pytest
 from google.protobuf.struct_pb2 import Struct
 
@@ -8,23 +11,20 @@ from tests.conftest import AccountInput, AsyncIt, ListValue, StringValue, Timest
 
 
 @pytest.mark.asyncio
-async def test_unary(testclient_fixture: TestClient) -> None:
+async def test_unary(
+    testclient_fixture: TestClient, account_input: Dict[str, Any]
+) -> None:
 
-    name = "John"
-    email = "john@email.com"
-    country = "BR"
-    struct = Struct()
-    struct.update({"country": country, "size": 125})
-    itens = ListValue()
-    list_ = ["foo"]
-    itens.extend(list_)
-
-    request = AccountInput(name=name, email=email, payload=struct, itens=itens)
+    name = account_input["name"]
+    email = account_input["email"]
+    country = account_input["country"]
+    itens = account_input["itens"]
+    request = account_input["request"]
 
     resp = await testclient_fixture.run_by_label(
         "", "functional", "create_account", request
     )
-    assert resp.id == f"id:{name}-{email}-{country}-{list_[0]}"
+    assert resp.id == f"id:{name}-{email}-{country}-{itens[0]}"
     assert resp.created_at == Timestamp(seconds=1577836800)
 
 

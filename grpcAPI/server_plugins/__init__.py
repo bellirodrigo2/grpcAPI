@@ -1,9 +1,7 @@
 from typing_extensions import Any, Protocol
 
-from grpcAPI.singleton import SingletonMeta
 
-
-class ServerPlugin(Protocol, metaclass=SingletonMeta):
+class ServerPlugin(Protocol):
 
     def on_add_service(self, service_name: str, server: Any) -> None:
         pass

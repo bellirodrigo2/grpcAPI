@@ -13,7 +13,7 @@ FDP = FieldDescriptorProto
 
 def inject_proto_typing(cls: Type[Any]) -> Optional[Dict[str, Type[Any]]]:
     if not issubclass(cls, Message):
-        raise RuntimeError
+        raise RuntimeError  # pragma: no cover
     if cls.__annotations__:
         return None
     annotations = {}
@@ -60,7 +60,7 @@ def get_primary_type(field: FieldDescriptor) -> Type[Any]:
     for k, v in _protobuf_to_python_map.items():
         if ftype in v:
             return k
-    raise TypeError
+    raise TypeError  # pragma: no cover
 
 
 def get_map_type(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:

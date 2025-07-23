@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from typing_extensions import Any, Mapping, Set
 
+from grpcAPI.server import ServerWrapper
 from grpcAPI.server_plugins import ServerPlugin, loader
 
 
@@ -23,7 +24,7 @@ class HealthCheckPlugin(ServerPlugin):
             "grace": self.grace,
         }
 
-    def configure(self, context: ServerContext, settings: Mapping[str, Any]) -> None:
+    def configure(self, context: ServerWrapper, settings: Mapping[str, Any]) -> None:
         health_pb2_grpc.add_HealthServicer_to_server(
             self._servicer, context.grpc_server
         )

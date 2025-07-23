@@ -27,7 +27,10 @@ class _UserCode:
     ValueType = typing.NewType("ValueType", builtins.int)
     V: typing_extensions.TypeAlias = ValueType
 
-class _UserCodeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_UserCode.ValueType], builtins.type):
+class _UserCodeEnumTypeWrapper(
+    google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_UserCode.ValueType],
+    builtins.type,
+):
     DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
     EMPLOYEE: _UserCode.ValueType  # 0
     SCHOOL: _UserCode.ValueType  # -247
@@ -58,7 +61,9 @@ class User(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class MapMsgEntry(google.protobuf.message.Message):
@@ -75,8 +80,12 @@ class User(google.protobuf.message.Message):
             key: builtins.int = ...,
             value: inner.inner_pb2.InnerMessage | None = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def HasField(
+            self, field_name: typing.Literal["value", b"value"]
+        ) -> builtins.bool: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class MapCodesEntry(google.protobuf.message.Message):
@@ -92,7 +101,9 @@ class User(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: global___UserCode.ValueType = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     CODE_FIELD_NUMBER: builtins.int
     AGE_FIELD_NUMBER: builtins.int
@@ -122,17 +133,35 @@ class User(google.protobuf.message.Message):
     @property
     def other(self) -> other_pb2.Other: ...
     @property
-    def dict(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def dict(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
-    def others(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[other_pb2.Other]: ...
+    def others(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        other_pb2.Other
+    ]: ...
     @property
     def msg(self) -> multi.inner.class_pb2.ClassMsg: ...
     @property
-    def map_msg(self) -> google.protobuf.internal.containers.MessageMap[builtins.int, inner.inner_pb2.InnerMessage]: ...
+    def map_msg(
+        self,
+    ) -> google.protobuf.internal.containers.MessageMap[
+        builtins.int, inner.inner_pb2.InnerMessage
+    ]: ...
     @property
-    def codes(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___UserCode.ValueType]: ...
+    def codes(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        global___UserCode.ValueType
+    ]: ...
     @property
-    def map_codes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, global___UserCode.ValueType]: ...
+    def map_codes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[
+        builtins.str, global___UserCode.ValueType
+    ]: ...
     def __init__(
         self,
         *,
@@ -148,12 +177,74 @@ class User(google.protobuf.message.Message):
         dict: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         others: collections.abc.Iterable[other_pb2.Other] | None = ...,
         msg: multi.inner.class_pb2.ClassMsg | None = ...,
-        map_msg: collections.abc.Mapping[builtins.int, inner.inner_pb2.InnerMessage] | None = ...,
+        map_msg: (
+            collections.abc.Mapping[builtins.int, inner.inner_pb2.InnerMessage] | None
+        ) = ...,
         codes: collections.abc.Iterable[global___UserCode.ValueType] | None = ...,
-        map_codes: collections.abc.Mapping[builtins.str, global___UserCode.ValueType] | None = ...,
+        map_codes: (
+            collections.abc.Mapping[builtins.str, global___UserCode.ValueType] | None
+        ) = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["age", b"age", "employee", b"employee", "inactive", b"inactive", "msg", b"msg", "occupation", b"occupation", "other", b"other", "school", b"school", "time", b"time"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["affilliation", b"affilliation", "age", b"age", "code", b"code", "codes", b"codes", "dict", b"dict", "employee", b"employee", "inactive", b"inactive", "map_codes", b"map_codes", "map_msg", b"map_msg", "msg", b"msg", "name", b"name", "occupation", b"occupation", "other", b"other", "others", b"others", "school", b"school", "time", b"time"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing.Literal["occupation", b"occupation"]) -> typing.Literal["employee", "school", "inactive"] | None: ...
+    def HasField(
+        self,
+        field_name: typing.Literal[
+            "age",
+            b"age",
+            "employee",
+            b"employee",
+            "inactive",
+            b"inactive",
+            "msg",
+            b"msg",
+            "occupation",
+            b"occupation",
+            "other",
+            b"other",
+            "school",
+            b"school",
+            "time",
+            b"time",
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "affilliation",
+            b"affilliation",
+            "age",
+            b"age",
+            "code",
+            b"code",
+            "codes",
+            b"codes",
+            "dict",
+            b"dict",
+            "employee",
+            b"employee",
+            "inactive",
+            b"inactive",
+            "map_codes",
+            b"map_codes",
+            "map_msg",
+            b"map_msg",
+            "msg",
+            b"msg",
+            "name",
+            b"name",
+            "occupation",
+            b"occupation",
+            "other",
+            b"other",
+            "others",
+            b"others",
+            "school",
+            b"school",
+            "time",
+            b"time",
+        ],
+    ) -> None: ...
+    def WhichOneof(
+        self, oneof_group: typing.Literal["occupation", b"occupation"]
+    ) -> typing.Literal["employee", "school", "inactive"] | None: ...
 
 global___User = User

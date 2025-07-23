@@ -1,5 +1,3 @@
-import pytest
-
 from grpcAPI.app import APIService
 from grpcAPI.package_module import (  # ajuste o import real
     APIModule,

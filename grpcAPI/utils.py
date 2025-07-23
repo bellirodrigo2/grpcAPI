@@ -1,5 +1,5 @@
 from typemapping import get_func_args
-from typing_extensions import Any, Callable, Sequence
+from typing_extensions import Any, Callable, Sequence, Tuple
 
 from grpcAPI.app import App
 from grpcAPI.makeproto import IService

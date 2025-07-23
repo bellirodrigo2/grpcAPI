@@ -3,7 +3,6 @@ from typing_extensions import Dict, List, get_type_hints
 
 from grpcAPI.protobut_typing import get_type, inject_proto_typing
 from tests.conftest import ClassMsg, InnerMessage, Other, User
-from tests.lib.user_pb2 import UserCode
 
 
 def test_fields() -> None:
@@ -22,10 +21,7 @@ def test_fields() -> None:
     others = userd.fields_by_name["others"]
     msg = userd.fields_by_name["msg"]
     map_msg = userd.fields_by_name["map_msg"]
-    codes = userd.fields_by_name["codes"]
-    map_codes = userd.fields_by_name["map_codes"]
 
-    # assert get_type(code, User)
     assert get_type(age, User) is InnerMessage
     assert get_type(time, User) is Timestamp
     assert get_type(affilliation, User) is str
@@ -37,8 +33,6 @@ def test_fields() -> None:
     assert get_type(others, User) is List[Other]
     assert get_type(msg, User) is ClassMsg
     assert get_type(map_msg, User) is Dict[int, InnerMessage]
-    # assert get_type(codes, User) is List[UserCode]
-    # assert get_type(map_codes, User) is Dict[str, UserCode]
 
 
 def test_cls() -> None:

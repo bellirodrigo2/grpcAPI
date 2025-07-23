@@ -2,7 +2,6 @@ from typing import Any as Any
 from typing import Dict
 
 import pytest
-from google.protobuf.struct_pb2 import Struct
 
 from grpcAPI import ErrorCode
 from grpcAPI.testclient.contextmock import ContextMock
@@ -105,7 +104,7 @@ async def test_server_stream_with_error(testclient_fixture: TestClient) -> None:
         "", "functional", "get_accounts", names, context
     )
     with pytest.raises(RuntimeError):
-        accounts = [acc async for acc in resp]
+        [acc async for acc in resp]
 
     context.tracker.set_code.assert_called_once_with(500)
     context.tracker.abort.assert_called_once_with(

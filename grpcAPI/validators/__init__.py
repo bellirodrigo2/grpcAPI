@@ -11,7 +11,7 @@ from ctxinject.validate import (
 from ctxinject.validate import inject_validation as ctxinject_inject_validation
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
-from typing_extensions import Any, Callable, Dict, List, Tuple, Type
+from typing_extensions import Any, Dict, List
 
 from grpcAPI.makeproto import IService
 from grpcAPI.makeproto_pass import inject_typing

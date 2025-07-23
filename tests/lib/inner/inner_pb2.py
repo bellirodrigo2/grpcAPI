@@ -9,28 +9,24 @@ from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    31,
-    0,
-    '',
-    'inner/inner.proto'
+    _runtime_version.Domain.PUBLIC, 6, 31, 0, "", "inner/inner.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11inner/inner.proto\x12\x05inner\"\x1b\n\x0cInnerMessage\x12\x0b\n\x03\x61ge\x18\x02 \x01(\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x11inner/inner.proto\x12\x05inner"\x1b\n\x0cInnerMessage\x12\x0b\n\x03\x61ge\x18\x02 \x01(\x03\x62\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'inner.inner_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "inner.inner_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_INNERMESSAGE']._serialized_start=28
-  _globals['_INNERMESSAGE']._serialized_end=55
+    DESCRIPTOR._loaded_options = None
+    _globals["_INNERMESSAGE"]._serialized_start = 28
+    _globals["_INNERMESSAGE"]._serialized_end = 55
 # @@protoc_insertion_point(module_scope)

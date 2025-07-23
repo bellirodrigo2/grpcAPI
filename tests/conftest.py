@@ -18,12 +18,12 @@ from typing import (
 )
 
 import pytest
-from google.protobuf.descriptor_pb2 import DescriptorProto
+from google.protobuf.descriptor_pb2 import DescriptorProto  # noqa: F401
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
-from google.protobuf.wrappers_pb2 import BytesValue, StringValue
-from typing_extensions import Annotated, Any, AsyncIterator, Dict, List
+from google.protobuf.wrappers_pb2 import BytesValue, StringValue  # noqa: F401
+from typing_extensions import Annotated, Dict, List
 
 from grpcAPI import ErrorCode
 from grpcAPI.app import APIService, App
@@ -38,10 +38,10 @@ lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
 
 from tests.lib.account_pb2 import Account, AccountCreated, AccountInput
-from tests.lib.inner.inner_pb2 import InnerMessage
-from tests.lib.multi.inner.class_pb2 import ClassMsg
-from tests.lib.other_pb2 import Other
-from tests.lib.user_pb2 import User, UserCode
+from tests.lib.inner.inner_pb2 import InnerMessage  # noqa: F401
+from tests.lib.multi.inner.class_pb2 import ClassMsg  # noqa: F401
+from tests.lib.other_pb2 import Other  # noqa: F401
+from tests.lib.user_pb2 import User, UserCode  # noqa: F401
 
 root = Path("./tests/proto")
 

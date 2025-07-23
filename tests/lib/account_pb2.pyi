@@ -34,8 +34,15 @@ class AccountInput(google.protobuf.message.Message):
         payload: google.protobuf.struct_pb2.Struct | None = ...,
         itens: google.protobuf.struct_pb2.ListValue | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["itens", b"itens", "payload", b"payload"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["email", b"email", "itens", b"itens", "name", b"name", "payload", b"payload"]) -> None: ...
+    def HasField(
+        self, field_name: typing.Literal["itens", b"itens", "payload", b"payload"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "email", b"email", "itens", b"itens", "name", b"name", "payload", b"payload"
+        ],
+    ) -> None: ...
 
 global___AccountInput = AccountInput
 
@@ -54,8 +61,12 @@ class AccountCreated(google.protobuf.message.Message):
         id: builtins.str = ...,
         created_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["created_at", b"created_at"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["created_at", b"created_at", "id", b"id"]) -> None: ...
+    def HasField(
+        self, field_name: typing.Literal["created_at", b"created_at"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self, field_name: typing.Literal["created_at", b"created_at", "id", b"id"]
+    ) -> None: ...
 
 global___AccountCreated = AccountCreated
 
@@ -88,7 +99,28 @@ class Account(google.protobuf.message.Message):
         id: builtins.str = ...,
         created_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["created_at", b"created_at", "itens", b"itens", "payload", b"payload"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["created_at", b"created_at", "email", b"email", "id", b"id", "itens", b"itens", "name", b"name", "payload", b"payload"]) -> None: ...
+    def HasField(
+        self,
+        field_name: typing.Literal[
+            "created_at", b"created_at", "itens", b"itens", "payload", b"payload"
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "created_at",
+            b"created_at",
+            "email",
+            b"email",
+            "id",
+            b"id",
+            "itens",
+            b"itens",
+            "name",
+            b"name",
+            "payload",
+            b"payload",
+        ],
+    ) -> None: ...
 
 global___Account = Account

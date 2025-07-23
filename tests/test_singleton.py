@@ -5,11 +5,11 @@ from grpcAPI.singleton import SingletonMeta
 
 
 class SingletonExample(metaclass=SingletonMeta):
-    def __init__(self, value: Any):
+    def __init__(self, value: Any) -> None:
         self.value = value
 
 
-def test_singleton_instance_is_same():
+def test_singleton_instance_is_same() -> None:
     a = SingletonExample(123)
     b = SingletonExample(456)
 
@@ -20,10 +20,10 @@ def test_singleton_instance_is_same():
     assert b.value == 123
 
 
-def test_singleton_reset_behavior(monkeypatch):
+def test_singleton_reset_behavior(monkeypatch: pytest.MonkeyPatch) -> None:
     # monkeypatch a dict para simular limpeza
     SingletonMeta._instances = {}  # reset manual
-    a = SingletonExample("foo")
+    SingletonExample("foo")
     SingletonMeta._instances = {}  # forçar limpeza (simula reinício da app)
 
     class AnotherSingleton(metaclass=SingletonMeta):

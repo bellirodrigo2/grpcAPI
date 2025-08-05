@@ -23,7 +23,7 @@ from grpcAPI.makeproto.validators.name import check_valid, check_valid_filenames
 
 
 def compile_service(
-    services: Dict[str, List[IService]],
+    services: Mapping[str, List[IService]],
     name_normalizer: Callable[[str], str] = lambda x: x,
     format_comment: Callable[[str], str] = default_format,
     custompassmethod: Callable[[Callable[..., Any]], List[str]] = lambda x: [],

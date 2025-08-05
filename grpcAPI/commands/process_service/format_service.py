@@ -1,9 +1,12 @@
+from typing import Dict
+
 from inflection import camelize
 from inflection import underscore as snake_case
 from typing_extensions import Any, List, Literal, Mapping, Optional, Protocol, Tuple
 
+from grpcAPI.commands.process_service import ProcessService
 from grpcAPI.makeproto import IService
-from grpcAPI.process_service import ProcessService
+from grpcAPI.makeproto.interface import ILabeledMethod
 
 
 class Labeled(Protocol):
@@ -13,15 +16,15 @@ class Labeled(Protocol):
     tags: List[str]
 
 
-class FormatServiceFactory:
-    def __call__(self, settings: Mapping[str, Any]) -> "FormatService":
+# class FormatServiceFactory:
+#     def __call__(self, settings: Mapping[str, Any]) -> "FormatService":
 
-        max_char, title_case, comment_strategy = get_format_settings(settings)
-        max_char = max_char or 80
-        title_case = title_case or "none"
-        comment_strategy = comment_strategy or "multiline"
+#         max_char, title_case, comment_strategy = get_format_settings(settings)
+#         max_char = max_char or 80
+#         title_case = title_case or "none"
+#         comment_strategy = comment_strategy or "multiline"
 
-        return FormatService(max_char, title_case, comment_strategy)
+#         return FormatService(max_char, title_case, comment_strategy)
 
 
 def get_format_settings(
@@ -36,12 +39,14 @@ def get_format_settings(
 
 class FormatService(ProcessService):
 
-    def __init__(
-        self,
-        max_char: int = 80,
-        case: Literal["snake", "camel", "pascal", "none"] = "none",
-        strategy: Literal["singleline", "multiline"] = "multiline",
-    ) -> None:
+    def __init__(self, **kwargs: Any) -> None:
+
+        format_settings: Dict[str, Any] = kwargs.get("format", {})
+
+        max_char = int(format_settings.get("max_char_per_line", 80))
+        case = format_settings.get("title_case", "none")
+        strategy = format_settings.get("comment_style", "multiline")
+
         self.max_char = max_char
         self.case = case
         if "multi" in strategy:
@@ -57,9 +62,9 @@ class FormatService(ProcessService):
             self.end_char = ""
             self.fill_char = " "
 
-    def __call__(self, service: IService) -> None:
-        format_comment(
-            service=service,
+    def __format_comment(self, labeled: Labeled) -> str:
+        return format_method_comment(
+            method=labeled,
             max_char=self.max_char,
             open_char=self.open_char,
             close_char=self.close_char,
@@ -67,40 +72,14 @@ class FormatService(ProcessService):
             end_char=self.end_char,
             fill_char=self.fill_char,
         )
-        format_title(service, self.case)
 
+    def _process_method(self, method: ILabeledMethod) -> None:
+        method.comments = self.__format_comment(labeled=method)
+        method.name = format_title_case(method.name, self.case)
 
-def format_comment(
-    service: IService,
-    max_char: int,
-    open_char: str,
-    close_char: str,
-    start_char: str,
-    end_char: str,
-    fill_char: str,
-) -> None:
-    def format(labeled: Labeled) -> str:
-        return format_method_comment(
-            method=labeled,
-            max_char=max_char,
-            open_char=open_char,
-            close_char=close_char,
-            start_char=start_char,
-            end_char=end_char,
-            fill_char=fill_char,
-        )
-
-    service.comments = format(labeled=service)
-    for method in service.methods:
-        method.comments = format(labeled=method)
-
-
-def format_title(
-    service: IService, case: Literal["snake", "camel", "pascal", "none"]
-) -> None:
-    service.name = format_title_case(service.name, case)
-    for method in service.methods:
-        method.name = format_title_case(method.name, case)
+    def _process_service(self, service: IService) -> None:
+        service.comments = self.__format_comment(labeled=service)
+        service.name = format_title_case(service.name, self.case)
 
 
 def format_title_case(val: str, case: Literal["snake", "camel", "pascal"]) -> str:
@@ -189,22 +168,19 @@ def format_multiline(text: str, max_char: int, start_char: str, end_char: str) -
     prefix_len = len(start_char)
     suffix_len = len(end_char)
     available_len = max_char - prefix_len - suffix_len
-
     if available_len <= 0:
-        raise ValueError("max_char too small for given start/end chars.")
+        available_len = prefix_len + suffix_len + 1
 
     lines: List[str] = []
     current_line = ""
 
     for word in words:
         while len(word) > available_len:
-            # Quebra palavras muito longas
             part = word[:available_len]
             lines.append(f"{start_char}{part.ljust(available_len)}{end_char}")
             word = word[available_len:]
 
         if len(current_line) + len(word) + (1 if current_line else 0) > available_len:
-            # Fecha a linha atual e começa nova
             lines.append(f"{start_char}{current_line.ljust(available_len)}{end_char}")
             current_line = word
         else:

@@ -2,11 +2,17 @@
   "proto_path": "grpcAPI/proto",
   "lib_path": "grpcAPI/lib",
   "lint": true,
+  "host": "localhost",
+  "port": 50051,
   "compile_proto": {
     "clean_services": true,
     "overwrite": false
   },
-
+  "format": {
+    "max_char_per_line": 80,
+    "title_case": "none",
+    "comment_style": "multiline"
+  },
   "server": {
     "options": {}
   },
@@ -14,12 +20,6 @@
     "health_check": true,
     "reflection": true
   },
-  "format": {
-    "max_char_per_line": 80,
-    "case": "none",
-    "comment_style": "multiline"
-  },
-
   "logger": {
     "version": 1,
     "disable_existing_loggers": false,

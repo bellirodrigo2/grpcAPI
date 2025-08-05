@@ -2,8 +2,8 @@ from typemapping import get_func_args
 from typing_extensions import Any, Callable, Sequence, Tuple
 
 from grpcAPI.app import App
+from grpcAPI.data_types import Depends
 from grpcAPI.makeproto import IService
-from grpcAPI.types import Depends
 
 
 def get_func_list() -> Sequence[IService]:

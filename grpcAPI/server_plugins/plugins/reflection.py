@@ -1,27 +1,26 @@
 from grpc_reflection.v1alpha import reflection
-from typing_extensions import Any, Mapping, Optional
+from typing_extensions import Any, Mapping, Set
 
-from grpcAPI.process_service import ServerContext, ServerPlugin
+from grpcAPI.server import ServerPlugin, ServerWrapper
 from grpcAPI.server_plugins import loader
 
 
 class ReflectionPlugin(ServerPlugin):
     def __init__(self) -> None:
         self.plugin_name = "reflection"
-        self._context: Optional[ServerContext] = None
-        self._services: list[str] = []
+        self._services: Set[str] = set()
 
-    def configure(self, context: ServerContext, settings: Mapping[str, Any]) -> None:
-        self._context = context
+    @property
+    def state(self) -> Mapping[str, Any]:
+        return {
+            "name": self.plugin_name,
+            "services": list(self._services),
+        }
 
-    def on_add_service(self, service_name: str) -> None:
-        reflection.enable_server_reflection(service_name, self._context.grpc_server)
-
-    def on_start(self) -> None:
-        return
-
-    def on_stop(self) -> None:
-        return
+    def on_add_service(self, service_name: str, server: ServerWrapper) -> None:
+        service_names = (service_name,)
+        reflection.enable_server_reflection(service_names, server.server)
+        self._services.add(service_name)
 
 
 def register() -> None:

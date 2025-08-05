@@ -1,11 +1,12 @@
 import importlib.util
 from pathlib import Path
+from typing import Dict
 
 from typing_extensions import Callable
 
-from grpcAPI.server_plugins import ServerPlugin
+from grpcAPI.server import ServerPlugin
 
-_get_plugin: dict[str, Callable[..., ServerPlugin]] = {}
+_get_plugin: Dict[str, Callable[..., ServerPlugin]] = {}
 
 
 def register(plugin_name: str, create_plugin: Callable[..., ServerPlugin]) -> None:
@@ -24,8 +25,8 @@ def get_plugin(plugin_name: str) -> ServerPlugin:
         if plugin_name not in _get_plugin:
             load_plugins([plugin_name])
         creator_func = _get_plugin[plugin_name]
-    except FileNotFoundError as e:
-        raise ValueError(str(e))
+    except Exception as e:
+        raise ValueError(f"Failed to load plugin '{plugin_name}': {str(e)}")
 
     plugin = creator_func()
     return plugin
@@ -49,4 +50,8 @@ def load_plugins(plugins: list[str]) -> None:
             raise FileNotFoundError(f"Can´t load plugin: {plugin_file} at {base_path}")
         plugin = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(plugin)
+        if not hasattr(plugin, "register"):
+            raise AttributeError(
+                f"Plugin '{plugin_file}' missing required 'register' function"
+            )
         plugin.register()

@@ -14,8 +14,8 @@ from typing_extensions import (
     get_origin,
 )
 
-from grpcAPI.makeproto import IMetaType
-from grpcAPI.types import FromRequest, Message
+from grpcAPI.data_types import FromRequest, Message
+from grpcAPI.makeproto import ILabeledMethod, IMetaType
 
 
 def get_protofile_path(cls: Type[Any]) -> str:
@@ -24,6 +24,55 @@ def get_protofile_path(cls: Type[Any]) -> str:
 
 def get_package(cls: Type[Any]) -> str:
     return cls.DESCRIPTOR.file.package
+
+
+@dataclass
+class LabeledMethod(ILabeledMethod):
+    title: str
+    name: str
+    method: Callable[..., Any]
+    package: str
+    module: str
+    service: str
+    comments: str
+    description: str
+    options: List[str]
+    tags: List[str]
+
+    request_types: List[IMetaType]
+    response_types: Optional[IMetaType]
+
+
+def make_labeled_method(
+    title: str,
+    func: Callable[..., Any],
+    package: str,
+    module: str,
+    service: str,
+    comment: str,
+    description: str,
+    tags: Optional[List[str]] = None,
+    options: Optional[List[str]] = None,
+) -> ILabeledMethod:
+    requests, response_type = extract_request_response_type(func)
+    method_name = func.__name__
+    tags = tags or []
+    options = options or []
+
+    return LabeledMethod(
+        title=title,
+        name=method_name,
+        method=func,
+        package=package,
+        module=module,
+        service=service,
+        comments=comment,
+        description=description,
+        request_types=requests,
+        response_types=response_type,
+        options=options,
+        tags=tags,
+    )
 
 
 def extract_request_response_type(

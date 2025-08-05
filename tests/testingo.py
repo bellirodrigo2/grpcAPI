@@ -6,8 +6,8 @@ from google.protobuf.wrappers_pb2 import StringValue
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import APIService
+from grpcAPI.data_types import AsyncContext
 from grpcAPI.server import ServerWrapper
-from grpcAPI.types import AsyncContext
 
 
 async def main() -> None:

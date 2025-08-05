@@ -20,12 +20,15 @@ class AccountInput(google.protobuf.message.Message):
     EMAIL_FIELD_NUMBER: builtins.int
     PAYLOAD_FIELD_NUMBER: builtins.int
     ITENS_FIELD_NUMBER: builtins.int
+    INNER_FIELD_NUMBER: builtins.int
     name: builtins.str
     email: builtins.str
     @property
     def payload(self) -> google.protobuf.struct_pb2.Struct: ...
     @property
     def itens(self) -> google.protobuf.struct_pb2.ListValue: ...
+    @property
+    def inner(self) -> global___Inner: ...
     def __init__(
         self,
         *,
@@ -33,18 +36,29 @@ class AccountInput(google.protobuf.message.Message):
         email: builtins.str = ...,
         payload: google.protobuf.struct_pb2.Struct | None = ...,
         itens: google.protobuf.struct_pb2.ListValue | None = ...,
+        inner: global___Inner | None = ...,
     ) -> None: ...
-    def HasField(
-        self, field_name: typing.Literal["itens", b"itens", "payload", b"payload"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing.Literal[
-            "email", b"email", "itens", b"itens", "name", b"name", "payload", b"payload"
-        ],
-    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["inner", b"inner", "itens", b"itens", "payload", b"payload"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["email", b"email", "inner", b"inner", "itens", b"itens", "name", b"name", "payload", b"payload"]) -> None: ...
 
 global___AccountInput = AccountInput
+
+@typing.final
+class Inner(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: builtins.int
+    name: builtins.str
+    def __init__(
+        self,
+        *,
+        name: builtins.str | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["_name", b"_name", "name", b"name"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_name", b"_name", "name", b"name"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["_name", b"_name"]) -> typing.Literal["name"] | None: ...
+
+global___Inner = Inner
 
 @typing.final
 class AccountCreated(google.protobuf.message.Message):
@@ -61,12 +75,8 @@ class AccountCreated(google.protobuf.message.Message):
         id: builtins.str = ...,
         created_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(
-        self, field_name: typing.Literal["created_at", b"created_at"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self, field_name: typing.Literal["created_at", b"created_at", "id", b"id"]
-    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["created_at", b"created_at"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["created_at", b"created_at", "id", b"id"]) -> None: ...
 
 global___AccountCreated = AccountCreated
 
@@ -99,28 +109,7 @@ class Account(google.protobuf.message.Message):
         id: builtins.str = ...,
         created_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(
-        self,
-        field_name: typing.Literal[
-            "created_at", b"created_at", "itens", b"itens", "payload", b"payload"
-        ],
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing.Literal[
-            "created_at",
-            b"created_at",
-            "email",
-            b"email",
-            "id",
-            b"id",
-            "itens",
-            b"itens",
-            "name",
-            b"name",
-            "payload",
-            b"payload",
-        ],
-    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["created_at", b"created_at", "itens", b"itens", "payload", b"payload"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["created_at", b"created_at", "email", b"email", "id", b"id", "itens", b"itens", "name", b"name", "payload", b"payload"]) -> None: ...
 
 global___Account = Account

@@ -5,6 +5,7 @@ from typing_extensions import Any, Dict
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import APIService
+from grpcAPI.commands.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.server import ServerWrapper
 from grpcAPI.testclient.contextmock import ContextMock
 from tests.conftest import Timestamp
@@ -22,6 +23,8 @@ async def test_add_simple(
     functional_service: APIService,
     account_input: Dict[str, Any],
 ) -> None:
+    inject_proto_processing = InjectProtoTyping()
+    inject_proto_processing.process(functional_service)
     methods = add_to_server(functional_service, mock_server, {}, {})
     assert set(methods.keys()) == set(
         ["create_account", "get_accounts", "get_by_ids", "get_emails"]

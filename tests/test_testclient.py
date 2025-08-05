@@ -4,14 +4,16 @@ from typing import Dict
 import pytest
 
 from grpcAPI import ErrorCode
-from grpcAPI.testclient.contextmock import ContextMock
-from grpcAPI.testclient.testclient import TestClient
+from grpcAPI.app import APIService
+from grpcAPI.testclient import ContextMock, TestClient
 from tests.conftest import AccountInput, AsyncIt, ListValue, StringValue, Timestamp
 
 
 @pytest.mark.asyncio
 async def test_unary(
-    testclient_fixture: TestClient, account_input: Dict[str, Any]
+    testclient_fixture: TestClient,
+    account_input: Dict[str, Any],
+    functional_service: APIService,
 ) -> None:
 
     name = account_input["name"]
@@ -19,12 +21,34 @@ async def test_unary(
     country = account_input["country"]
     itens = account_input["itens"]
     request = account_input["request"]
+    inner = account_input["inner_str"]
+    create_acount = None
 
-    resp = await testclient_fixture.run_by_label(
-        "", "functional", "create_account", request
-    )
-    assert resp.id == f"id:{name}-{email}-{country}-{itens[0]}"
+    for method in functional_service.methods:
+        if method.name == "create_account":
+            create_acount = method.method
+            break
+    resp = await testclient_fixture.run(create_acount, request)
+    assert resp.id == f"id:{name}-{email}-{country}-{itens[0]}{inner}"
     assert resp.created_at == Timestamp(seconds=1577836800)
+
+
+@pytest.mark.asyncio
+async def test_unary_validation(
+    testclient_fixture: TestClient,
+    account_input: Dict[str, Any],
+    functional_service: APIService,
+) -> None:
+
+    request = account_input["request"]
+    itens = request.itens
+    itens.extend(["foo", "bar", "too", "much"])
+    for method in functional_service.methods:
+        if method.name == "create_account":
+            create_acount = method.method
+            break
+    with pytest.raises(ValueError):
+        await testclient_fixture.run(create_acount, request)
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,7 @@
 import subprocess
 from logging import Logger, getLogger
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
 from typing_extensions import List
 
@@ -14,7 +14,7 @@ def compile_protoc(
     clss: bool,
     services: bool,
     mypy_stubs: bool,
-    files: Optional[List[str]] = None,
+    files: Optional[Iterable[str]] = None,
     logger: Logger = default_logger,
 ) -> None:
 
@@ -75,9 +75,10 @@ def list_proto_files(base_dir: Path, rel_path: Optional[Path] = None) -> List[st
 
 if __name__ == "__main__":
     compile_protoc(
-        Path("./tests/proto"),
-        Path("./tests/lib"),
+        Path("./grpcAPI/prototypes/proto"),
+        Path("./grpcAPI/prototypes/lib"),
         True,
         False,
         True,
+        files=["prototypes.proto"],
     )

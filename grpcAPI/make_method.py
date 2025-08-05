@@ -1,12 +1,12 @@
 import inspect
 from collections.abc import AsyncIterator, Callable
 
-from ctxinject.inject import get_mapped_ctx, resolve_mapped_ctx
 from typing_extensions import Any, Dict
 
 from grpcAPI import ExceptionRegistry
+from grpcAPI.data_types import AsyncContext
 from grpcAPI.makeproto import ILabeledMethod
-from grpcAPI.types import AsyncContext
+from grpcAPI.proto_ctxinject import get_mapped_ctx, resolve_mapped_ctx
 
 
 async def safe_run(

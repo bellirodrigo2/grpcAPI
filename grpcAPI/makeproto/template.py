@@ -77,7 +77,7 @@ class ServiceTemplate(Node, ToDict):
         try:
             return (
                 self.package == other.package  # type: ignore
-                and self.module == other.module  # type: ignore
+                # and self.module == other.module  # type: ignore
                 and self.name == other.name  # type: ignore
             )
         except AttributeError:  # pragma: no cover

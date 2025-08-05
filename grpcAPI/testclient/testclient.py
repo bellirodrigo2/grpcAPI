@@ -1,12 +1,12 @@
 import inspect
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from grpcAPI.app import App
+from grpcAPI.commands.process_service.run_process_service import run_process_service
+from grpcAPI.data_types import AsyncContext
 from grpcAPI.make_method import make_method_async
-from grpcAPI.process_service import ProcessService
 from grpcAPI.proto_build import make_protos
 from grpcAPI.testclient.contextmock import ContextMock
-from grpcAPI.types import AsyncContext
 
 default_test_settings = {
     "lint": True,
@@ -21,24 +21,15 @@ class TestClient:
         self,
         app: App,
         settings: Dict[str, Any],
-        process_service_factory: Optional[
-            List[Callable[[Mapping[str, Any]], ProcessService]]
-        ] = None,
     ) -> None:
 
         settings = {**settings, **default_test_settings}
+        run_process_service(app, settings)
 
-        process_service_factory = process_service_factory or []
-        process_service_factory.extend(app._process_service_factories)
-        process_services = [
-            factory(settings) for factory in set(process_service_factory)
-        ]
-        for service in app.service_list:
-            for proc in process_services:
-                proc(service)
         if settings["lint"]:
-            make_protos(app.services, app._casting_list)
-
+            make_protos(
+                app.services,
+            )
         self._services: Dict[Tuple[str, str, str], Callable[..., Any]] = {}
         for service in app.service_list:
             for method in service.methods:
@@ -83,7 +74,7 @@ class TestClient:
             raise Exception(
                 f'Function "{func.__name__}" is not linked to a grpcAPI module'
             )
-        package, _, service_name, method_name = label
+        package, service_name, method_name = label
 
         return await self.run_by_label(
             package, service_name, method_name, request, context

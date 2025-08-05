@@ -13,17 +13,15 @@ from typing_extensions import (
     Mapping,
     Optional,
     Sequence,
-    Tuple,
     Type,
     Union,
 )
 
 from grpcAPI import ExceptionRegistry
-from grpcAPI.extract_types import extract_request_response_type
-from grpcAPI.makeproto import IService
-from grpcAPI.process_service import ProcessService
+from grpcAPI.data_types import AsyncContext
+from grpcAPI.label_method import make_labeled_method
+from grpcAPI.makeproto import ILabeledMethod, IService
 from grpcAPI.singleton import SingletonMeta
-from grpcAPI.types import AsyncContext, LabeledMethod
 
 Middleware = aio.ServerInterceptor
 
@@ -53,10 +51,10 @@ class APIService(IService):
         self.package = package
         self.module_level_options = module_level_options or []
         self.module_level_comments = module_level_comments or []
-        self.__methods: List[LabeledMethod] = []
+        self.__methods: List[ILabeledMethod] = []
 
     @property
-    def methods(self) -> List[LabeledMethod]:
+    def methods(self) -> List[ILabeledMethod]:
         return list(self.__methods)
 
     @property
@@ -77,26 +75,19 @@ class APIService(IService):
     ) -> Callable[..., Any]:
         comment = comment or func.__doc__ or ""
         title = title or func.__name__
-        method_name = func.__name__
-        tags = tags or []
-        options = options or []
 
-        requests, response_type = extract_request_response_type(func)
-
-        labeled_method = LabeledMethod(
-            title=title,
-            name=method_name,
-            method=func,
-            package=self.package,
-            module=self.module,
-            service=self.name,
-            comments=comment,
-            description=description,
-            request_types=requests,
-            response_types=response_type,
-            options=options,
-            tags=tags,
+        labeled_method = make_labeled_method(
+            title,
+            func,
+            self.package,
+            self.module,
+            self.name,
+            comment,
+            description,
+            options,
+            tags,
         )
+
         self.__methods.append(labeled_method)
         return func
 
@@ -132,28 +123,20 @@ DependencyRegistry = Dict[Callable[..., Any], Callable[..., Any]]
 
 Lifespan = Callable[[Any], AsyncGenerator[None, None]]
 
-CastDict = Dict[Tuple[Type[Any], Type[Any]], Callable[..., Any]]
-
 
 class App(metaclass=SingletonMeta):
 
     def __init__(
         self,
-        service_classes: List[IService],
-        middleware: List[Type[Middleware]],
-        lifespan: Optional[Lifespan],
-        _casting_list: List[Tuple[Type[Any], Type[Any]]],
-        _process_service_factories: List[Callable[[Mapping[str, Any]], ProcessService]],
+        lifespan: Optional[Lifespan] = None,
     ) -> None:
-        self._service_classes = service_classes
-        self._middleware = middleware
+        self._service_classes = []
+        self._middleware = []
         self.lifespan = lifespan
 
         self._services: DefaultDict[str, List[IService]] = defaultdict(list)
         self.dependency_overrides: DependencyRegistry = {}
         self._exception_handlers: ExceptionRegistry = {}
-        self._casting_list = _casting_list
-        self._process_service_factories = _process_service_factories
 
     @property
     def services(self) -> Mapping[str, List[IService]]:

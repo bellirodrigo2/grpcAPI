@@ -4,8 +4,10 @@ import pytest
 from typing_extensions import Annotated
 
 from grpcAPI.app import APIService
-from grpcAPI.proto_build import make_protos, write_protos
-from grpcAPI.types import Depends, FromContext, FromRequest
+from grpcAPI.commands.process_service.inject_typing import InjectProtoTyping
+from grpcAPI.data_types import Depends, FromContext, FromRequest
+from grpcAPI.makeproto.write_proto import write_protos
+from grpcAPI.proto_build import make_protos
 from tests.conftest import (
     DescriptorProto,
     InnerMessage,
@@ -43,6 +45,8 @@ def basic_proto() -> APIService:
     async def bilateral(req: AsyncIterator[Other]) -> AsyncIterator[User]:
         yield User()
 
+    inject_proto_processing = InjectProtoTyping()
+    inject_proto_processing.process(serviceapi)
     return serviceapi
 
 
@@ -131,7 +135,9 @@ def test_basic_content(basic_proto: APIService) -> None:
         "rpc serverstream(Other) returns (stream userpack.User);",
         "rpc bilateral(stream Other) returns (stream userpack.User);",
     ]
-    proto_stream = make_protos({"pack1": [basic_proto]}, [], [])
+    proto_stream = make_protos(
+        {"pack1": [basic_proto]},
+    )
     proto_list = list(proto_stream)
     for proto in proto_list:
         assert_content(proto.content, contents)
@@ -167,7 +173,9 @@ def test_complex(complex_proto: List[APIService]) -> None:
 
     services = {"": [service1, service2], "pack3": [service3]}
 
-    proto_stream = make_protos(services, [], [])
+    proto_stream = make_protos(
+        services,
+    )
 
     pack = write_protos(
         proto_stream=proto_stream,
@@ -192,7 +200,9 @@ def test_complex(complex_proto: List[APIService]) -> None:
 def test_inject(inject_proto: APIService) -> None:
 
     services = {"": [inject_proto]}
-    proto_stream = make_protos(services, [], [])
+    proto_stream = make_protos(
+        services,
+    )
     pack = write_protos(
         proto_stream=proto_stream,
         out_dir=root,

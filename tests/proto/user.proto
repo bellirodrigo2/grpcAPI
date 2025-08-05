@@ -6,7 +6,8 @@ import "inner/inner.proto";
 import "other.proto";
 import "multi/inner/class.proto";
 import "google/protobuf/timestamp.proto";
-
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
 
 message User {
     UserCode code = 1;
@@ -27,7 +28,26 @@ message User {
     repeated UserCode codes=23;
     map<string, UserCode> map_codes = 24;
     
+    repeated string strs = 25;
 
+    message Nested {
+        string nested_field = 1;
+    }
+    Nested nested = 26;
+
+    Circular circular = 27;
+
+    optional string optional_field = 28;
+
+    google.protobuf.ListValue list_value = 29;
+    repeated google.protobuf.Struct struct_value = 30;
+    repeated google.protobuf.Int32Value intvalue = 31;
+    map<string, google.protobuf.Int64Value> intmap = 32;
+
+}
+
+message Circular {
+    User circular_user = 1;
 }
 
 enum UserCode {

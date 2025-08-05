@@ -4,8 +4,8 @@ from typing import Iterable, Mapping, NoReturn
 import grpc
 from typing_extensions import Any, Callable, Optional, Sequence, Tuple
 
+from grpcAPI.data_types import AsyncContext
 from grpcAPI.testclient.tracker import Tracker
-from grpcAPI.types import AsyncContext
 
 std_auth_context = {
     "x509_common_name": [b"default-client"],

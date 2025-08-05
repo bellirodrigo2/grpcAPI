@@ -10,6 +10,7 @@ from typing import (
     AsyncIterator,
     Callable,
     Iterable,
+    Mapping,
     Optional,
     Sequence,
     Type,
@@ -27,17 +28,16 @@ from typing_extensions import Annotated, Dict, List
 
 from grpcAPI import ErrorCode
 from grpcAPI.app import APIService, App
-from grpcAPI.grpcapi import GrpcAPI
+from grpcAPI.commands.settings.utils import combine_settings
+from grpcAPI.data_types import AsyncContext, FromRequest
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType, IService
 from grpcAPI.protoc_compile import compile_protoc
-from grpcAPI.settings.utils import combine_settings
-from grpcAPI.testclient.testclient import TestClient
-from grpcAPI.types import AsyncContext, FromRequest
+from grpcAPI.testclient import TestClient
 
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
 
-from tests.lib.account_pb2 import Account, AccountCreated, AccountInput
+from tests.lib.account_pb2 import Account, AccountCreated, AccountInput, Inner
 from tests.lib.inner.inner_pb2 import InnerMessage  # noqa: F401
 from tests.lib.multi.inner.class_pb2 import ClassMsg  # noqa: F401
 from tests.lib.other_pb2 import Other  # noqa: F401
@@ -70,8 +70,9 @@ def functional_service() -> APIService:
         name: Annotated[str, FromRequest(AccountInput)],
         context: AsyncContext,
         email: str = FromRequest(AccountInput),
-        payload: Dict[str, Any] = FromRequest(AccountInput),
-        itens: List[Any] = FromRequest(AccountInput),
+        payload: Struct = FromRequest(AccountInput),
+        itens: ListValue = FromRequest(AccountInput, max_length=4),
+        inner_str: Optional[str] = FromRequest(AccountInput, "inner.name"),
     ) -> AccountCreated:
         if name == "raise":
             raise NotImplementedError("Not Implemented Test")
@@ -83,7 +84,7 @@ def functional_service() -> APIService:
         ts.FromDatetime(created_at)
         country = payload["country"]
         return AccountCreated(
-            id=f"id:{name}-{email}-{country}-{itens[0]}", created_at=ts
+            id=f"id:{name}-{email}-{country}-{itens[0]}{inner_str}", created_at=ts
         )
 
     @serviceapi
@@ -131,8 +132,11 @@ def account_input() -> Dict[str, Any]:
     itens = ListValue()
     list_ = ["foo"]
     itens.extend(list_)
+    inner_str = "Inner Name"
 
-    request = AccountInput(name=name, email=email, payload=struct, itens=itens)
+    request = AccountInput(
+        name=name, email=email, payload=struct, itens=itens, inner=Inner(name=inner_str)
+    )
     return {
         "name": name,
         "email": email,
@@ -140,13 +144,14 @@ def account_input() -> Dict[str, Any]:
         "struct": struct,
         "itens": itens,
         "request": request,
+        "inner_str": inner_str,
     }
 
 
 @pytest.fixture(scope="session")
 def app_fixture(functional_service: APIService) -> App:
 
-    app = GrpcAPI()
+    app = App()
     app.add_service(functional_service)
 
     @app.exception_handler(NotImplementedError)

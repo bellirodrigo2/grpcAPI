@@ -20,7 +20,7 @@ class ImportsSetter(CompilerPass):
             request_type = method.request_types[0]
             self._set_imports(method, request_type)
             self._set_imports(method, method.response_type)
-        except (AttributeError, IndexError) as e:
+        except (AttributeError, IndexError, KeyError, TypeError, ValueError) as e:
             report: CompileReport = self.ctx.get_report(method.service)
             report.report_error(
                 CompileErrorCode.SETTER_PASS_ERROR,

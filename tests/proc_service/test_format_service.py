@@ -1,13 +1,13 @@
+from re import S
 from typing import Any, List, Mapping, Optional, Type
 
 import pytest
 
-from grpcAPI.makeproto import ILabeledMethod
-from grpcAPI.process_service.format_service import (
+from grpcAPI.commands.process_service.format_service import (
     FormatService,
-    FormatServiceFactory,
     format_multiline,
 )
+from grpcAPI.makeproto import ILabeledMethod
 
 
 class FakeBase:
@@ -88,11 +88,13 @@ def test_comment_formatting_styles(strategy: str, expected_start: str) -> None:
     )
 
     format_service = FormatService(
-        max_char=80,
-        case="snake",
-        strategy=strategy,
+        format={
+            "max_char": 80,
+            "title_case": "snake",
+            "comment_style": strategy,
+        }
     )
-    format_service(service)
+    format_service.process(service)
 
     assert expected_start in service.comments
     assert "create_user" in service.methods[0].name
@@ -109,15 +111,27 @@ def test_title_case_conversion() -> None:
             FakeMethod("deleteUser", "Delete", "desc", ["b"]),
         ],
     )
-    format_service = FormatService(80, case="pascal", strategy="singleline")
-    format_service(service)
+    format_service = FormatService(
+        format={
+            "max_char_per_line": 80,
+            "title_case": "pascal",
+            "comment_strategy": "singleline",
+        }
+    )
+    format_service.process(service)
 
     assert service.name == "MyServiceTest"  # unchanged since it is already PascalCase
     assert service.methods[0].name == "CreateAccount"
     assert service.methods[1].name == "DeleteUser"
 
-    format_service = FormatService(80, case="snake", strategy="singleline")
-    format_service(service)
+    format_service = FormatService(
+        format={
+            "max_char_per_line": 80,
+            "title_case": "snake",
+            "comment_style": "singleline",
+        }
+    )
+    format_service.process(service)
     assert service.methods[0].name == "create_account"
     assert service.methods[1].name == "delete_user"
 
@@ -134,19 +148,42 @@ def test_multiline_formatting_output() -> None:
 
 
 def test_factory_default_values() -> None:
-    factory = FormatServiceFactory()
-
     # no config provided
     settings: Mapping[str, Any] = {}
-    service = factory(settings)
-    assert isinstance(service, FormatService)
+    service = FormatService(format=settings)
     assert service.max_char == 80
     assert service.case == "none"
     assert service.open_char.startswith("/*")
 
     # partial config
     settings = {"format": {"max_char_per_line": 100, "comment_style": "singleline"}}
-    service = factory(settings)
+    service = FormatService(**settings)
     assert service.max_char == 100
     assert service.open_char == ""
     assert service.start_char == "//"
+
+
+def test_wrong_max_char() -> None:
+
+    text = format_multiline("hello world", 1, "/*", "*/")
+    assert text == "/*hello*/\n/*world*/"
+
+
+def test_long_world() -> None:
+    text = format_multiline("thisisaverylongworld", 10, "", "")
+    assert text == "thisisaver\nylongworld"
+
+
+def test_functional_service_format(functional_service: FakeService) -> None:
+    # Test that the functional service can be formatted correctly
+    format_service = FormatService(
+        format={
+            "max_char_per_line": 80,
+            "title_case": "snake",
+            "comment_style": "multiline",
+        }
+    )
+    format_service.process(functional_service)
+
+    scom = functional_service.comments
+    assert "*Title: Functional Service" in scom

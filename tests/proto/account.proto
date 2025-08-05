@@ -10,8 +10,12 @@ message AccountInput {
     string email=2;
     google.protobuf.Struct payload = 3;
     google.protobuf.ListValue itens = 4;
+    Inner inner = 5;
 }
 
+message Inner{
+    optional string name = 1;
+}
 
 message AccountCreated{
     string id=1;

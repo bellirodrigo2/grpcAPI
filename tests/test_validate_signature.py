@@ -1,8 +1,24 @@
-from typing import Annotated, Any, AsyncIterator, Callable, List, Optional, Type
+from datetime import datetime
+from typing import Any, AsyncIterator, Callable, Dict, List, Optional, Type
 
-from grpcAPI.extract_types import extract_request, extract_response
-from grpcAPI.makeproto_pass import validate_signature_pass
-from grpcAPI.types import AsyncContext, Depends, FromContext, FromRequest, Message
+import pytest
+from typemapping import get_func_args
+from typing_extensions import Annotated
+
+from grpcAPI.data_types import AsyncContext, Depends, FromContext, FromRequest, Message
+from grpcAPI.label_method import extract_request, extract_response
+from grpcAPI.proto_build import validate_signature_pass
+from grpcAPI.proto_ctxinject import convert_timestamp
+from grpcAPI.protobut_typing import inject_proto_typing
+from tests.conftest import (
+    ClassMsg,
+    InnerMessage,
+    Other,
+    Struct,
+    Timestamp,
+    User,
+    UserCode,
+)
 
 
 def getdb() -> str:
@@ -148,3 +164,62 @@ def test_handler12() -> None:
 
 def test_handler13() -> None:
     run_tests(handler13, [], MyRequest, 2)
+
+
+def test_inject_typing() -> None:
+
+    inject_proto_typing(User)
+
+    async def get_db() -> str:
+        return "sqlite"
+
+    def func(
+        other: Annotated[Other, FromRequest(User)],
+        code: UserCode = FromRequest(User),
+        age: InnerMessage = FromRequest(User),
+        time: datetime = FromRequest(User),
+        name: str = FromRequest(User),
+        employee: str = FromRequest(User),
+        inactive: bool = FromRequest(User),
+        others: List[Other] = FromRequest(User),
+        dict: Dict[str, str] = FromRequest(User),
+        msg: ClassMsg = FromRequest(User),
+        map_msg: Dict[int, InnerMessage] = FromRequest(User),
+        code2: UserCode = FromRequest(User, field="code"),
+        codes: List[UserCode] = FromRequest(User),
+        map_codes: Dict[str, UserCode] = FromRequest(User),
+        db: str = Depends(get_db),
+    ) -> None:
+        pass
+
+    errors = validate_signature_pass(func)
+    assert errors == []
+
+
+def test_validate_date() -> None:
+
+    def func(
+        time: datetime = FromRequest(
+            User, start=datetime(2023, 6, 6), end=datetime(2025, 6, 6)
+        ),
+    ) -> None:
+        return
+
+    args = get_func_args(func)
+    modelinj = args[0].getinstance(FromRequest)
+
+    modelinj._validator = convert_timestamp
+
+    ts = Timestamp()
+    ts.FromDatetime(datetime(2024, 6, 6))
+    assert modelinj.validate(ts, basetype=datetime) == datetime(2024, 6, 6)
+
+    with pytest.raises(ValueError):
+        ts = Timestamp()
+        ts.FromDatetime(datetime(2022, 6, 6))
+        assert modelinj.validate(ts, basetype=datetime) == datetime(2024, 6, 6)
+
+    with pytest.raises(ValueError):
+        ts = Timestamp()
+        ts.FromDatetime(datetime(2026, 6, 6))
+        assert modelinj.validate(ts, basetype=datetime) == datetime(2024, 6, 6)

@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package grpcAPI.prototypes;
+
+option cc_enable_arenas = true;
+option go_package = "grpcAPI.golang.org/prototypes/prototypes";
+option java_package = "com.grpcAPI.prototypes";
+option java_outer_classname = "TypesProto";
+option java_multiple_files = true;
+option objc_class_prefix = "GRPCAPI";
+option csharp_namespace = "grpcAPI.ProtoTypes";
+
+message ListStr {
+    repeated string value = 1;
+}
+message ListInt {
+    repeated int64 value = 1;
+}
+message ListBool {
+    repeated bool value = 1;
+}
+message ListBytes {
+    repeated bytes value = 1;
+}
+message ListDouble {
+    repeated double value = 1;
+}
+
+message MapStrStr {
+    map<string,string> value = 1;
+}
+
+message MapStrBytes {
+    map<string,bytes> value = 1;
+}
+message MapIntStr {
+    map<int64,string> value = 1;
+}
+
+message MapIntBytes {
+    map<int64,bytes> value = 1;
+}

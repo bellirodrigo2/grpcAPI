@@ -1,11 +1,11 @@
 import asyncio
-from typing import Dict, Optional
+from typing import Optional
 
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from typing_extensions import Any, Mapping, Set
 
-from grpcAPI.server import ServerWrapper
-from grpcAPI.server_plugins import ServerPlugin, loader
+from grpcAPI.server import ServerPlugin, ServerWrapper
+from grpcAPI.server_plugins import loader
 
 
 class HealthCheckPlugin(ServerPlugin):
@@ -16,7 +16,7 @@ class HealthCheckPlugin(ServerPlugin):
         self.grace = grace
 
     @property
-    def state(self) -> Dict[str, Any]:
+    def state(self) -> Mapping[str, Any]:
         return {
             "name": self.plugin_name,
             "servicer": self._servicer,
@@ -24,24 +24,20 @@ class HealthCheckPlugin(ServerPlugin):
             "grace": self.grace,
         }
 
-    def configure(self, context: ServerWrapper, settings: Mapping[str, Any]) -> None:
-        health_pb2_grpc.add_HealthServicer_to_server(
-            self._servicer, context.grpc_server
-        )
+    def on_register(self, server: ServerWrapper) -> None:
+        health_pb2_grpc.add_HealthServicer_to_server(self._servicer, server.server)
         self._servicer.set("", health_pb2.HealthCheckResponse.SERVING)
         self._services_set.add("")
 
-    def on_add_service(self, service_name: str) -> None:
+    def on_add_service(self, service_name: str, server: Any) -> None:
         self._servicer.set(service_name, health_pb2.HealthCheckResponse.SERVING)
         self._services_set.add(service_name)
 
-    def on_start(self) -> None:
-        return
-
-    def on_stop(self) -> None:
+    async def on_stop(self) -> None:
         for service_name in self._services_set:
             self._servicer.set(service_name, health_pb2.HealthCheckResponse.NOT_SERVING)
-        asyncio.sleep(self.grace)
+        if self.grace is not None:
+            await asyncio.sleep(self.grace)
 
 
 def register() -> None:

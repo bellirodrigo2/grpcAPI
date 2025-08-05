@@ -1,5 +1,3 @@
-# __all__ = ["TestClient", "ContextMock"]
-__all__ = ["ContextMock"]
+__all__ = ["TestClient", "ContextMock"]
 from grpcAPI.testclient.contextmock import ContextMock
-
-# from grpcAPI.testclient.testclient import TestClient
+from grpcAPI.testclient.testclient import TestClient

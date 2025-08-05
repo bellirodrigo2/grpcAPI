@@ -1,34 +1,65 @@
 import importlib
+from functools import lru_cache
 from types import ModuleType
+from typing import Set, Type
 
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto
+from typemapping import get_args, get_origin
 from typing_extensions import Any, Dict, List, Optional, Type
 
-from grpcAPI.types import Message
+from grpcAPI.data_types import Message
 
 FD = FieldDescriptor
 FDP = FieldDescriptorProto
 
 
-def inject_proto_typing(cls: Type[Any]) -> Optional[Dict[str, Type[Any]]]:
+def extract_message(ftype: Type[Any]) -> Optional[Type[Message]]:
+    origin = get_origin(ftype)
+    if origin is None:
+        tgttype = ftype
+    else:
+        args = get_args(ftype)
+        if origin is dict:
+            tgttype = args[1]
+        else:
+            tgttype = args[0]
+    if isinstance(tgttype, type) and issubclass(tgttype, Message):
+        return tgttype
+    return None
+
+
+def inject_proto_typing(cls: Type[Any]) -> None:
     if not issubclass(cls, Message):
         raise RuntimeError  # pragma: no cover
     if cls.__annotations__:
-        return None
+        return
     annotations = {}
+    nested_msg: Set[Type[Message]] = set()
     for field in cls.DESCRIPTOR.fields:
-        type = get_type(field, cls)
-        annotations[field.name] = type
-    return annotations
+        ftype = get_type(field, cls)
+        annotations[field.name] = ftype
+        basemessage = extract_message(ftype)
+        if basemessage:
+            nested_msg.add(basemessage)
+    cls.__annotations__ = annotations
+
+    for type_message in nested_msg:
+        inject_proto_typing(type_message)
 
 
 def get_type(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
     if is_map_field(field):
-        return get_map_type(field, cls)
-    if is_list(field):
-        return get_list_type(field, cls)
-    return get_type_single(field, cls)
+        base_type = get_map_type(field, cls)
+    elif is_list(field):
+        base_type = get_list_type(field, cls)
+    else:
+        base_type = get_type_single(field, cls)
+
+    if is_optional_field(field):
+        return Optional[base_type]
+
+    return base_type
 
 
 def get_type_single(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
@@ -39,20 +70,80 @@ def get_type_single(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
     return get_primary_type(field)
 
 
-def get_message_type(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
+def is_optional_field(field: FieldDescriptor) -> bool:
+    # Skip repeated fields - they're always List[T], never Optional[List[T]]
+    if field.label == FieldDescriptor.LABEL_REPEATED:
+        return False
 
+    # Proto3 explicit optional ONLY (creates synthetic oneof with _fieldname)
+    if (
+        hasattr(field, "containing_oneof")
+        and field.containing_oneof
+        and field.containing_oneof.name.startswith("_")
+    ):
+        return True
+
+    # Everything else is NOT optional:
+    # - Regular messages: always have default instance (not None)
+    # - Regular oneof: always have default value (not None)
+    # - Primitives: always have default values (not None)
+
+    return False
+
+
+@lru_cache
+def get_message_type(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
     cls_module = get_module(cls)
 
     original_file = cls.DESCRIPTOR.file.name
     field_filename = field.file.name
+
     if field_filename == original_file:
         tgt_module = cls_module
     else:
         imported_str = get_protobuf_name(field_filename)
         tgt_module = getattr(cls_module, imported_str)
 
-    tgt_type = getattr(tgt_module, field.name)
-    return tgt_type
+    # Recursive approach for nested types
+    return resolve_nested_type(field.full_name, tgt_module, cls)
+
+
+def resolve_nested_type(
+    full_name: str, module: ModuleType, root_cls: Type[Any]
+) -> Type[Any]:
+    """Recursively resolve nested message types"""
+    parts = full_name.split(".")
+    type_name = parts[-1]  # Always the last part is the actual type name
+
+    # Try simple approach first (works for most cases)
+    try:
+        return getattr(module, type_name)
+    except AttributeError:
+        pass
+
+    # If simple doesn't work, check if it's in the root class (same-file nested)
+    if hasattr(root_cls, type_name):
+        return getattr(root_cls, type_name)
+
+    # Only try complex nested resolution if we have more than 2 parts
+    # and it's not a well-known type
+    if len(parts) > 2 and not (parts[0] == "google" and parts[1] == "protobuf"):
+        message_path = parts[1:]  # Skip package name
+
+        try:
+            # Start with the outermost message
+            current_type = getattr(module, message_path[0])
+
+            # Navigate through nested messages
+            for nested_name in message_path[1:]:
+                current_type = getattr(current_type, nested_name)
+
+            return current_type
+        except AttributeError:
+            pass
+
+    # If all else fails
+    raise AttributeError(f"Could not resolve type: {full_name} in module {module}")
 
 
 def get_primary_type(field: FieldDescriptor) -> Type[Any]:
@@ -87,10 +178,12 @@ def is_map_field(field: FieldDescriptor) -> bool:
 
 
 def is_list(field: FieldDescriptor) -> bool:
-    return (
-        field.label == FD.LABEL_REPEATED
-        and field.type == FD.TYPE_MESSAGE
-        and not field.message_type.GetOptions().map_entry
+    return field.label == FD.LABEL_REPEATED and (
+        field.type != FD.TYPE_MESSAGE
+        or (
+            field.type == FD.TYPE_MESSAGE
+            and not field.message_type.GetOptions().map_entry
+        )
     )
 
 

@@ -1,5 +1,4 @@
 # test_integration.py - Versão corrigida com mock apropriado
-import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
 import grpc
@@ -121,15 +120,11 @@ class TestIntegration:
                 # test_integration.py - Versão corrigida com mocks apropriados
 
 
-import asyncio
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock
 
-import grpc
 import pytest
 
 from grpcAPI.server import ServerWrapper
-from grpcAPI.server_plugins.plugins.health_check import HealthCheckPlugin
-from grpcAPI.server_plugins.plugins.reflection import ReflectionPlugin
 
 
 class TestIntegration:

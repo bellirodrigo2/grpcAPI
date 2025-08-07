@@ -1,6 +1,8 @@
 # ruff: noqa: E402
+import asyncio
 import logging
 import sys
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -9,8 +11,8 @@ from typing import (
     Any,
     AsyncIterator,
     Callable,
+    Generator,
     Iterable,
-    Mapping,
     Optional,
     Sequence,
     Type,
@@ -29,7 +31,7 @@ from typing_extensions import Annotated, Dict, List
 from grpcAPI import ErrorCode
 from grpcAPI.app import APIService, App
 from grpcAPI.commands.settings.utils import combine_settings
-from grpcAPI.data_types import AsyncContext, FromRequest
+from grpcAPI.data_types import AsyncContext, Depends, FromRequest
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType, IService
 from grpcAPI.protoc_compile import compile_protoc
 from grpcAPI.testclient import TestClient
@@ -48,7 +50,7 @@ root = Path("./tests/proto")
 logger = logging.getLogger("grpcAPI.server")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def functional_service() -> APIService:
     serviceapi = APIService(
         module="account_service",
@@ -59,6 +61,35 @@ def functional_service() -> APIService:
         tags=["account", "test"],
     )
     text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+
+    async def get_db() -> str:
+        await asyncio.sleep(0.01)
+        return "db_connection"
+
+    class MockConnection:
+        def __init__(self):
+            self.connection = "sync_db_connection"
+
+        def close(self):
+            self.connection = "close_db"
+
+    # Raw functions (without decorators)
+    def sync_get_db() -> Generator[MockConnection, None, None]:
+        db = MockConnection()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    @asynccontextmanager
+    async def async_get_db():
+        db = MockConnection()
+        await asyncio.sleep(0.01)
+        try:
+            yield db
+        finally:
+            db.close()
+            await asyncio.sleep(0.01)
 
     @serviceapi(
         title="Create Account",
@@ -73,7 +104,19 @@ def functional_service() -> APIService:
         payload: Struct = FromRequest(AccountInput),
         itens: ListValue = FromRequest(AccountInput, max_length=4),
         inner_str: Optional[str] = FromRequest(AccountInput, "inner.name"),
+        db: str = Depends(get_db),
+        db1: MockConnection = Depends(sync_get_db),
+        db2: MockConnection = Depends(async_get_db),
     ) -> AccountCreated:
+
+        assert db == "db_connection", "Database connection should be injected"
+        assert (
+            db1.connection == "sync_db_connection"
+        ), "Sync DB connection should be injected"
+        assert (
+            db2.connection == "sync_db_connection"
+        ), "Async DB connection should be injected"
+
         if name == "raise":
             raise NotImplementedError("Not Implemented Test")
         if name == "abort":
@@ -89,8 +132,20 @@ def functional_service() -> APIService:
 
     @serviceapi
     async def get_accounts(
-        values: ListValue, context: AsyncContext
+        values: ListValue,
+        context: AsyncContext,
+        db: str = Depends(get_db),
+        db1: MockConnection = Depends(sync_get_db),
+        db2: MockConnection = Depends(async_get_db),
     ) -> AsyncIterator[Account]:
+        assert db == "db_connection", "Database connection should be injected"
+        assert (
+            db1.connection == "sync_db_connection"
+        ), "Sync DB connection should be injected"
+
+        assert (
+            db2.connection == "sync_db_connection"
+        ), "Sync DB connection should be injected"
 
         for v in values:
             if v == "foo":
@@ -122,7 +177,7 @@ def functional_service() -> APIService:
     return serviceapi
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def account_input() -> Dict[str, Any]:
     name = "John"
     email = "john@email.com"
@@ -148,10 +203,12 @@ def account_input() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def app_fixture(functional_service: APIService) -> App:
 
     app = App()
+    if app.services:
+        return app
     app.add_service(functional_service)
 
     @app.exception_handler(NotImplementedError)
@@ -164,7 +221,7 @@ def app_fixture(functional_service: APIService) -> App:
     return app
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def testclient_fixture(app_fixture: App) -> TestClient:
     settings = combine_settings(
         {

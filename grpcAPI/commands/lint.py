@@ -15,9 +15,9 @@ def run_lint(app: App, logger: Logger) -> None:
 class LintCommand(GRPCAPICommand):
 
     def __init__(
-        self, command_name: str, app_path: str, settings_path: Optional[str] = None
+        self, app_path: str, settings_path: Optional[str] = None
     ) -> None:
-        super().__init__(command_name, app_path, settings_path)
+        super().__init__('lint', app_path, settings_path)
 
     async def run(self, **kwargs: Any) -> None:
         run_lint(self.app, self.logger)

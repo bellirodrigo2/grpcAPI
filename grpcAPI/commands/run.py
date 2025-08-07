@@ -22,10 +22,8 @@ from grpcAPI.server_plugins.loader import get_plugin
 
 class RunCommand(GRPCAPICommand):
 
-    def __init__(
-        self, command_name: str, app_path: str, settings_path: Optional[str] = None
-    ) -> None:
-        super().__init__(command_name, app_path, settings_path)
+    def __init__(self, app_path: str, settings_path: Optional[str] = None) -> None:
+        super().__init__("run", app_path, settings_path)
 
     async def run(self, **kwargs: Any) -> None:
 

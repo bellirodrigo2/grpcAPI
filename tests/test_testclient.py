@@ -36,13 +36,13 @@ async def test_unary(
 @pytest.mark.asyncio
 async def test_unary_validation(
     testclient_fixture: TestClient,
-    account_input: Dict[str, Any],
     functional_service: APIService,
 ) -> None:
 
-    request = account_input["request"]
-    itens = request.itens
-    itens.extend(["foo", "bar", "too", "much"])
+    itens = ListValue()
+    request = AccountInput(itens=itens)
+    itens.extend(["foo", "bar", "too", "much", "items"])
+    create_acount = None
     for method in functional_service.methods:
         if method.name == "create_account":
             create_acount = method.method

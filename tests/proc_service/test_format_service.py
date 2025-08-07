@@ -1,4 +1,3 @@
-from re import S
 from typing import Any, List, Mapping, Optional, Type
 
 import pytest

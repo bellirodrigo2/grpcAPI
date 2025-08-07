@@ -69,9 +69,10 @@ class TestClient:
         context: Optional[AsyncContext] = None,
     ) -> Any:
 
-        label = func.__label__
-        if label is None:
-            raise Exception(
+        try:
+            label = func.__label__
+        except AttributeError:
+            raise UnboundLocalError(
                 f'Function "{func.__name__}" is not linked to a grpcAPI module'
             )
         package, service_name, method_name = label

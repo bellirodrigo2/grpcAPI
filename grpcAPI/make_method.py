@@ -1,5 +1,6 @@
 import inspect
 from collections.abc import AsyncIterator, Callable
+from contextlib import AsyncExitStack
 
 from typing_extensions import Any, Dict
 
@@ -42,10 +43,11 @@ def make_method_async(
 
     async def method(request: Any, context: AsyncContext) -> Any:
         try:
-            ctx = {req_t.argtype: request, AsyncContext: context}
-            kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
-            response = await func(**kwargs)
-            return response
+            async with AsyncExitStack() as stack:
+                ctx = {req_t.argtype: request, AsyncContext: context}
+                kwargs = await resolve_mapped_ctx(ctx, mapped_ctx, stack=stack)
+                response = await func(**kwargs)
+                return response
         except Exception as e:
             exc_handler = exception_registry.get(type(e), None)
             if exc_handler is not None:
@@ -55,10 +57,11 @@ def make_method_async(
 
     async def stream_method(request: Any, context: AsyncContext) -> Any:
         try:
-            ctx = {req_t.argtype: request, AsyncContext: context}
-            kwargs = await resolve_mapped_ctx(ctx, mapped_ctx)
-            async for resp in func(**kwargs):
-                yield resp
+            async with AsyncExitStack() as stack:
+                ctx = {req_t.argtype: request, AsyncContext: context}
+                kwargs = await resolve_mapped_ctx(ctx, mapped_ctx, stack)
+                async for resp in func(**kwargs):
+                    yield resp
         except Exception as e:
             exc_handler = exception_registry.get(type(e), None)
             if exc_handler is not None:

@@ -124,7 +124,7 @@ DependencyRegistry = Dict[Callable[..., Any], Callable[..., Any]]
 Lifespan = Callable[[Any], AsyncGenerator[None, None]]
 
 
-class App(metaclass=SingletonMeta):
+class App:
 
     def __init__(
         self,
@@ -182,3 +182,7 @@ class App(metaclass=SingletonMeta):
             return func
 
         return decorator
+
+
+class GrpcAPI(App, metaclass=SingletonMeta):
+    pass

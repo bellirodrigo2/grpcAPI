@@ -14,7 +14,6 @@ from tests.conftest import (
     ClassMsg,
     InnerMessage,
     Other,
-    Struct,
     Timestamp,
     User,
     UserCode,

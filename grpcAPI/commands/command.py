@@ -2,7 +2,7 @@ from logging import getLogger
 from pathlib import Path
 from typing import Any, Optional
 
-from grpcAPI.app import App
+from grpcAPI.app import GrpcAPI
 from grpcAPI.commands.process_service.run_process_service import run_process_service
 from grpcAPI.commands.settings.utils import (
     combine_settings,
@@ -26,7 +26,7 @@ class GRPCAPICommand:
         self.app_path = app_path
 
         load_app(app_path)
-        self.app = App()
+        self.app = GrpcAPI()
 
         self.settings_path = settings_path
 

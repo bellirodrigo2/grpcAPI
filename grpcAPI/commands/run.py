@@ -1,3 +1,4 @@
+from contextlib import AsyncExitStack
 from pathlib import Path
 from typing import Optional
 
@@ -6,7 +7,6 @@ from typing_extensions import Any, Dict
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import App
 from grpcAPI.commands.command import GRPCAPICommand
-from grpcAPI.commands.process_service.run_process_service import run_process_service
 from grpcAPI.commands.settings.utils import combine_settings, load_app
 from grpcAPI.commands.utils import (
     get_compile_proto_settings,
@@ -14,10 +14,11 @@ from grpcAPI.commands.utils import (
     get_proto_lib_path,
 )
 from grpcAPI.makeproto.write_proto import write_protos
+from grpcAPI.process_service.run_process_service import run_process_service
 from grpcAPI.proto_build import make_protos
 from grpcAPI.protoc_compile import compile_protoc
-from grpcAPI.server import make_server
-from grpcAPI.server_plugins.loader import get_plugin
+from grpcAPI.server import ServerWrapper, make_server
+from grpcAPI.server_plugins.loader import make_plugin
 
 
 class RunCommand(GRPCAPICommand):
@@ -53,21 +54,30 @@ class RunCommand(GRPCAPICommand):
 
         middlewares = [middleware() for middleware in set(app._middleware)]
 
-        server = make_server(server_settings, middlewares)
+        if app.server:
+            server = ServerWrapper(app.server)
+        else:
+            server = make_server(server_settings, middlewares)
 
-        plugins = [get_plugin(plugin_name) for plugin_name in plugins_settings.keys()]
+        plugins = [
+            make_plugin(plugin_name, **kwargs)
+            for plugin_name, kwargs in plugins_settings.items()
+        ]
         for plugin in plugins:
             server.register_plugin(plugin)
 
         for service in app.service_list:
-            add_to_server(
-                service, server, app.dependency_overrides, app._exception_handlers
-            )
+            if service._active:
+                add_to_server(
+                    service, server, app.dependency_overrides, app._exception_handlers
+                )
         host, port = get_host_port(settings)
         server.add_insecure_port(f"{host}:{port}")
 
-        lifespan = app.lifespan
-        await server.start(lifespan)
+        async with AsyncExitStack() as stack:
+            for lifespan in app.lifespan:
+                await stack.enter_async_context(lifespan(app))
+            await server.start()
 
 
 async def run_app(
@@ -101,9 +111,12 @@ async def run_app(
     server_settings = settings.get("server", {})
     middlewares = [middleware() for middleware in set(app._middleware)]
 
-    server = make_server(server_settings, middlewares)
+    server = make_server(middlewares, server_settings)
 
-    plugins = [get_plugin(plugin_name) for plugin_name in plugins_settings.keys()]
+    plugins = [
+        make_plugin(plugin_name, **kwargs)
+        for plugin_name, kwargs in plugins_settings.items()
+    ]
     for plugin in plugins:
         server.register_plugin(plugin)
 

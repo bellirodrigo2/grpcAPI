@@ -1,9 +1,4 @@
-from grpcAPI.app import APIService
-from grpcAPI.package_module import (  # ajuste o import real
-    APIModule,
-    APIPackage,
-    MetaData,
-)
+from grpcAPI.app import APIModule, APIPackage, APIService, MetaData
 
 
 def test_metadata_basic() -> None:

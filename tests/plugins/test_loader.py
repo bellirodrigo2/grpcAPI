@@ -6,8 +6,8 @@ import pytest
 
 from grpcAPI.server_plugins.loader import (
     _get_plugin,
-    get_plugin,
     load_plugins,
+    make_plugin,
     register,
     unregister,
 )
@@ -40,7 +40,7 @@ class TestLoader:
             return MockPlugin("test")
 
         register("test_plugin", mock_creator)
-        plugin = get_plugin("test_plugin")
+        plugin = make_plugin("test_plugin")
 
         assert isinstance(plugin, MockPlugin)
         assert plugin.plugin_name == "test"
@@ -57,7 +57,7 @@ class TestLoader:
 
             mock_load.side_effect = side_effect
 
-            plugin = get_plugin("new_plugin")
+            plugin = make_plugin("new_plugin")
 
             mock_load.assert_called_once_with(["new_plugin"])
             assert isinstance(plugin, MockPlugin)
@@ -68,7 +68,7 @@ class TestLoader:
             mock_load.side_effect = FileNotFoundError("Plugin not found")
 
             with pytest.raises(ValueError, match="Plugin not found"):
-                get_plugin("missing_plugin")
+                make_plugin("missing_plugin")
 
     def test_load_plugins_success(self) -> None:
         # Create temporary directory structure

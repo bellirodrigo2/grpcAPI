@@ -1,6 +1,6 @@
 import importlib.util
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 from typing_extensions import Callable
 
@@ -19,7 +19,7 @@ def unregister(plugin_name: str) -> None:
     _get_plugin.pop(plugin_name, None)
 
 
-def get_plugin(plugin_name: str) -> ServerPlugin:
+def make_plugin(plugin_name: str, **kwargs: Any) -> ServerPlugin:
 
     try:
         if plugin_name not in _get_plugin:

@@ -1,3 +1,5 @@
+from typing import List
+
 from typing_extensions import (
     Any,
     Callable,
@@ -18,11 +20,15 @@ class IMetaType(Protocol):
     proto_path: str
 
 
-class ILabeledMethod(Protocol):
-    name: str
-    method: Callable[..., Any]
+class IFilter(Protocol):
     package: str
     module: str
+    tags: Iterable[str]
+
+
+class ILabeledMethod(IFilter):
+    name: str
+    method: Callable[..., Any]
     service: str
     options: Sequence[str]
     comments: str
@@ -30,15 +36,13 @@ class ILabeledMethod(Protocol):
     response_types: Optional[IMetaType]
 
 
-class IService(Protocol):
+class IService(IFilter):
     name: str
-    module: str
-    package: str
     options: Sequence[str]
     comments: str
 
-    module_level_options: Iterable[str]
-    module_level_comments: Iterable[str]
+    module_level_options: List[str]
+    module_level_comments: List[str]
 
     @property
     def methods(self) -> Sequence[ILabeledMethod]: ...  # pragma: no cover

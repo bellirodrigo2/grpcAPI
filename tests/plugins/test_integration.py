@@ -15,7 +15,7 @@ class TestIntegration:
     def mock_grpc_server(self) -> Mock:
         """Mock do servidor gRPC interno."""
         server = Mock()  # Remover spec para permitir qualquer atributo
-        server.add_generic_rpc_handlers = Mock()
+        server.add_registered_method_handlers = Mock()
         server.start = AsyncMock()
         server.stop = AsyncMock()
         return server
@@ -44,8 +44,7 @@ class TestIntegration:
         server_wrapper.register_plugin(reflection_plugin)
 
         # Simulate adding a service
-        handler = Mock()
-        handler._name = "TestService"
+        name = "TestService"
 
         with patch(
             "grpc_reflection.v1alpha.reflection.enable_server_reflection"
@@ -53,7 +52,7 @@ class TestIntegration:
             "grpcAPI.server_plugins.plugins.health_check.health_pb2_grpc.add_HealthServicer_to_server"
         ):
 
-            server_wrapper.add_generic_rpc_handlers([handler])
+            server_wrapper.add_registered_method_handlers(name, {})
 
             # Verify both plugins were called
             assert "TestService" in health_plugin._services_set
@@ -132,7 +131,7 @@ class TestIntegration:
     @pytest.fixture
     def mock_grpc_server(self) -> Mock:
         server = Mock(spec=grpc.aio.Server)
-        server.add_generic_rpc_handlers = Mock()
+        server.add_registered_method_handlers = Mock()
         server.start = AsyncMock()
         server.stop = AsyncMock()
         return server
@@ -154,7 +153,7 @@ class TestIntegration:
 
         # Simulate adding a service
         handler = Mock()
-        handler._name = "TestService"
+        name = "TestService"
 
         with patch(
             "grpc_reflection.v1alpha.reflection.enable_server_reflection"
@@ -162,7 +161,7 @@ class TestIntegration:
             "grpcAPI.server_plugins.plugins.health_check.health_pb2_grpc.add_HealthServicer_to_server"
         ):
 
-            server_wrapper.add_generic_rpc_handlers([handler])
+            server_wrapper.add_registered_method_handlers(name, handler)
 
             # Verify both plugins were called
             assert "TestService" in health_plugin._services_set
@@ -194,8 +193,8 @@ class TestIntegration:
             "grpcAPI.server_plugins.plugins.health_check.health_pb2_grpc.add_HealthServicer_to_server"
         ):
             handler = Mock()
-            handler._name = "TestService"
-            server_wrapper.add_generic_rpc_handlers([handler])
+            name = "TestService"
+            server_wrapper.add_registered_method_handlers(name, handler)
 
             # Verificar que serviço foi adicionado
             assert "TestService" in health_plugin._services_set
@@ -205,44 +204,6 @@ class TestIntegration:
             await server_wrapper.stop(grace=1.0)
             # Verificar que o plugin teve tempo de graceful shutdown
             mock_sleep.assert_called_with(0.1)  # grace do plugin
-
-    @pytest.mark.asyncio
-    async def test_reflection_plugin_lifecycle(
-        self, server_wrapper: ServerWrapper
-    ) -> None:
-        """Teste específico do ciclo de vida do reflection plugin."""
-        reflection_plugin = ReflectionPlugin()
-        server_wrapper.register_plugin(reflection_plugin)
-
-        # Verificar estado inicial
-        initial_state = reflection_plugin.state
-        assert initial_state["name"] == "reflection"
-        assert len(initial_state["services"]) == 0
-
-        # Adicionar múltiplos serviços
-        with patch(
-            "grpc_reflection.v1alpha.reflection.enable_server_reflection"
-        ) as mock_reflection:
-            services = ["ServiceA", "ServiceB", "ServiceC"]
-            handlers = []
-            for service in services:
-                handler = Mock()
-                handler._name = service
-                handlers.append(handler)
-
-            server_wrapper.add_generic_rpc_handlers(handlers)
-
-            # Verificar que reflection foi chamada para cada serviço
-            assert mock_reflection.call_count == len(services)
-            for service in services:
-                mock_reflection.assert_any_call((service,), server_wrapper.server)
-                assert service in reflection_plugin._services
-
-        # Verificar estado final
-        final_state = reflection_plugin.state
-        assert len(final_state["services"]) == len(services)
-        for service in services:
-            assert service in final_state["services"]
 
     @pytest.mark.asyncio
     async def test_plugins_interaction(self, server_wrapper: ServerWrapper) -> None:
@@ -258,21 +219,14 @@ class TestIntegration:
         assert health_plugin in server_wrapper.plugins
         assert reflection_plugin in server_wrapper.plugins
 
-        # Simular adição de serviços
-        services = ["UserService", "OrderService"]
-        handlers = []
-        for service in services:
-            handler = Mock()
-            handler._name = service
-            handlers.append(handler)
-
         with patch(
             "grpc_reflection.v1alpha.reflection.enable_server_reflection"
         ), patch(
             "grpcAPI.server_plugins.plugins.health_check.health_pb2_grpc.add_HealthServicer_to_server"
         ):
-
-            server_wrapper.add_generic_rpc_handlers(handlers)
+            services = ["UserService", "OrderService"]
+            for service in services:
+                server_wrapper.add_registered_method_handlers(service, {})
 
             # Verificar que ambos os plugins foram informados sobre todos os serviços
             for service in services:
@@ -312,68 +266,15 @@ class TestIntegration:
             mock_reflection.side_effect = Exception("Reflection failed")
 
             handler = Mock()
-            handler._name = "TestService"
+            name = "TestService"
 
             # Deve falhar, mas não devemos capturar a exceção aqui pois não implementamos tratamento de erro
             # Vamos apenas verificar que o health plugin ainda funciona
             try:
-                server_wrapper.add_generic_rpc_handlers([handler])
+                server_wrapper.add_registered_method_handlers(name, handler)
             except Exception:
                 # Esperado que falhe devido ao reflection
                 pass
 
             # Health plugin deve ter funcionado mesmo com reflection falhando
             assert "TestService" in health_plugin._services_set
-
-    @pytest.mark.asyncio
-    async def test_empty_handlers_list(self, mock_grpc_server: Mock) -> None:
-        """Testar comportamento com lista vazia de handlers."""
-        # FIX: Criar uma nova instância para este teste para evitar interferência
-        wrapper = ServerWrapper(mock_grpc_server)
-
-        health_plugin = HealthCheckPlugin()
-        reflection_plugin = ReflectionPlugin()
-
-        wrapper.register_plugin(health_plugin)
-        wrapper.register_plugin(reflection_plugin)
-
-        # Estados iniciais
-        health_initial = len(health_plugin._services_set)
-        reflection_initial = len(reflection_plugin._services)
-
-        # Reset mock para este teste específico
-        mock_grpc_server.add_generic_rpc_handlers.reset_mock()
-
-        # Adicionar lista vazia
-        wrapper.add_generic_rpc_handlers([])
-
-        # Estados não devem ter mudado (exceto pelo serviço raiz do health que já existe)
-        assert len(health_plugin._services_set) == health_initial
-        assert len(reflection_plugin._services) == reflection_initial
-
-        # Servidor deve ter sido chamado exatamente uma vez
-        mock_grpc_server.add_generic_rpc_handlers.assert_called_once_with([])
-
-    @pytest.mark.asyncio
-    async def test_handlers_without_name(self, server_wrapper: ServerWrapper) -> None:
-        """Testar comportamento com handlers sem atributo _name."""
-        health_plugin = HealthCheckPlugin()
-        reflection_plugin = ReflectionPlugin()
-
-        server_wrapper.register_plugin(health_plugin)
-        server_wrapper.register_plugin(reflection_plugin)
-
-        # Handler sem _name
-        handler = Mock(spec=[])  # Sem atributos
-
-        with patch(
-            "grpc_reflection.v1alpha.reflection.enable_server_reflection"
-        ), patch(
-            "grpcAPI.server_plugins.plugins.health_check.health_pb2_grpc.add_HealthServicer_to_server"
-        ):
-
-            server_wrapper.add_generic_rpc_handlers([handler])
-
-            # Plugins devem ter recebido 'unknown_service'
-            assert "unknown_service" in health_plugin._services_set
-            assert "unknown_service" in reflection_plugin._services

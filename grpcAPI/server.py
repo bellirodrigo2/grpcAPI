@@ -1,12 +1,17 @@
-from typing import Any, AsyncGenerator, Callable, Dict, Mapping
+from typing import Any, Dict, Iterable, Mapping
 
 import grpc
-from typing_extensions import Any, List, Optional, Protocol, Sequence
+from typing_extensions import Any, List, Optional, Protocol, Sequence, Tuple
 
 from grpcAPI.app import Middleware
 
 
 class ServerPlugin(Protocol):
+
+    @property
+    def plugin_name(self) -> str:
+        """Return the name of the plugin."""
+        ...
 
     @property
     def state(self) -> Mapping[str, Any]:
@@ -17,12 +22,23 @@ class ServerPlugin(Protocol):
         """Called when plugin is registered with server."""
         pass
 
-    def on_add_service(self, service_name: str, server: "ServerWrapper") -> None:
+    def on_add_service(
+        self, service_name: str, methods_name: Iterable[str], server: "ServerWrapper"
+    ) -> None:
         """Called when a service is added to the server."""
         pass
 
-    async def on_start(self) -> None:
+    def on_add_port(
+        self, address: str, credentials: Optional[grpc.ServerCredentials]
+    ) -> None:
+        pass
+
+    async def on_start(self, server: "ServerWrapper") -> None:
         """Called when server is starting."""
+        pass
+
+    async def on_wait_for_termination(self, timeout: Optional[float] = None) -> None:
+        """Called when server is waiting for termination."""
         pass
 
     async def on_stop(self) -> None:
@@ -42,6 +58,18 @@ class ServerWrapper:
     def server(self) -> grpc.aio.Server:
         return self._server
 
+    def _trigger_plugins(self, trigger: str, **kwargs: Any) -> None:
+        for plugin in self.plugins:
+            func = getattr(plugin, trigger, None)
+            if func:
+                func(**kwargs)
+
+    async def _trigger_plugins_async(self, trigger: str, **kwargs: Any) -> None:
+        for plugin in self.plugins:
+            func = getattr(plugin, trigger, None)
+            if func:
+                await func(**kwargs)
+
     def register_plugin(self, plugin: ServerPlugin) -> None:
         plugin.on_register(self)
         self.plugins.append(plugin)
@@ -49,77 +77,63 @@ class ServerWrapper:
     def add_generic_rpc_handlers(
         self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]
     ) -> None:
-        if generic_rpc_handlers:
-            for handler in generic_rpc_handlers:
-                service_name = getattr(handler, "_name", "unknown_service")
-                for plugin in self.plugins:
-                    plugin.on_add_service(service_name, self)
         return self._server.add_generic_rpc_handlers(generic_rpc_handlers)
-        # for plugin in self.plugins:
-        #     plugin.on_add_service(generic_rpc_handlers[0]._name, self._server)
-        # return self._server.add_generic_rpc_handlers(generic_rpc_handlers)
+
+    def add_registered_method_handlers(
+        self, service_name: str, method_handlers: Dict[str, Any]
+    ) -> None:
+        self._trigger_plugins(
+            "on_add_service",
+            service_name=service_name,
+            methods_name=method_handlers.keys(),
+            server=self,
+        )
+        self.server.add_registered_method_handlers(service_name, method_handlers)
 
     def add_insecure_port(self, address: str) -> int:
+        self._trigger_plugins("on_add_port", address=address, credentials=None)
         return self._server.add_insecure_port(address)
 
     def add_secure_port(
         self, address: str, server_credentials: grpc.ServerCredentials
     ) -> int:
+        self._trigger_plugins(
+            "on_add_port", address=address, credentials=server_credentials
+        )
         return self._server.add_secure_port(address, server_credentials)
 
     async def start(
         self,
-        lifespan: Optional[
-            Callable[["ServerWrapper"], AsyncGenerator[None, None]]
-        ] = None,
     ) -> None:
-        for plugin in self.plugins:
-            if hasattr(plugin, "on_start"):
-                await plugin.on_start()
-        # if lifespan:
-        #     async with lifespan(self):
-        #         await self._server.start()
-        # else:
-        #     await self._server.start()
-
-        if lifespan:
-            lifespan_gen = lifespan(self)
-            try:
-                await lifespan_gen.__anext__()
-                await self._server.start()
-            except StopAsyncIteration:
-                await self._server.start()
-            finally:
-                try:
-                    await lifespan_gen.__anext__()
-                except StopAsyncIteration:
-                    pass
-        else:
-            await self._server.start()
+        await self._trigger_plugins_async("on_start", server=self)
+        await self._server.start()
 
     async def stop(self, grace: Optional[float]) -> None:
-
-        for plugin in self.plugins:
-            if hasattr(plugin, "on_stop"):
-                await plugin.on_stop()
+        await self._trigger_plugins_async("on_stop")
         return await self._server.stop(grace)
 
     async def wait_for_termination(self, timeout: Optional[float] = None) -> bool:
+        await self._trigger_plugins_async("on_wait_for_termination", timeout=timeout)
         return await self._server.wait_for_termination(timeout)
 
-    def add_registered_method_handlers(
-        self, service_name: str, method_handlers: Any
-    ) -> None:
-        self.server.add_registered_method_handlers(service_name, method_handlers)
+
+_compression_map = {
+    "gzip": grpc.Compression.Gzip,
+    "deflate": grpc.Compression.Deflate,
+    "none": grpc.Compression.NoCompression,
+}
 
 
 def make_server(
-    server_settings: Dict[str, Any],
-    middlewares: Optional[List[Middleware]],
-    # migration_thread_pool: Optional[Executor] = None,
-    # maximum_concurrent_rpcs: Optional[int] = None,
-    # compression: Optional[grpc.Compression] = None,
+    middlewares: Optional[List[Middleware]], **server_settings: Any
 ) -> ServerWrapper:
-    options = server_settings.items()
-    server = grpc.aio.server(interceptors=middlewares, options=options)
+    options: Sequence[Tuple[str, Any]] = server_settings.get("options", [])
+    maximum_concurrent_rpcs = server_settings.get("maximum_concurrent_rpcs", None)
+    compression = server_settings.get("compression", "none")
+    server = grpc.aio.server(
+        interceptors=middlewares,
+        maximum_concurrent_rpcs=maximum_concurrent_rpcs,
+        compression=_compression_map.get(compression, grpc.Compression.NoCompression),
+        options=options,
+    )
     return ServerWrapper(server, [])

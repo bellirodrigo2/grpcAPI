@@ -37,7 +37,7 @@ class TestReflectionPlugin:
         plugin: ReflectionPlugin,
         mock_server_wrapper: Mock,
     ) -> None:
-        plugin.on_add_service("TestService", mock_server_wrapper)
+        plugin.on_add_service("TestService", [], mock_server_wrapper)
 
         # Verificar se foi chamado com tupla de service names e o servidor interno
         mock_enable_reflection.assert_called_once_with(
@@ -53,8 +53,8 @@ class TestReflectionPlugin:
         mock_server_wrapper: Mock,
     ) -> None:
         # Adicionar múltiplos serviços
-        plugin.on_add_service("ServiceA", mock_server_wrapper)
-        plugin.on_add_service("ServiceB", mock_server_wrapper)
+        plugin.on_add_service("ServiceA", [], mock_server_wrapper)
+        plugin.on_add_service("ServiceB", [], mock_server_wrapper)
 
         # Verificar se ambos foram chamados
         assert mock_enable_reflection.call_count == 2
@@ -99,8 +99,8 @@ class TestReflectionPlugin:
     ) -> None:
         """Testar se não adiciona serviços duplicados no conjunto."""
         # Adicionar o mesmo serviço duas vezes
-        plugin.on_add_service("TestService", mock_server_wrapper)
-        plugin.on_add_service("TestService", mock_server_wrapper)
+        plugin.on_add_service("TestService", [], mock_server_wrapper)
+        plugin.on_add_service("TestService", [], mock_server_wrapper)
 
         # Deve ter chamado reflection duas vezes (comportamento normal)
         assert mock_enable_reflection.call_count == 2
@@ -119,12 +119,12 @@ class TestReflectionPlugin:
         initial_state = plugin.state
         assert len(initial_state["services"]) == 0
 
-        plugin.on_add_service("ServiceA", mock_server_wrapper)
+        plugin.on_add_service("ServiceA", [], mock_server_wrapper)
         state_after_one = plugin.state
         assert len(state_after_one["services"]) == 1
         assert "ServiceA" in state_after_one["services"]
 
-        plugin.on_add_service("ServiceB", mock_server_wrapper)
+        plugin.on_add_service("ServiceB", [], mock_server_wrapper)
         final_state = plugin.state
         assert len(final_state["services"]) == 2
         assert "ServiceA" in final_state["services"]

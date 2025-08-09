@@ -8,18 +8,42 @@
     "clean_services": true,
     "overwrite": false
   },
+  "service_filter": {
+    "package": {
+      "include": [],
+      "exclude": []
+    },
+    "module": {
+      "include": [],
+      "exclude": []
+    },
+    "tags": {
+      "include": [],
+      "exclude": []
+    },
+    "rule_logic": "AND"
+  },
   "format": {
     "max_char_per_line": 80,
     "title_case": "none",
     "comment_style": "multiline"
   },
   "server": {
-    "options": {}
+    "compression": "gzip",
+    "maximum_concurrent_rpcs": 100,
+    "options": []
   },
   "plugins": {
-    "health_check": true,
-    "reflection": true
+    "health_check": {},
+    "reflection": {},
+    "server_logger": {
+      "level": "INFO",
+      "handlers": ["console"],
+      "filename": ".",
+      "propagate": false
+    }
   },
+  "app_log_level": "INFO",
   "logger": {
     "version": 1,
     "disable_existing_loggers": false,
@@ -52,11 +76,6 @@
       "grpcAPI": {
         "handlers": ["console"],
         "level": "ERROR",
-        "propagate": false
-      },
-      "grpcAPI.server": {
-        "level": "INFO",
-        "handlers": ["console"],
         "propagate": false
       }
     },

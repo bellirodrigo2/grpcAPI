@@ -41,6 +41,11 @@ class LabeledMethod(ILabeledMethod):
 
     request_types: List[IMetaType]
     response_types: Optional[IMetaType]
+    _active: bool = True
+
+    @property
+    def active(self) -> bool:
+        return self._active
 
 
 def make_labeled_method(

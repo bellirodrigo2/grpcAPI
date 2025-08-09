@@ -101,7 +101,11 @@ def prepare_modules(
             continue
         allmodules, ctx = compiler_ctx
         all_templates.extend(allmodules)
-        templates = [make_service_template(service) for service in service_list]
+        templates = [
+            make_service_template(service)
+            for service in service_list
+            if service._active
+        ]
         compiler_execution.append((templates, ctx))
 
     return all_templates, compiler_execution
@@ -111,20 +115,24 @@ def extract_modules(
     packlist: List[IService],
 ) -> Mapping[str, Tuple[Iterable[str], Iterable[str]]]:
 
-    modules: Dict[str, Tuple[Set[str], Set[str]]] = {}
+    modules: Dict[str, Tuple[List[str], List[str]]] = {}
     for service in packlist:
         mod_name = service.module
-        mod_opt = service.module_level_options
-        mod_com = service.module_level_comments
+        mod_opt = [opt.strip() for opt in service.module_level_options]
+        mod_com = [serv.strip() for serv in service.module_level_comments]
         if mod_name not in modules:
             modules[mod_name] = (
-                set(mod_opt),
-                set(mod_com),
+                mod_opt,
+                mod_com,
             )
         else:
             option, comment = modules[mod_name]
-            option.update(mod_opt)
-            comment.update(mod_com)
+            option.extend(mod_opt)
+            comment.extend(mod_com)
+            modules[mod_name] = (
+                list(dict.fromkeys(option)),  # Remove duplicates
+                list(dict.fromkeys(comment)),
+            )
 
     return modules
 

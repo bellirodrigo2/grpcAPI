@@ -5,7 +5,7 @@ from typing_extensions import Any, Dict
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import APIService
-from grpcAPI.commands.process_service.inject_typing import InjectProtoTyping
+from grpcAPI.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.server import ServerWrapper
 from grpcAPI.testclient.contextmock import ContextMock
 from tests.conftest import Timestamp

@@ -1,15 +1,19 @@
-from typing import Any, List, Mapping
+from typing import Any, Iterable, List, Mapping
 
 from grpcAPI.server import ServerPlugin, ServerWrapper
 
 
 class MockPlugin(ServerPlugin):
     def __init__(self, name: str = "mock_plugin"):
-        self.plugin_name = name
+        self._plugin_name = name
         self.on_register_called = False
         self.on_add_service_called = False
         self.on_stop_called = False
         self.services: List[str] = []
+
+    @property
+    def plugin_name(self) -> str:
+        return self._plugin_name
 
     @property
     def state(self) -> Mapping[str, Any]:
@@ -24,7 +28,9 @@ class MockPlugin(ServerPlugin):
     def on_register(self, server: ServerWrapper) -> None:
         self.on_register_called = True
 
-    def on_add_service(self, service_name: str, server: ServerWrapper) -> None:
+    def on_add_service(
+        self, service_name: str, methods_name: Iterable[str], server: ServerWrapper
+    ) -> None:
         self.on_add_service_called = True
         self.services.append(service_name)
 

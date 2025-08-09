@@ -46,7 +46,7 @@ class TestHealthCheckPlugin:
 
     def test_on_add_service(self, plugin) -> None:
         mock_server = Mock()
-        plugin.on_add_service("TestService", mock_server)
+        plugin.on_add_service("TestService", [], mock_server)
 
         assert "TestService" in plugin._services_set
 

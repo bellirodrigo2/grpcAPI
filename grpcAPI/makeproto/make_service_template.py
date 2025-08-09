@@ -19,6 +19,8 @@ def make_service_template(
     methods: List[MethodTemplate] = []
 
     for labeledmethod in service.methods:
+        if not labeledmethod.active:
+            continue
         method = labeledmethod.method
 
         method_template = MethodTemplate(

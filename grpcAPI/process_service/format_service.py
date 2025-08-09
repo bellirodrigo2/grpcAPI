@@ -4,9 +4,9 @@ from inflection import camelize
 from inflection import underscore as snake_case
 from typing_extensions import Any, List, Literal, Mapping, Optional, Protocol, Tuple
 
-from grpcAPI.commands.process_service import ProcessService
 from grpcAPI.makeproto import IService
 from grpcAPI.makeproto.interface import ILabeledMethod
+from grpcAPI.process_service import ProcessService
 
 
 class Labeled(Protocol):

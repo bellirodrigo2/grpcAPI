@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Iterable
 from typing import Optional
 
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -10,10 +11,13 @@ from grpcAPI.server_plugins import loader
 
 class HealthCheckPlugin(ServerPlugin):
     def __init__(self, grace: Optional[float] = 2.0) -> None:
-        self.plugin_name = "health_check"
         self._servicer: health.HealthServicer = health.HealthServicer()
         self._services_set: Set[str] = set()
         self.grace = grace
+
+    @property
+    def plugin_name(self) -> str:
+        return "health_check"
 
     @property
     def state(self) -> Mapping[str, Any]:
@@ -29,7 +33,9 @@ class HealthCheckPlugin(ServerPlugin):
         self._servicer.set("", health_pb2.HealthCheckResponse.SERVING)
         self._services_set.add("")
 
-    def on_add_service(self, service_name: str, server: Any) -> None:
+    def on_add_service(
+        self, service_name: str, methods_name: Iterable[str], server: "ServerWrapper"
+    ) -> None:
         self._servicer.set(service_name, health_pb2.HealthCheckResponse.SERVING)
         self._services_set.add(service_name)
 

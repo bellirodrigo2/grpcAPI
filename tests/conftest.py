@@ -325,7 +325,7 @@ class Service(IService):
     options: Sequence[str] = field(default_factory=list[str])
     comments: str = ""
     _methods: Sequence["LabeledMethod"] = field(default_factory=list["LabeledMethod"])
-
+    _active = True
     module_level_options: Iterable[str] = field(default_factory=list[str])
     module_level_comments: Iterable[str] = field(default_factory=list[str])
 
@@ -351,6 +351,10 @@ class LabeledMethod(ILabeledMethod):
     comments: str = field(default="")
     request_types: Sequence[Any] = field(default_factory=list[Any])
     response_types: Optional[Any] = None
+
+    @property
+    def active(self) -> bool:
+        return True
 
 
 @pytest.fixture

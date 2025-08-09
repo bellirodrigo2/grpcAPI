@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-from typing import Iterable
+from typing import Never
 
 from grpc import aio
 from typing_extensions import (
@@ -21,9 +21,90 @@ from grpcAPI import ExceptionRegistry
 from grpcAPI.data_types import AsyncContext
 from grpcAPI.label_method import make_labeled_method
 from grpcAPI.makeproto import ILabeledMethod, IService
+from grpcAPI.process_service import ProcessService
 from grpcAPI.singleton import SingletonMeta
 
 Middleware = aio.ServerInterceptor
+
+
+class MetaData:
+
+    def __init__(
+        self,
+        name: str,
+        options: Optional[List[str]] = None,
+        comments: Optional[List[str]] = None,
+    ):
+        self.name = name
+        self.options: List[str] = options or []
+        self.comments: List[str] = comments or []
+
+
+class APIModule(MetaData):
+
+    def __init__(
+        self,
+        name: str,
+        package: str = "",
+        options: Optional[List[str]] = None,
+        comments: Optional[List[str]] = None,
+    ):
+        self.package = package
+        self.services: List[APIService] = []
+        super().__init__(name, options, comments)
+
+    def make_service(
+        self,
+        service_name: str,
+        options: Optional[List[str]] = None,
+        comments: str = "",
+        title: Optional[str] = None,
+        description: str = "",
+        tags: Optional[List[str]] = None,
+    ) -> "APIService":
+        service = APIService(
+            name=service_name,
+            module=self.name,
+            package=self.package,
+            title=title,
+            description=description,
+            tags=tags,
+            options=options,
+            comments=comments,
+            module_level_options=self.options,
+            module_level_comments=self.comments,
+        )
+        self.services.append(service)
+        return service
+
+
+class APIPackage(MetaData):
+
+    def __init__(
+        self,
+        name: str,
+        options: Optional[List[str]] = None,
+        comments: Optional[List[str]] = None,
+    ):
+        self.modules: List[APIModule] = []
+        super().__init__(name, options, comments)
+
+    def make_module(
+        self,
+        module_name: str,
+        options: Optional[List[str]] = None,
+        comments: Optional[List[str]] = None,
+    ) -> APIModule:
+        options = options or []
+        comments = comments or []
+        module = APIModule(
+            name=module_name,
+            package=self.name,
+            comments=list(set(comments + self.comments)),
+            options=list(set(options + self.options)),
+        )
+        self.modules.append(module)
+        return module
 
 
 class APIService(IService):
@@ -38,8 +119,8 @@ class APIService(IService):
         title: Optional[str] = None,
         description: str = "",
         tags: Optional[List[str]] = None,
-        module_level_options: Optional[Iterable[str]] = None,
-        module_level_comments: Optional[Iterable[str]] = None,
+        module_level_options: Optional[List[str]] = None,
+        module_level_comments: Optional[List[str]] = None,
     ) -> None:
         self.title = title or name
         self.description = description
@@ -52,6 +133,7 @@ class APIService(IService):
         self.module_level_options = module_level_options or []
         self.module_level_comments = module_level_comments or []
         self.__methods: List[ILabeledMethod] = []
+        self._active = True
 
     @property
     def methods(self) -> List[ILabeledMethod]:
@@ -121,22 +203,25 @@ class APIService(IService):
 
 DependencyRegistry = Dict[Callable[..., Any], Callable[..., Any]]
 
-Lifespan = Callable[[Any], AsyncGenerator[None, None]]
+Lifespan = Callable[["App"], AsyncGenerator[Never, bool]]
 
 
 class App:
 
     def __init__(
         self,
-        lifespan: Optional[Lifespan] = None,
+        lifespan: Optional[List[Lifespan]] = None,
+        server: Optional[Any] = None,
     ) -> None:
         self._service_classes = []
         self._middleware = []
-        self.lifespan = lifespan
+        self.lifespan = lifespan or []
+        self.server = server
 
         self._services: DefaultDict[str, List[IService]] = defaultdict(list)
         self.dependency_overrides: DependencyRegistry = {}
         self._exception_handlers: ExceptionRegistry = {}
+        self._process_service: List[ProcessService] = []
 
     @property
     def services(self) -> Mapping[str, List[IService]]:
@@ -146,13 +231,33 @@ class App:
     def service_list(self) -> Sequence[IService]:
         return list(itertools.chain.from_iterable(self._services.values()))
 
-    def add_service(self, service: APIService) -> None:
+    def add_service(self, service: Union[APIService, APIModule, APIPackage]) -> None:
+        if isinstance(service, APIService):
+            self._add_service(service)
+        elif isinstance(service, APIModule):
+            self._add_module(service)
+        elif isinstance(service, APIPackage):
+            self._add_package(service)
+        else:
+            raise TypeError(
+                f"Expected APIService, APIModule, or APIPackage, got {type(service).__name__}"
+            )
+
+    def _add_service(self, service: APIService) -> None:
         for existing_service in self._services[service.package]:
             if existing_service.name == service.name:
                 raise KeyError(
                     f"Service '{service.name}' already registered in package '{service.package}', module '{existing_service.module}'"
                 )
         self._services[service.package].append(service)
+
+    def _add_module(self, module: "APIModule") -> None:
+        for service in module.services:
+            self._add_service(service)
+
+    def _add_package(self, package: "APIPackage") -> None:
+        for module in package.modules:
+            self._add_module(module)
 
     def add_middleware(self, middleware: Type[Middleware]) -> None:
         self._middleware.append(middleware)

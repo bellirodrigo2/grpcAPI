@@ -16,7 +16,7 @@ def add_to_server(
     exception_registry: ExceptionRegistry,
 ) -> Mapping[str, Callable[..., Any]]:
 
-    rpc_method_handlers = {}
+    rpc_method_handlers: Dict[str, Any] = {}
     methods: Dict[str, Callable[..., Any]] = {}
     for method in service.methods:
         key = method.name

@@ -4,9 +4,9 @@ import pytest
 from typing_extensions import Annotated
 
 from grpcAPI.app import APIService
-from grpcAPI.commands.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.data_types import Depends, FromContext, FromRequest
 from grpcAPI.makeproto.write_proto import write_protos
+from grpcAPI.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.proto_build import make_protos
 from tests.conftest import (
     DescriptorProto,

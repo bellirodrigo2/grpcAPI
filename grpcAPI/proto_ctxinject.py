@@ -8,7 +8,7 @@ __all__ = [
     "resolve_mapped_ctx",
 ]
 from datetime import datetime
-from typing import Any, Callable, Dict, Hashable, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Hashable, Optional, Tuple, Type, List
 
 from ctxinject import (
     DependsInject,
@@ -71,11 +71,34 @@ def convert_timestamp(
 
     return ts
 
+def base_constrained_list(
+    value: List[Any],
+    **kwargs: Any,
+) -> List[Any]:
+    min_length = kwargs.get("min_length", None)
+    max_length = kwargs.get("max_length", None)
+    length = len(value)
+    if min_length is not None and length < min_length:
+        raise ValueError(
+            f"List has {length} items, but should have at least {min_length}"  # ✅ FIXED
+        )
+    if max_length is not None and length > max_length:
+        raise ValueError(
+            f"List has {length} items, but should have at most {max_length}"  # ✅ FIXED
+        )
+    return value
+
+def base_constrained_dict(
+    value: Dict[Any, Any],
+    **kwargs: Any,
+) -> Dict[Any, Any]:
+    constrained_list(list(value.values()), **kwargs)
+    return value
 
 protobuf_converts: Dict[Tuple[Hashable, Hashable], Callable[..., Any]] = {
     (Timestamp, datetime): convert_timestamp,
-    (Struct, Struct): constrained_dict,
-    (ListValue, ListValue): constrained_list,
+    (Struct, Struct): base_constrained_dict,
+    (ListValue, ListValue): base_constrained_list,
 }
 
 arg_proc.update(protobuf_converts)

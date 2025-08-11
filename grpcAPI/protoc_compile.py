@@ -75,10 +75,10 @@ def list_proto_files(base_dir: Path, rel_path: Optional[Path] = None) -> List[st
 
 if __name__ == "__main__":
     compile_protoc(
-        Path("./grpcAPI/prototypes/proto"),
-        Path("./grpcAPI/prototypes/lib"),
+        Path("./tests/guber/proto"),
+        Path("./tests/guber/lib"),
         True,
         False,
         True,
-        files=["prototypes.proto"],
+        # files=["prototypes.proto"],
     )

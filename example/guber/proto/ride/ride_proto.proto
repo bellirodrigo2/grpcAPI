@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package ride;
+
+import "google/protobuf/timestamp.proto";
+
+message RideRequest {
+    string passenger_id = 1;
+    double from_lat = 2;
+    double from_long = 3;
+    double to_lat = 4;
+    double to_long = 5;
+    google.protobuf.Timestamp requested_at = 6;
+}
+
+enum RideStatus {
+    REQUESTED = 0;
+    ACCEPTED = 1;
+    IN_PROGRESS = 2;
+    COMPLETED = 3;
+    CANCELED = 4;
+}
+
+message RideInfo {
+    string driver_id = 1;
+    RideRequest ride_request = 2;
+    string ride_id = 3;
+    google.protobuf.Timestamp accepted_at = 4;
+    optional google.protobuf.Timestamp finished_at = 5;
+    RideStatus status = 6;
+}

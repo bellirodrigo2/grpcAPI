@@ -38,6 +38,8 @@ pydantic = [
     "ctxinject[pydantic]"
 ]
 
+example = ["sqlalchemy"]
+
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"

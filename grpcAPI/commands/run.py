@@ -67,7 +67,7 @@ class RunCommand(GRPCAPICommand):
             server.register_plugin(plugin)
 
         for service in app.service_list:
-            if service._active:
+            if service.active:
                 add_to_server(
                     service, server, app.dependency_overrides, app._exception_handlers
                 )

@@ -37,15 +37,36 @@ class IncludeExclude:
         def fnmatch_any(names: Iterable[str], patterns: Iterable[str]) -> bool:
             return any(fnmatch(n, p) for n in names for p in patterns)
 
-        if self.include and not any(fnmatch_any(names, p) for p in self.include):
+        if self.include and not fnmatch_any(names, self.include):
             return False
-        if self.exclude and any(fnmatch_any(names, p) for p in self.exclude):
+        if self.exclude and fnmatch_any(names, self.exclude):
             return False
         return True
 
-        # if self.exclude and any(fnmatch(name, p) for p in self.exclude):
-        #     return False
-        # return not self.include or any(fnmatch(name, p) for p in self.include)
+
+class ChainedFilter(ProcessService):
+    def __init__(
+        self,
+        includes_excludes: Optional[Iterable[IncludeExclude]] = None,
+        rule_logic: str = "and",  # "and", "or" or "hierarchical"
+    ) -> None:
+        self.includes_excludes = includes_excludes or []
+        self.rule_logic = rule_logic
+
+    def should_include(self, words: Iterable[Union[str, Iterable[str]]]) -> bool:
+        results = [
+            ie.should_include(word) for ie, word in zip(self.includes_excludes, words)
+        ]
+
+        if self.rule_logic == "and":
+            return all(results)
+        elif self.rule_logic == "or":
+            return any(results)
+        else:
+            for result in results:
+                if not result:
+                    return False
+            return results[-1]
 
 
 class ProcessFilteredService(ProcessService):
@@ -65,28 +86,19 @@ class ProcessFilteredService(ProcessService):
         self.true_method_cb = true_method_cb
         self.false_method_cb = false_method_cb
 
-        self.package_rules = package or IncludeExclude()
-        self.module_rules = module or IncludeExclude()
-        self.tags = tags or IncludeExclude()
-        self.rule_logic = rule_logic
+        self.chained_filter = ChainedFilter(
+            includes_excludes=[
+                package or IncludeExclude(),
+                module or IncludeExclude(),
+                tags or IncludeExclude(),
+            ],
+            rule_logic=rule_logic,
+        )
 
     def _should_include(self, service: IFilter) -> bool:
-        results = [
-            self.package_rules.should_include(service.package),
-            self.module_rules.should_include(service.module),
-            self.tags.should_include(service.tags),
-        ]
-
-        if self.rule_logic == "and":
-            return all(results)
-        elif self.rule_logic == "or":
-            return any(results)
-        elif not results[0]:
-            return False
-        elif not results[1]:
-            return False
-        else:
-            return results[2]
+        return self.chained_filter.should_include(
+            [service.package, service.module, service.tags]
+        )
 
     def _process_service(self, service: IService) -> None:
         if not self._should_include(service):

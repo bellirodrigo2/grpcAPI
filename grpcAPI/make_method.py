@@ -1,6 +1,7 @@
 import inspect
 from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack
+from typing import Type
 
 from typing_extensions import Any, Dict
 
@@ -33,40 +34,72 @@ def make_method_async(
         raise type(e)(
             f"Not able to make method for: {labeledmethod.name}:\n Error:{str(e)}"
         )
-    mapped_ctx = get_mapped_ctx(
+    cls_factory = StreamRunner if is_stream else UnaryRunner
+    runner = cls_factory(
         func=func,
-        context={req_t.argtype: None, AsyncContext: None},
-        allow_incomplete=False,
-        validate=True,
         overrides=overrides,
+        exception_registry=exception_registry,
+        req=req_t.argtype,
     )
+    return runner
 
-    async def method(request: Any, context: AsyncContext) -> Any:
+
+class Runner:
+    __slots__ = ("func", "exception_registry", "mapped_ctx", "req")
+
+    def __init__(
+        self,
+        func: Callable[..., Any],
+        overrides: Dict[Callable[..., Any], Callable[..., Any]],
+        exception_registry: ExceptionRegistry,
+        req: Type[Any],
+    ):
+        self.func = func
+        # self.overrides = overrides
+        self.exception_registry = exception_registry
+        self.req = req
+
+        self.mapped_ctx = get_mapped_ctx(
+            func=func,
+            context={req: None, AsyncContext: None},
+            allow_incomplete=False,
+            validate=True,
+            overrides=overrides,
+        )
+
+    async def _make_kwargs(
+        self, request: Any, context: AsyncContext, stack: AsyncExitStack
+    ) -> Any:
+        ctx = {self.req: request, AsyncContext: context}
+        return await resolve_mapped_ctx(ctx, self.mapped_ctx, stack)
+
+    async def _handle_exception(self, e: Exception, context: AsyncContext) -> None:
+        exc_handler = self.exception_registry.get(type(e), None)
+        if exc_handler is not None:
+            await safe_run(exc_handler, e, context)
+        else:
+            raise e
+
+
+class UnaryRunner(Runner):
+
+    async def __call__(self, request: Any, context: AsyncContext) -> Any:
         try:
             async with AsyncExitStack() as stack:
-                ctx = {req_t.argtype: request, AsyncContext: context}
-                kwargs = await resolve_mapped_ctx(ctx, mapped_ctx, stack=stack)
-                response = await func(**kwargs)
+                kwargs = await self._make_kwargs(request, context, stack)
+                response = await self.func(**kwargs)
                 return response
         except Exception as e:
-            exc_handler = exception_registry.get(type(e), None)
-            if exc_handler is not None:
-                await safe_run(exc_handler, e, context)
-            else:
-                raise e
+            await self._handle_exception(e, context)
 
-    async def stream_method(request: Any, context: AsyncContext) -> Any:
+
+class StreamRunner(Runner):
+
+    async def __call__(self, request: Any, context: AsyncContext) -> Any:
         try:
             async with AsyncExitStack() as stack:
-                ctx = {req_t.argtype: request, AsyncContext: context}
-                kwargs = await resolve_mapped_ctx(ctx, mapped_ctx, stack)
-                async for resp in func(**kwargs):
+                kwargs = await self._make_kwargs(request, context, stack)
+                async for resp in self.func(**kwargs):
                     yield resp
         except Exception as e:
-            exc_handler = exception_registry.get(type(e), None)
-            if exc_handler is not None:
-                await safe_run(exc_handler, e, context)
-            else:
-                raise e
-
-    return stream_method if is_stream else method
+            await self._handle_exception(e, context)

@@ -3,7 +3,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
-from typing_extensions import Any, Callable, Dict, List, Optional, Protocol, Set
+from typing_extensions import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Protocol,
+    Set,
+)
 
 from grpcAPI.makeproto.interface import IMetaType
 
@@ -21,7 +30,7 @@ class ToDict(Protocol):
 class Node:
     name: str
     comments: str
-    options: List[str]
+    options: Iterable[str]
 
     def accept(self, visitor: Visitor) -> None:
         raise NotImplementedError()  # pragma: no cover

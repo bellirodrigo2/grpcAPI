@@ -1,4 +1,4 @@
-from typing import List, Optional, Protocol
+from typing import Dict, Iterable, List, Optional, Protocol
 
 from grpcAPI.makeproto.interface import IService
 from grpcAPI.process_service import IncludeExclude, ProcessFilteredService
@@ -33,7 +33,7 @@ class MakeOptions(Protocol):
     ) -> str: ...
 
 
-class AddOptions(ProcessFilteredService):
+class CustomAddOptions(ProcessFilteredService):
     def __init__(
         self,
         options: List[MakeOptions],
@@ -61,3 +61,43 @@ class AddOptions(ProcessFilteredService):
                     mod_level_options.append(option)
             except Exception as _:
                 pass
+
+
+def make_option(kv_map: Dict[str, str]) -> Iterable[MakeOptions]:
+
+    make_options = []
+    for key, value_pattern in kv_map.items():
+
+        def _make_option(
+            package: Optional[str] = None, 
+            module: Optional[str] = None,
+            _key: str = key,
+            _value_pattern: str = value_pattern
+        ) -> str:
+            value = _value_pattern
+            if package is not None:
+                value = value.replace("{package}", package)
+            if module is not None:
+                value = value.replace("{module}", module)
+            return f'{_key} = "{value}"'
+
+        make_options.append(_make_option)
+    return make_options
+
+
+class AddLanguageOptions(CustomAddOptions):
+    def __init__(
+        self,
+        kv_map: Dict[str, str],
+        package: Optional[IncludeExclude] = None,
+        module: Optional[IncludeExclude] = None,
+        tags: Optional[IncludeExclude] = None,
+        rule_logic: str = "and",  # "and", "or" or "hierarchical"
+    ) -> None:
+        super().__init__(
+            options=list(make_option(kv_map)),
+            package=package,
+            module=module,
+            tags=tags,
+            rule_logic=rule_logic,
+        )

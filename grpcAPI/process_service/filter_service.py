@@ -10,7 +10,10 @@ class DisableService(ProcessFilteredService):
     ) -> None:
 
         if "service_filter" not in kwargs:
-            super().__init__()
+            super().__init__(
+                false_service_cb=self._disable,
+                false_method_cb=self._disable,
+            )
         else:
             empty_kwargs: Dict[str, Iterable[str]] = {
                 "include": [],
@@ -22,6 +25,8 @@ class DisableService(ProcessFilteredService):
             tags = fitler_kwargs.get("tags", empty_kwargs)
             rule_logic = fitler_kwargs.get("rule_logic", "and")
             super().__init__(
+                false_service_cb=self._disable,
+                false_method_cb=self._disable,
                 package=IncludeExclude(**package),
                 module=IncludeExclude(**module),
                 tags=IncludeExclude(**tags),
@@ -29,4 +34,4 @@ class DisableService(ProcessFilteredService):
             )
 
     def _disable(self, block: Any) -> None:
-        block._active = False
+        block.active = False

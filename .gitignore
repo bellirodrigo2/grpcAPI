@@ -2,6 +2,10 @@ todo
 
 cmd
 
+CLAUDE.md
+
+app.log
+
 #config file
 /src/config.yml
 

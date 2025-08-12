@@ -9,61 +9,59 @@ from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    31,
-    0,
-    '',
-    'prototypes.proto'
+    _runtime_version.Domain.PUBLIC, 6, 31, 0, "", "prototypes.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10prototypes.proto\x12\x12grpcAPI.prototypes\"\x18\n\x07ListStr\x12\r\n\x05value\x18\x01 \x03(\t\"\x18\n\x07ListInt\x12\r\n\x05value\x18\x01 \x03(\x03\"\x19\n\x08ListBool\x12\r\n\x05value\x18\x01 \x03(\x08\"\x1a\n\tListBytes\x12\r\n\x05value\x18\x01 \x03(\x0c\"\x1b\n\nListDouble\x12\r\n\x05value\x18\x01 \x03(\x01\"r\n\tMapStrStr\x12\x37\n\x05value\x18\x01 \x03(\x0b\x32(.grpcAPI.prototypes.MapStrStr.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"v\n\x0bMapStrBytes\x12\x39\n\x05value\x18\x01 \x03(\x0b\x32*.grpcAPI.prototypes.MapStrBytes.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\"r\n\tMapIntStr\x12\x37\n\x05value\x18\x01 \x03(\x0b\x32(.grpcAPI.prototypes.MapIntStr.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"v\n\x0bMapIntBytes\x12\x39\n\x05value\x18\x01 \x03(\x0b\x32*.grpcAPI.prototypes.MapIntBytes.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\x42r\n\x16\x63om.grpcAPI.prototypesB\nTypesProtoP\x01Z(grpcAPI.golang.org/prototypes/prototypes\xf8\x01\x01\xa2\x02\x07GRPCAPI\xaa\x02\x12grpcAPI.ProtoTypesb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x10prototypes.proto\x12\x12grpcAPI.prototypes"\x18\n\x07ListStr\x12\r\n\x05value\x18\x01 \x03(\t"\x18\n\x07ListInt\x12\r\n\x05value\x18\x01 \x03(\x03"\x19\n\x08ListBool\x12\r\n\x05value\x18\x01 \x03(\x08"\x1a\n\tListBytes\x12\r\n\x05value\x18\x01 \x03(\x0c"\x1b\n\nListDouble\x12\r\n\x05value\x18\x01 \x03(\x01"r\n\tMapStrStr\x12\x37\n\x05value\x18\x01 \x03(\x0b\x32(.grpcAPI.prototypes.MapStrStr.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01"v\n\x0bMapStrBytes\x12\x39\n\x05value\x18\x01 \x03(\x0b\x32*.grpcAPI.prototypes.MapStrBytes.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01"r\n\tMapIntStr\x12\x37\n\x05value\x18\x01 \x03(\x0b\x32(.grpcAPI.prototypes.MapIntStr.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01"v\n\x0bMapIntBytes\x12\x39\n\x05value\x18\x01 \x03(\x0b\x32*.grpcAPI.prototypes.MapIntBytes.ValueEntry\x1a,\n\nValueEntry\x12\x0b\n\x03key\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\x42r\n\x16\x63om.grpcAPI.prototypesB\nTypesProtoP\x01Z(grpcAPI.golang.org/prototypes/prototypes\xf8\x01\x01\xa2\x02\x07GRPCAPI\xaa\x02\x12grpcAPI.ProtoTypesb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'prototypes_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "prototypes_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\026com.grpcAPI.prototypesB\nTypesProtoP\001Z(grpcAPI.golang.org/prototypes/prototypes\370\001\001\242\002\007GRPCAPI\252\002\022grpcAPI.ProtoTypes'
-  _globals['_MAPSTRSTR_VALUEENTRY']._loaded_options = None
-  _globals['_MAPSTRSTR_VALUEENTRY']._serialized_options = b'8\001'
-  _globals['_MAPSTRBYTES_VALUEENTRY']._loaded_options = None
-  _globals['_MAPSTRBYTES_VALUEENTRY']._serialized_options = b'8\001'
-  _globals['_MAPINTSTR_VALUEENTRY']._loaded_options = None
-  _globals['_MAPINTSTR_VALUEENTRY']._serialized_options = b'8\001'
-  _globals['_MAPINTBYTES_VALUEENTRY']._loaded_options = None
-  _globals['_MAPINTBYTES_VALUEENTRY']._serialized_options = b'8\001'
-  _globals['_LISTSTR']._serialized_start=40
-  _globals['_LISTSTR']._serialized_end=64
-  _globals['_LISTINT']._serialized_start=66
-  _globals['_LISTINT']._serialized_end=90
-  _globals['_LISTBOOL']._serialized_start=92
-  _globals['_LISTBOOL']._serialized_end=117
-  _globals['_LISTBYTES']._serialized_start=119
-  _globals['_LISTBYTES']._serialized_end=145
-  _globals['_LISTDOUBLE']._serialized_start=147
-  _globals['_LISTDOUBLE']._serialized_end=174
-  _globals['_MAPSTRSTR']._serialized_start=176
-  _globals['_MAPSTRSTR']._serialized_end=290
-  _globals['_MAPSTRSTR_VALUEENTRY']._serialized_start=246
-  _globals['_MAPSTRSTR_VALUEENTRY']._serialized_end=290
-  _globals['_MAPSTRBYTES']._serialized_start=292
-  _globals['_MAPSTRBYTES']._serialized_end=410
-  _globals['_MAPSTRBYTES_VALUEENTRY']._serialized_start=366
-  _globals['_MAPSTRBYTES_VALUEENTRY']._serialized_end=410
-  _globals['_MAPINTSTR']._serialized_start=412
-  _globals['_MAPINTSTR']._serialized_end=526
-  _globals['_MAPINTSTR_VALUEENTRY']._serialized_start=482
-  _globals['_MAPINTSTR_VALUEENTRY']._serialized_end=526
-  _globals['_MAPINTBYTES']._serialized_start=528
-  _globals['_MAPINTBYTES']._serialized_end=646
-  _globals['_MAPINTBYTES_VALUEENTRY']._serialized_start=602
-  _globals['_MAPINTBYTES_VALUEENTRY']._serialized_end=646
+    _globals["DESCRIPTOR"]._loaded_options = None
+    _globals["DESCRIPTOR"]._serialized_options = (
+        b"\n\026com.grpcAPI.prototypesB\nTypesProtoP\001Z(grpcAPI.golang.org/prototypes/prototypes\370\001\001\242\002\007GRPCAPI\252\002\022grpcAPI.ProtoTypes"
+    )
+    _globals["_MAPSTRSTR_VALUEENTRY"]._loaded_options = None
+    _globals["_MAPSTRSTR_VALUEENTRY"]._serialized_options = b"8\001"
+    _globals["_MAPSTRBYTES_VALUEENTRY"]._loaded_options = None
+    _globals["_MAPSTRBYTES_VALUEENTRY"]._serialized_options = b"8\001"
+    _globals["_MAPINTSTR_VALUEENTRY"]._loaded_options = None
+    _globals["_MAPINTSTR_VALUEENTRY"]._serialized_options = b"8\001"
+    _globals["_MAPINTBYTES_VALUEENTRY"]._loaded_options = None
+    _globals["_MAPINTBYTES_VALUEENTRY"]._serialized_options = b"8\001"
+    _globals["_LISTSTR"]._serialized_start = 40
+    _globals["_LISTSTR"]._serialized_end = 64
+    _globals["_LISTINT"]._serialized_start = 66
+    _globals["_LISTINT"]._serialized_end = 90
+    _globals["_LISTBOOL"]._serialized_start = 92
+    _globals["_LISTBOOL"]._serialized_end = 117
+    _globals["_LISTBYTES"]._serialized_start = 119
+    _globals["_LISTBYTES"]._serialized_end = 145
+    _globals["_LISTDOUBLE"]._serialized_start = 147
+    _globals["_LISTDOUBLE"]._serialized_end = 174
+    _globals["_MAPSTRSTR"]._serialized_start = 176
+    _globals["_MAPSTRSTR"]._serialized_end = 290
+    _globals["_MAPSTRSTR_VALUEENTRY"]._serialized_start = 246
+    _globals["_MAPSTRSTR_VALUEENTRY"]._serialized_end = 290
+    _globals["_MAPSTRBYTES"]._serialized_start = 292
+    _globals["_MAPSTRBYTES"]._serialized_end = 410
+    _globals["_MAPSTRBYTES_VALUEENTRY"]._serialized_start = 366
+    _globals["_MAPSTRBYTES_VALUEENTRY"]._serialized_end = 410
+    _globals["_MAPINTSTR"]._serialized_start = 412
+    _globals["_MAPINTSTR"]._serialized_end = 526
+    _globals["_MAPINTSTR_VALUEENTRY"]._serialized_start = 482
+    _globals["_MAPINTSTR_VALUEENTRY"]._serialized_end = 526
+    _globals["_MAPINTBYTES"]._serialized_start = 528
+    _globals["_MAPINTBYTES"]._serialized_end = 646
+    _globals["_MAPINTBYTES_VALUEENTRY"]._serialized_start = 602
+    _globals["_MAPINTBYTES_VALUEENTRY"]._serialized_end = 646
 # @@protoc_insertion_point(module_scope)

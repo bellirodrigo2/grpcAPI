@@ -34,7 +34,21 @@ class AccountInfo(google.protobuf.message.Message):
         car_plate: builtins.str = ...,
         is_driver: builtins.bool = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["car_plate", b"car_plate", "cpf", b"cpf", "email", b"email", "is_driver", b"is_driver", "name", b"name"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "car_plate",
+            b"car_plate",
+            "cpf",
+            b"cpf",
+            "email",
+            b"email",
+            "is_driver",
+            b"is_driver",
+            "name",
+            b"name",
+        ],
+    ) -> None: ...
 
 global___AccountInfo = AccountInfo
 
@@ -57,7 +71,14 @@ class Account(google.protobuf.message.Message):
         info: global___AccountInfo | None = ...,
         created_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["created_at", b"created_at", "info", b"info"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["account_id", b"account_id", "created_at", b"created_at", "info", b"info"]) -> None: ...
+    def HasField(
+        self, field_name: typing.Literal["created_at", b"created_at", "info", b"info"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "account_id", b"account_id", "created_at", b"created_at", "info", b"info"
+        ],
+    ) -> None: ...
 
 global___Account = Account

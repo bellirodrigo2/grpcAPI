@@ -1,7 +1,7 @@
 import importlib
 from functools import lru_cache
 from types import ModuleType
-from typing import Set, Type
+from typing import Set
 
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto

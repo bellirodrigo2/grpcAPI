@@ -1,6 +1,5 @@
 import sys
 from collections.abc import AsyncIterator
-from typing import Callable, Iterable, Mapping
 
 from typing_extensions import Any, Callable, Iterable, List, Mapping
 

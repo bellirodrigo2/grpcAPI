@@ -22,7 +22,10 @@ class _RideStatus:
     ValueType = typing.NewType("ValueType", builtins.int)
     V: typing_extensions.TypeAlias = ValueType
 
-class _RideStatusEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_RideStatus.ValueType], builtins.type):
+class _RideStatusEnumTypeWrapper(
+    google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_RideStatus.ValueType],
+    builtins.type,
+):
     DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
     REQUESTED: _RideStatus.ValueType  # 0
     ACCEPTED: _RideStatus.ValueType  # 1
@@ -66,8 +69,26 @@ class RideRequest(google.protobuf.message.Message):
         to_long: builtins.float = ...,
         requested_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["requested_at", b"requested_at"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["from_lat", b"from_lat", "from_long", b"from_long", "passenger_id", b"passenger_id", "requested_at", b"requested_at", "to_lat", b"to_lat", "to_long", b"to_long"]) -> None: ...
+    def HasField(
+        self, field_name: typing.Literal["requested_at", b"requested_at"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "from_lat",
+            b"from_lat",
+            "from_long",
+            b"from_long",
+            "passenger_id",
+            b"passenger_id",
+            "requested_at",
+            b"requested_at",
+            "to_lat",
+            b"to_lat",
+            "to_long",
+            b"to_long",
+        ],
+    ) -> None: ...
 
 global___RideRequest = RideRequest
 
@@ -100,8 +121,49 @@ class RideInfo(google.protobuf.message.Message):
         finished_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
         status: global___RideStatus.ValueType = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "finished_at", b"finished_at", "ride_request", b"ride_request"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "driver_id", b"driver_id", "finished_at", b"finished_at", "ride_id", b"ride_id", "ride_request", b"ride_request", "status", b"status"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing.Literal["_finished_at", b"_finished_at"]) -> typing.Literal["finished_at"] | None: ...
+    def HasField(
+        self,
+        field_name: typing.Literal[
+            "_accepted_at",
+            b"_accepted_at",
+            "_finished_at",
+            b"_finished_at",
+            "accepted_at",
+            b"accepted_at",
+            "finished_at",
+            b"finished_at",
+            "ride_request",
+            b"ride_request",
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "_accepted_at",
+            b"_accepted_at",
+            "_finished_at",
+            b"_finished_at",
+            "accepted_at",
+            b"accepted_at",
+            "driver_id",
+            b"driver_id",
+            "finished_at",
+            b"finished_at",
+            "ride_id",
+            b"ride_id",
+            "ride_request",
+            b"ride_request",
+            "status",
+            b"status",
+        ],
+    ) -> None: ...
+    @typing.overload
+    def WhichOneof(
+        self, oneof_group: typing.Literal["_accepted_at", b"_accepted_at"]
+    ) -> typing.Literal["accepted_at"] | None: ...
+    @typing.overload
+    def WhichOneof(
+        self, oneof_group: typing.Literal["_finished_at", b"_finished_at"]
+    ) -> typing.Literal["finished_at"] | None: ...
 
 global___RideInfo = RideInfo

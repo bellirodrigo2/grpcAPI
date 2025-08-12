@@ -33,7 +33,7 @@ class TestAddLogger:
         assert level == "DEBUG"
         assert "console" in handlers
         assert "server_logger_handler" in handlers
-        assert propagate == True
+        assert propagate
         mock_dict_config.assert_called_once()
 
     @patch(
@@ -53,7 +53,7 @@ class TestAddLogger:
 
         assert level == "INFO"
         assert handlers == ["console"]
-        assert propagate == False
+        assert not propagate
 
     @patch("grpcAPI.server_plugins.plugins.server_logger.LOGGING_CONFIG", {})
     @patch("logging.config.dictConfig")
@@ -91,12 +91,12 @@ class TestServerLoggerPlugin:
 
         assert plugin.level == "DEBUG"
         assert plugin.handlers == ["console", "file"]
-        assert plugin.propagate == False
+        assert not plugin.propagate
         assert plugin._logger == mock_logger
         assert plugin._services == {}
         assert plugin._server_starts == []
         assert plugin._server_stops == []
-        assert plugin._wait_for_termination == False
+        assert not plugin._wait_for_termination
 
     @patch("grpcAPI.server_plugins.plugins.server_logger.add_logger")
     @patch("grpcAPI.server_plugins.plugins.server_logger.getLogger")
@@ -122,7 +122,7 @@ class TestServerLoggerPlugin:
         assert state["logger"] == mock_logger
         assert state["logger_config"]["level"] == "INFO"
         assert state["logger_config"]["handlers"] == ["console"]
-        assert state["logger_config"]["propagate"] == True
+        assert state["logger_config"]["propagate"]
 
     @patch("grpcAPI.server_plugins.plugins.server_logger.add_logger")
     @patch("grpcAPI.server_plugins.plugins.server_logger.getLogger")
@@ -230,7 +230,7 @@ class TestServerLoggerPlugin:
 
         await plugin.on_wait_for_termination(timeout=30.0)
 
-        assert plugin._wait_for_termination == True
+        assert plugin._wait_for_termination
         mock_logger.info.assert_called_once_with(
             "Server is waiting for termination: timeout 30.0."
         )
@@ -255,7 +255,7 @@ class TestServerLoggerPlugin:
         await plugin.on_stop()
 
         assert plugin._server_stops == [stop_time]
-        assert plugin._wait_for_termination == False
+        assert not plugin._wait_for_termination
 
         mock_logger.info.assert_called_once_with("Server stopped.")
         mock_logger.debug.assert_any_call("Waiting for termination: 'True' ")

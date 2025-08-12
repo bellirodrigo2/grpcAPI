@@ -18,7 +18,11 @@ class ListStr(google.protobuf.message.Message):
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        builtins.str
+    ]: ...
     def __init__(
         self,
         *,
@@ -34,7 +38,11 @@ class ListInt(google.protobuf.message.Message):
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        builtins.int
+    ]: ...
     def __init__(
         self,
         *,
@@ -50,7 +58,11 @@ class ListBool(google.protobuf.message.Message):
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bool]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        builtins.bool
+    ]: ...
     def __init__(
         self,
         *,
@@ -66,7 +78,11 @@ class ListBytes(google.protobuf.message.Message):
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bytes]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        builtins.bytes
+    ]: ...
     def __init__(
         self,
         *,
@@ -82,7 +98,11 @@ class ListDouble(google.protobuf.message.Message):
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        builtins.float
+    ]: ...
     def __init__(
         self,
         *,
@@ -110,11 +130,15 @@ class MapStrStr(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     def __init__(
         self,
         *,
@@ -142,11 +166,17 @@ class MapStrBytes(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.bytes = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.bytes]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[
+        builtins.str, builtins.bytes
+    ]: ...
     def __init__(
         self,
         *,
@@ -174,11 +204,15 @@ class MapIntStr(google.protobuf.message.Message):
             key: builtins.int = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.ScalarMap[builtins.int, builtins.str]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.int, builtins.str]: ...
     def __init__(
         self,
         *,
@@ -206,11 +240,17 @@ class MapIntBytes(google.protobuf.message.Message):
             key: builtins.int = ...,
             value: builtins.bytes = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     VALUE_FIELD_NUMBER: builtins.int
     @property
-    def value(self) -> google.protobuf.internal.containers.ScalarMap[builtins.int, builtins.bytes]: ...
+    def value(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[
+        builtins.int, builtins.bytes
+    ]: ...
     def __init__(
         self,
         *,

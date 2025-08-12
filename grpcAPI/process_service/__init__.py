@@ -1,7 +1,6 @@
 from fnmatch import fnmatch
 from typing import Any, Callable, Iterable, Optional, Union
 
-from grpcAPI.makeproto import IService
 from grpcAPI.makeproto.interface import IFilter, ILabeledMethod, IService
 
 

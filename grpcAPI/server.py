@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Mapping
+from typing import Dict, Iterable, Mapping
 
 import grpc
 from typing_extensions import Any, List, Optional, Protocol, Sequence, Tuple

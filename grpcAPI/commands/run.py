@@ -1,3 +1,4 @@
+import logging
 from contextlib import AsyncExitStack
 from pathlib import Path
 from typing import Optional
@@ -106,6 +107,7 @@ async def run_app(
             proto_path, lib_path = get_proto_lib_path(settings)
             clean_services, overwrite = get_compile_proto_settings(settings)
             files = write_protos(proto_files, proto_path, overwrite, clean_services)
+            logger = logging.getLogger(__name__)
             compile_protoc(Path("./"), lib_path, True, False, False, files, logger)
 
     server_settings = settings.get("server", {})

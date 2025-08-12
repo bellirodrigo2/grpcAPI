@@ -33,6 +33,7 @@ from grpcAPI.app import APIService, App
 from grpcAPI.commands.settings.utils import combine_settings
 from grpcAPI.data_types import AsyncContext, Depends, FromRequest
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType, IService
+from grpcAPI.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.protoc_compile import compile_protoc
 from grpcAPI.testclient import TestClient
 
@@ -174,6 +175,8 @@ def functional_service() -> APIService:
             emails.extend([id])
         return emails
 
+    inject = InjectProtoTyping()
+    inject.process(serviceapi)
     return serviceapi
 
 
@@ -325,7 +328,7 @@ class Service(IService):
     options: Sequence[str] = field(default_factory=list[str])
     comments: str = ""
     _methods: Sequence["LabeledMethod"] = field(default_factory=list["LabeledMethod"])
-    _active = True
+    active = True
     module_level_options: Iterable[str] = field(default_factory=list[str])
     module_level_comments: Iterable[str] = field(default_factory=list[str])
 

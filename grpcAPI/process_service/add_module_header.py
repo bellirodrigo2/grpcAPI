@@ -69,10 +69,10 @@ def make_option(kv_map: Dict[str, str]) -> Iterable[MakeOptions]:
     for key, value_pattern in kv_map.items():
 
         def _make_option(
-            package: Optional[str] = None, 
+            package: Optional[str] = None,
             module: Optional[str] = None,
             _key: str = key,
-            _value_pattern: str = value_pattern
+            _value_pattern: str = value_pattern,
         ) -> str:
             value = _value_pattern
             if package is not None:

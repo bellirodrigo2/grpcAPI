@@ -133,7 +133,7 @@ class APIService(IService):
         self.module_level_options = module_level_options or []
         self.module_level_comments = module_level_comments or []
         self.__methods: List[ILabeledMethod] = []
-        self._active = True
+        self.active = True
 
     @property
     def methods(self) -> List[ILabeledMethod]:

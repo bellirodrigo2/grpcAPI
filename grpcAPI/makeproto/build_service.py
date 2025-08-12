@@ -102,9 +102,7 @@ def prepare_modules(
         allmodules, ctx = compiler_ctx
         all_templates.extend(allmodules)
         templates = [
-            make_service_template(service)
-            for service in service_list
-            if service._active
+            make_service_template(service) for service in service_list if service.active
         ]
         compiler_execution.append((templates, ctx))
 

@@ -87,33 +87,33 @@ def test_all_lines_start_with_double_slash() -> None:
     # Test 1: Text that doesn't start with // should return False
     text = "This text is not a comment"
     result = all_lines_start_with_double_slash(text)
-    assert result == False, f"Expected False for non-comment text, got: {result}"
+    assert not result, f"Expected False for non-comment text, got: {result}"
 
     # Test 2: Single line comment should return True
     text = "// This is a comment"
     result = all_lines_start_with_double_slash(text)
-    assert result == True, f"Expected True for single line comment, got: {result}"
+    assert result, f"Expected True for single line comment, got: {result}"
 
     # Test 3: Multiple lines with // should return True
     text = """// First line
 // Second line
 // Third line"""
     result = all_lines_start_with_double_slash(text)
-    assert result == True, f"Expected True for multi-line comment, got: {result}"
+    assert result, f"Expected True for multi-line comment, got: {result}"
 
     # Test 4: Multiple lines with some without // should return False
     text = """// First line
 Second line without //
 // Third line"""
     result = all_lines_start_with_double_slash(text)
-    assert result == False, f"Expected False for mixed content, got: {result}"
+    assert not result, f"Expected False for mixed content, got: {result}"
 
     # Test 5: Text with empty lines should return True if other lines have //
     text = """// First line
 
 // Third line"""
     result = all_lines_start_with_double_slash(text)
-    assert result == True, f"Expected True for comment with empty lines, got: {result}"
+    assert result, f"Expected True for comment with empty lines, got: {result}"
 
 
 if __name__ == "__main__":

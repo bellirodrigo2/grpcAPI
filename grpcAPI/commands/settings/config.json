@@ -6,7 +6,9 @@
   "port": 50051,
   "compile_proto": {
     "clean_services": true,
-    "overwrite": false
+    "overwrite": false,
+    "zipcompress": false,
+    "output_path": "grpcAPI/output"
   },
   "service_filter": {
     "package": {

@@ -37,8 +37,8 @@ dev = [
 pydantic = [
     "ctxinject[pydantic]"
 ]
-
-example = ["sqlalchemy"]
+[tool.ruff.lint]
+ignore = ["E402"]
 
 [build-system]
 requires = ["setuptools", "wheel"]

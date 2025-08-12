@@ -29,7 +29,10 @@ class _UserCode:
     ValueType = typing.NewType("ValueType", builtins.int)
     V: typing_extensions.TypeAlias = ValueType
 
-class _UserCodeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_UserCode.ValueType], builtins.type):
+class _UserCodeEnumTypeWrapper(
+    google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_UserCode.ValueType],
+    builtins.type,
+):
     DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
     EMPLOYEE: _UserCode.ValueType  # 0
     SCHOOL: _UserCode.ValueType  # -247
@@ -60,7 +63,9 @@ class User(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class MapMsgEntry(google.protobuf.message.Message):
@@ -77,8 +82,12 @@ class User(google.protobuf.message.Message):
             key: builtins.int = ...,
             value: inner.inner_pb2.InnerMessage | None = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def HasField(
+            self, field_name: typing.Literal["value", b"value"]
+        ) -> builtins.bool: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class MapCodesEntry(google.protobuf.message.Message):
@@ -94,7 +103,9 @@ class User(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: global___UserCode.ValueType = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class Nested(google.protobuf.message.Message):
@@ -107,7 +118,9 @@ class User(google.protobuf.message.Message):
             *,
             nested_field: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["nested_field", b"nested_field"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["nested_field", b"nested_field"]
+        ) -> None: ...
 
     @typing.final
     class IntmapEntry(google.protobuf.message.Message):
@@ -124,8 +137,12 @@ class User(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: google.protobuf.wrappers_pb2.Int64Value | None = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def HasField(
+            self, field_name: typing.Literal["value", b"value"]
+        ) -> builtins.bool: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     CODE_FIELD_NUMBER: builtins.int
     AGE_FIELD_NUMBER: builtins.int
@@ -164,19 +181,41 @@ class User(google.protobuf.message.Message):
     @property
     def other(self) -> other_pb2.Other: ...
     @property
-    def dict(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def dict(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
-    def others(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[other_pb2.Other]: ...
+    def others(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        other_pb2.Other
+    ]: ...
     @property
     def msg(self) -> multi.inner.class_pb2.ClassMsg: ...
     @property
-    def map_msg(self) -> google.protobuf.internal.containers.MessageMap[builtins.int, inner.inner_pb2.InnerMessage]: ...
+    def map_msg(
+        self,
+    ) -> google.protobuf.internal.containers.MessageMap[
+        builtins.int, inner.inner_pb2.InnerMessage
+    ]: ...
     @property
-    def codes(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___UserCode.ValueType]: ...
+    def codes(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        global___UserCode.ValueType
+    ]: ...
     @property
-    def map_codes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, global___UserCode.ValueType]: ...
+    def map_codes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[
+        builtins.str, global___UserCode.ValueType
+    ]: ...
     @property
-    def strs(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]: ...
+    def strs(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        builtins.str
+    ]: ...
     @property
     def nested(self) -> global___User.Nested: ...
     @property
@@ -184,11 +223,23 @@ class User(google.protobuf.message.Message):
     @property
     def list_value(self) -> google.protobuf.struct_pb2.ListValue: ...
     @property
-    def struct_value(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[google.protobuf.struct_pb2.Struct]: ...
+    def struct_value(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        google.protobuf.struct_pb2.Struct
+    ]: ...
     @property
-    def intvalue(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[google.protobuf.wrappers_pb2.Int32Value]: ...
+    def intvalue(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        google.protobuf.wrappers_pb2.Int32Value
+    ]: ...
     @property
-    def intmap(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, google.protobuf.wrappers_pb2.Int64Value]: ...
+    def intmap(
+        self,
+    ) -> google.protobuf.internal.containers.MessageMap[
+        builtins.str, google.protobuf.wrappers_pb2.Int64Value
+    ]: ...
     def __init__(
         self,
         *,
@@ -204,24 +255,125 @@ class User(google.protobuf.message.Message):
         dict: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         others: collections.abc.Iterable[other_pb2.Other] | None = ...,
         msg: multi.inner.class_pb2.ClassMsg | None = ...,
-        map_msg: collections.abc.Mapping[builtins.int, inner.inner_pb2.InnerMessage] | None = ...,
+        map_msg: (
+            collections.abc.Mapping[builtins.int, inner.inner_pb2.InnerMessage] | None
+        ) = ...,
         codes: collections.abc.Iterable[global___UserCode.ValueType] | None = ...,
-        map_codes: collections.abc.Mapping[builtins.str, global___UserCode.ValueType] | None = ...,
+        map_codes: (
+            collections.abc.Mapping[builtins.str, global___UserCode.ValueType] | None
+        ) = ...,
         strs: collections.abc.Iterable[builtins.str] | None = ...,
         nested: global___User.Nested | None = ...,
         circular: global___Circular | None = ...,
         optional_field: builtins.str | None = ...,
         list_value: google.protobuf.struct_pb2.ListValue | None = ...,
-        struct_value: collections.abc.Iterable[google.protobuf.struct_pb2.Struct] | None = ...,
-        intvalue: collections.abc.Iterable[google.protobuf.wrappers_pb2.Int32Value] | None = ...,
-        intmap: collections.abc.Mapping[builtins.str, google.protobuf.wrappers_pb2.Int64Value] | None = ...,
+        struct_value: (
+            collections.abc.Iterable[google.protobuf.struct_pb2.Struct] | None
+        ) = ...,
+        intvalue: (
+            collections.abc.Iterable[google.protobuf.wrappers_pb2.Int32Value] | None
+        ) = ...,
+        intmap: (
+            collections.abc.Mapping[
+                builtins.str, google.protobuf.wrappers_pb2.Int64Value
+            ]
+            | None
+        ) = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_optional_field", b"_optional_field", "age", b"age", "circular", b"circular", "employee", b"employee", "inactive", b"inactive", "list_value", b"list_value", "msg", b"msg", "nested", b"nested", "occupation", b"occupation", "optional_field", b"optional_field", "other", b"other", "school", b"school", "time", b"time"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_optional_field", b"_optional_field", "affilliation", b"affilliation", "age", b"age", "circular", b"circular", "code", b"code", "codes", b"codes", "dict", b"dict", "employee", b"employee", "inactive", b"inactive", "intmap", b"intmap", "intvalue", b"intvalue", "list_value", b"list_value", "map_codes", b"map_codes", "map_msg", b"map_msg", "msg", b"msg", "name", b"name", "nested", b"nested", "occupation", b"occupation", "optional_field", b"optional_field", "other", b"other", "others", b"others", "school", b"school", "strs", b"strs", "struct_value", b"struct_value", "time", b"time"]) -> None: ...
+    def HasField(
+        self,
+        field_name: typing.Literal[
+            "_optional_field",
+            b"_optional_field",
+            "age",
+            b"age",
+            "circular",
+            b"circular",
+            "employee",
+            b"employee",
+            "inactive",
+            b"inactive",
+            "list_value",
+            b"list_value",
+            "msg",
+            b"msg",
+            "nested",
+            b"nested",
+            "occupation",
+            b"occupation",
+            "optional_field",
+            b"optional_field",
+            "other",
+            b"other",
+            "school",
+            b"school",
+            "time",
+            b"time",
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "_optional_field",
+            b"_optional_field",
+            "affilliation",
+            b"affilliation",
+            "age",
+            b"age",
+            "circular",
+            b"circular",
+            "code",
+            b"code",
+            "codes",
+            b"codes",
+            "dict",
+            b"dict",
+            "employee",
+            b"employee",
+            "inactive",
+            b"inactive",
+            "intmap",
+            b"intmap",
+            "intvalue",
+            b"intvalue",
+            "list_value",
+            b"list_value",
+            "map_codes",
+            b"map_codes",
+            "map_msg",
+            b"map_msg",
+            "msg",
+            b"msg",
+            "name",
+            b"name",
+            "nested",
+            b"nested",
+            "occupation",
+            b"occupation",
+            "optional_field",
+            b"optional_field",
+            "other",
+            b"other",
+            "others",
+            b"others",
+            "school",
+            b"school",
+            "strs",
+            b"strs",
+            "struct_value",
+            b"struct_value",
+            "time",
+            b"time",
+        ],
+    ) -> None: ...
     @typing.overload
-    def WhichOneof(self, oneof_group: typing.Literal["_optional_field", b"_optional_field"]) -> typing.Literal["optional_field"] | None: ...
+    def WhichOneof(
+        self, oneof_group: typing.Literal["_optional_field", b"_optional_field"]
+    ) -> typing.Literal["optional_field"] | None: ...
     @typing.overload
-    def WhichOneof(self, oneof_group: typing.Literal["occupation", b"occupation"]) -> typing.Literal["employee", "school", "inactive"] | None: ...
+    def WhichOneof(
+        self, oneof_group: typing.Literal["occupation", b"occupation"]
+    ) -> typing.Literal["employee", "school", "inactive"] | None: ...
 
 global___User = User
 
@@ -237,7 +389,11 @@ class Circular(google.protobuf.message.Message):
         *,
         circular_user: global___User | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["circular_user", b"circular_user"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["circular_user", b"circular_user"]) -> None: ...
+    def HasField(
+        self, field_name: typing.Literal["circular_user", b"circular_user"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self, field_name: typing.Literal["circular_user", b"circular_user"]
+    ) -> None: ...
 
 global___Circular = Circular

@@ -8,7 +8,7 @@ __all__ = [
     "resolve_mapped_ctx",
 ]
 from datetime import datetime
-from typing import Any, Callable, Dict, Hashable, Optional, Tuple, Type, List
+from typing import Any, Callable, Dict, Hashable, List, Optional, Tuple, Type
 
 from ctxinject import (
     DependsInject,
@@ -17,7 +17,7 @@ from ctxinject import (
     get_mapped_ctx,
     resolve_mapped_ctx,
 )
-from ctxinject.validation import arg_proc, constrained_dict, constrained_list
+from ctxinject.validation import arg_proc, constrained_list
 from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -71,6 +71,7 @@ def convert_timestamp(
 
     return ts
 
+
 def base_constrained_list(
     value: List[Any],
     **kwargs: Any,
@@ -88,12 +89,14 @@ def base_constrained_list(
         )
     return value
 
+
 def base_constrained_dict(
     value: Dict[Any, Any],
     **kwargs: Any,
 ) -> Dict[Any, Any]:
     constrained_list(list(value.values()), **kwargs)
     return value
+
 
 protobuf_converts: Dict[Tuple[Hashable, Hashable], Callable[..., Any]] = {
     (Timestamp, datetime): convert_timestamp,

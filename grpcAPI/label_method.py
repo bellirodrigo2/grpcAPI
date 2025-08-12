@@ -8,13 +8,12 @@ from typing_extensions import (
     List,
     Optional,
     Set,
-    Tuple,
     Type,
     get_args,
     get_origin,
 )
 
-from grpcAPI.data_types import FromRequest, Message
+from grpcAPI.data_types import FromRequest, Message, set_function_metadata
 from grpcAPI.makeproto import ILabeledMethod, IMetaType
 
 
@@ -58,8 +57,17 @@ def make_labeled_method(
     description: str,
     tags: Optional[List[str]] = None,
     options: Optional[List[str]] = None,
+    request_type_input: Optional[Type[Any]] = None,
+    response_type_input: Optional[Type[Any]] = None,
 ) -> ILabeledMethod:
-    requests, response_type = extract_request_response_type(func)
+    if request_type_input is not None and is_message(request_type_input):
+        requests = [type_to_metatype(request_type_input)]
+        set_function_metadata(func, request_type_input)
+    else:
+        requests = extract_request_type(func)
+        
+    response_type= extract_response_type(func,response_type_input)
+
     method_name = func.__name__
     tags = tags or []
     options = options or []
@@ -79,20 +87,23 @@ def make_labeled_method(
         tags=tags,
     )
 
-
-def extract_request_response_type(
+def extract_request_type(
     func: Callable[..., Any],
-) -> Tuple[List[IMetaType], Optional[IMetaType]]:
+) -> List[IMetaType]:
     request_args = extract_request(func)
     requests = [type_to_metatype(arg) for arg in request_args]
+    return requests
 
-    response_arg = extract_response(func)
 
+def extract_response_type(
+    func: Callable[..., Any],
+    response_type_input: Optional[Type[Any]] = None,
+) -> Optional[IMetaType]:
+    response_arg = extract_response(func) or response_type_input
     if response_arg is None:
-        response_type = None
-    else:
-        response_type = type_to_metatype(response_arg)
-    return requests, response_type
+        return None
+
+    return type_to_metatype(response_arg)
 
 
 @dataclass

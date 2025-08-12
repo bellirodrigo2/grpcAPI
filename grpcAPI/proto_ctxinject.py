@@ -25,7 +25,6 @@ from typemapping import get_args, get_equivalent_origin, is_equivalent_origin
 
 
 def protobuf_types_predicate(
-    _: ModelFieldInject,
     modeltype: Type[Any],
     basetype: Type[Any],
 ) -> bool:
@@ -33,7 +32,6 @@ def protobuf_types_predicate(
 
 
 def ignore_enum(
-    _: ModelFieldInject,
     modeltype: Type[Any],
     basetype: Type[Any],
 ) -> bool:

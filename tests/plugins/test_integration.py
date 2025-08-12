@@ -1,4 +1,4 @@
-# test_integration.py - Versão corrigida com mock apropriado
+# test_integration.py - Fixed version with appropriate mock
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -12,7 +12,7 @@ class TestIntegration:
 
     @pytest.fixture
     def mock_grpc_server(self) -> Mock:
-        """Mock do servidor gRPC interno."""
+        """Mock of internal gRPC server."""
         server = Mock()  # Remover spec para permitir qualquer atributo
         server.add_registered_method_handlers = Mock()
         server.start = AsyncMock()
@@ -21,7 +21,7 @@ class TestIntegration:
 
     @pytest.fixture
     def mock_server_wrapper(self, mock_grpc_server) -> Mock:
-        """Mock do ServerWrapper que tem propriedade server."""
+        """Mock of ServerWrapper that has server property."""
         wrapper = Mock()
         wrapper.server = mock_grpc_server  # FIX: Adicionar propriedade server
         wrapper.plugins = []
@@ -69,21 +69,21 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_health_plugin_lifecycle(self, mock_server_wrapper: Mock) -> None:
-        """Teste específico do ciclo de vida do health plugin."""
+        """Specific test of health plugin lifecycle."""
         health_plugin = HealthCheckPlugin(grace=0.1)
 
-        # Simular registro
+        # Simulate registration
         with patch(
             "grpcAPI.server_plugins.plugins.health_check.health_pb2_grpc.add_HealthServicer_to_server"
         ):
             health_plugin.on_register(mock_server_wrapper)
 
-        # Verificar estado após registro
+        # Check state after registration
         state_after_register = health_plugin.state
         assert state_after_register["name"] == "health_check"
         assert "" in state_after_register["services"]  # Serviço raiz
 
-        # Simular adição de serviço
+        # Simulate service addition
         health_plugin.on_add_service("TestService", {}, mock_server_wrapper)
         assert "TestService" in health_plugin._services_set
 
@@ -94,15 +94,15 @@ class TestIntegration:
 
     @pytest.mark.asyncio
     async def test_reflection_plugin_lifecycle(self, mock_server_wrapper: Mock) -> None:
-        """Teste específico do ciclo de vida do reflection plugin."""
+        """Specific test of reflection plugin lifecycle."""
         reflection_plugin = ReflectionPlugin()
 
-        # Verificar estado inicial
+        # Check initial state
         initial_state = reflection_plugin.state
         assert initial_state["name"] == "reflection"
         assert len(initial_state["services"]) == 0
 
-        # Adicionar múltiplos serviços
+        # Add multiple services
         with patch(
             "grpc_reflection.v1alpha.reflection.enable_server_reflection"
         ) as mock_reflection:
@@ -111,7 +111,7 @@ class TestIntegration:
             for service in services:
                 reflection_plugin.on_add_service(service, {}, mock_server_wrapper)
 
-            # Verificar que reflection foi chamada para cada serviço
+            # Check that reflection was called for each service
             assert mock_reflection.call_count == len(services)
             for service in services:
                 mock_reflection.assert_any_call((service,), mock_server_wrapper.server)

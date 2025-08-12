@@ -1,12 +1,13 @@
 import importlib.util
-import json
 import logging
 import sys
 from pathlib import Path
 
+import json5
 import toml
 import yaml
 from typing_extensions import Any, Dict
+
 
 DEFAULT_CONFIG_PATH = Path("./grpcAPI/commands/settings/config.json")
 
@@ -16,19 +17,22 @@ logger = logging.getLogger(__name__)
 def load_file_by_extension(path: Path) -> Dict[str, Any]:
     """
     Loads and parses a config file based on its file extension.
-    Supports: .toml, .yaml/.yml, .json
+    Supports: .toml, .yaml/.yml, .json (with comments support)
     """
     try:
         ext = path.suffix.lower()
-        with path.open("r", encoding="utf-8") as f:
-            if ext == ".toml":
+        if ext == ".toml":
+            with path.open("r", encoding="utf-8") as f:
                 return toml.load(f)
-            elif ext in (".yaml", ".yml"):
+        elif ext in (".yaml", ".yml"):
+            with path.open("r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
-            elif ext == ".json":
-                return json.load(f)
-            else:
-                raise ValueError("Unsupported config file format: {}".format(ext))
+        elif ext == ".json":
+            # Use JSON5 parser for JSON with comments support
+            with path.open("r", encoding="utf-8") as f:
+                return json5.load(f)
+        else:
+            raise ValueError("Unsupported config file format: {}".format(ext))
     except Exception as e:
         logger.error(f"Failed to parse config: {str(e)}")
         return {}

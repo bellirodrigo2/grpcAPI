@@ -15,8 +15,12 @@ def is_service_dependent(service: IService, dep_func: Callable[..., Any]) -> boo
     for method in service.methods:
         for arg in get_func_args(method.method):
             instance = arg.getinstance(Depends)
-            if instance is not None and instance.default == dep_func:
-                return True
+            if instance is not None:
+                if instance.default == dep_func:
+                    return True
+                #protect against circular dependencies
+                if is_service_dependent(service, instance.default):
+                    return True
     return False
 
 
@@ -40,18 +44,18 @@ class StatefulService:
         self.dependents = map_dependents(dep_func)
         self.is_active = is_active
         self.exceptions = exceptions
-        # passar args de dep_func para self.run
-        # iniciar healtcheck e adicionar ao self
+        # pass dep_func args to self.run
+        # start healthcheck and add to self
 
     def run(self, **kwargs: Any) -> Any:
 
         try:
             resp = self.dep_func(**kwargs)
             if not self.is_active:
-                # alterar todos os healtcheck para serving
+                # change all healthcheck to serving
                 pass
             return resp
         except self.exceptions:
             if self.is_active:
-                # alterar todos os healtcheck para not serving
+                # change all healthcheck to not serving
                 pass

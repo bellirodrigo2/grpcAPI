@@ -14,11 +14,12 @@ dependencies = [
     "grpcio-tools",
     "grpcio-health-checking",
     "grpcio-reflection",
-    "toml",
     "rich",
     "jinja2",
     "inflection",
-    "pyyaml"
+    "pyyaml",
+    "toml",
+    "json5",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +38,11 @@ dev = [
 pydantic = [
     "ctxinject[pydantic]"
 ]
+
+example = [
+    "sqlalchemy>=2.0.0",
+]
+
 [tool.ruff.lint]
 ignore = ["E402"]
 

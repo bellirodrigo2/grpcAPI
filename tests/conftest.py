@@ -92,6 +92,17 @@ def functional_service() -> APIService:
             db.close()
             await asyncio.sleep(0.01)
 
+    def assert_db_connection(
+        db: str, db1: MockConnection, db2: MockConnection
+    ) -> None:
+        assert db == "db_connection", "Database connection should be injected"
+        assert (
+            db1.connection == "sync_db_connection"
+        ), "Sync DB connection should be injected"
+        assert (
+            db2.connection == "sync_db_connection"
+        ), "Async DB connection should be injected"
+
     @serviceapi(
         title="Create Account",
         description="Create an account by giving a name, email, payload and itens",
@@ -109,14 +120,7 @@ def functional_service() -> APIService:
         db1: MockConnection = Depends(sync_get_db),
         db2: MockConnection = Depends(async_get_db),
     ) -> AccountCreated:
-
-        assert db == "db_connection", "Database connection should be injected"
-        assert (
-            db1.connection == "sync_db_connection"
-        ), "Sync DB connection should be injected"
-        assert (
-            db2.connection == "sync_db_connection"
-        ), "Async DB connection should be injected"
+        assert_db_connection(db, db1, db2)
 
         if name == "raise":
             raise NotImplementedError("Not Implemented Test")
@@ -139,14 +143,7 @@ def functional_service() -> APIService:
         db1: MockConnection = Depends(sync_get_db),
         db2: MockConnection = Depends(async_get_db),
     ) -> AsyncIterator[Account]:
-        assert db == "db_connection", "Database connection should be injected"
-        assert (
-            db1.connection == "sync_db_connection"
-        ), "Sync DB connection should be injected"
-
-        assert (
-            db2.connection == "sync_db_connection"
-        ), "Sync DB connection should be injected"
+        assert_db_connection(db, db1, db2)
 
         for v in values:
             if v == "foo":
@@ -160,7 +157,11 @@ def functional_service() -> APIService:
             yield Account(name=v, email=f"{v}@email.com")
 
     @serviceapi
-    async def get_by_ids(ids: AsyncIterator[StringValue]) -> AsyncIterator[Account]:
+    async def get_by_ids(ids: AsyncIterator[StringValue],
+        db: str = Depends(get_db),
+        db1: MockConnection = Depends(sync_get_db),
+        db2: MockConnection = Depends(async_get_db),) -> AsyncIterator[Account]:
+        assert_db_connection(db, db1, db2)        
 
         async for id in ids:
             yield Account(
@@ -168,12 +169,25 @@ def functional_service() -> APIService:
             )
 
     @serviceapi
-    async def get_emails(ids: AsyncIterator[StringValue]) -> ListValue:
-
+    async def get_emails(ids: AsyncIterator[StringValue],
+        db: str = Depends(get_db),
+        db1: MockConnection = Depends(sync_get_db),
+        db2: MockConnection = Depends(async_get_db),) -> ListValue:
+        assert_db_connection(db, db1, db2)    
         emails = ListValue()
         async for id in ids:
             emails.extend([id])
         return emails
+
+    @serviceapi(request_type_input=AccountInput, response_type_input=Empty)
+    async def log_accountinput(name:str, email:str,payload:Struct, itens:ListValue, inner:Inner,
+        db: str = Depends(get_db),
+        db1: MockConnection = Depends(sync_get_db),
+        db2: MockConnection = Depends(async_get_db),):
+        
+        assert_db_connection(db, db1, db2)
+        
+        return Empty()
 
     inject = InjectProtoTyping()
     inject.process(serviceapi)

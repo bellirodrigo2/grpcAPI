@@ -6,7 +6,7 @@ from typing import Type
 from typing_extensions import Any, Dict
 
 from grpcAPI import ExceptionRegistry
-from grpcAPI.data_types import AsyncContext
+from grpcAPI.data_types import AsyncContext, get_function_metadata
 from grpcAPI.makeproto import ILabeledMethod
 from grpcAPI.proto_ctxinject import get_mapped_ctx, resolve_mapped_ctx
 
@@ -43,9 +43,23 @@ def make_method_async(
     )
     return runner
 
+class CtxMngr:
+    def __init__(self, req: Type[Any], func: Callable[..., Any])->None:
+        self.req = req
+        self.bynames = get_function_metadata(func)
 
+    def get_ctx_template(self) -> Dict[Any, Any]:
+        if self.bynames is None:
+            return {self.req: None, AsyncContext: None}
+        return {**self.bynames, AsyncContext: None}
+
+    def get_ctx(self,req: Any,context: AsyncContext)-> Dict[Any, Any]:
+        if self.bynames is None:
+            return {self.req: req, AsyncContext: context}
+        ctx = {k: getattr(req, k) for k in self.bynames.keys()}
+        return {**ctx, AsyncContext: context}
 class Runner:
-    __slots__ = ("func", "exception_registry", "mapped_ctx", "req")
+    __slots__ = ("func", "exception_registry", "mapped_ctx", "req", "ctx_mngr", "overrides")
 
     def __init__(
         self,
@@ -55,13 +69,15 @@ class Runner:
         req: Type[Any],
     ):
         self.func = func
-        # self.overrides = overrides
+        self.overrides = overrides
         self.exception_registry = exception_registry
         self.req = req
-
+        self.ctx_mngr = CtxMngr(req, func)
+        
+        context = self.ctx_mngr.get_ctx_template()
         self.mapped_ctx = get_mapped_ctx(
             func=func,
-            context={req: None, AsyncContext: None},
+            context=context,
             allow_incomplete=False,
             validate=True,
             overrides=overrides,
@@ -70,7 +86,7 @@ class Runner:
     async def _make_kwargs(
         self, request: Any, context: AsyncContext, stack: AsyncExitStack
     ) -> Any:
-        ctx = {self.req: request, AsyncContext: context}
+        ctx = self.ctx_mngr.get_ctx(request, context)
         return await resolve_mapped_ctx(ctx, self.mapped_ctx, stack)
 
     async def _handle_exception(self, e: Exception, context: AsyncContext) -> None:

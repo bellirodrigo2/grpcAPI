@@ -23,21 +23,21 @@ class CompileErrorCode(Enum):
         "Class 'proto_path' attribute is not defined",
     )
 
-    # E400 - Descrições
+    # E400 - Descriptions
     INVALID_COMMENT = (
         "E401",
         "Invalid comment",
         "Comment must be a string",
     )
 
-    # E500 - Opções
+    # E500 - Options
     INVALID_OPTIONS = (
         "E501",
         "Invalid options",
         "Options must be a List[str]",
     )
 
-    # E800 - Métodos
+    # E800 - Methods
     METHOD_INVALID_REQUEST_TYPE = (
         "E801",
         "Invalid request type",

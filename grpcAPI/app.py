@@ -154,20 +154,24 @@ class APIService(IService):
         tags: Optional[List[str]] = None,
         comment: Optional[str] = None,
         options: Optional[List[str]] = None,
+        request_type_input: Optional[Type[Any]] = None,
+        response_type_input: Optional[Type[Any]] = None,
     ) -> Callable[..., Any]:
         comment = comment or func.__doc__ or ""
         title = title or func.__name__
 
         labeled_method = make_labeled_method(
             title,
-            func,
-            self.package,
-            self.module,
-            self.name,
-            comment,
-            description,
-            options,
-            tags,
+            func=func,
+            package=self.package,
+            module=self.module,
+            service=self.name,
+            comment=comment,
+            description=description,
+            tags=options,
+            options=tags,
+            request_type_input=request_type_input,
+            response_type_input=response_type_input,
         )
 
         self.__methods.append(labeled_method)
@@ -182,6 +186,8 @@ class APIService(IService):
         tags: Optional[List[str]] = None,
         comment: Optional[str] = None,
         options: Optional[List[str]] = None,
+        request_type_input: Optional[Type[Any]] = None,
+        response_type_input: Optional[Type[Any]] = None,
     ) -> Union[Callable[..., Any], Callable[[Callable[..., Any]], Callable[..., Any]]]:
         if func is not None and callable(func):
             # Called as @serviceapi
@@ -190,12 +196,14 @@ class APIService(IService):
             # Called as @serviceapi(...)
             def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
                 return self._register_method(
-                    f,
+                    func=f,
                     title=title,
                     description=description,
                     tags=tags,
                     comment=comment,
                     options=options,
+                    request_type_input=request_type_input,
+                    response_type_input=response_type_input,
                 )
 
             return decorator

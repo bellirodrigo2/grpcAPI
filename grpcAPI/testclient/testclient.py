@@ -13,6 +13,18 @@ default_test_settings = {
     "compile_proto": {"clean_services": True, "overwrite": False},
 }
 
+def set_label(func: Callable[..., Any], label: Tuple[str, str, str]) -> None:
+    """Set a label for the function to identify it in the test client."""
+    func.__testclient_label__ = label
+
+def get_label(func: Callable[..., Any]) -> Tuple[str, str, str]:
+    """Get the label of the function."""
+    try:
+        return func.__testclient_label__
+    except AttributeError:
+        raise UnboundLocalError(
+            f'Function "{func.__name__}" is not linked to a grpcAPI module'
+        )
 
 class TestClient:
     __test__ = False
@@ -40,7 +52,7 @@ class TestClient:
                 )
                 tuple_id = (service.package, service.name, method.name)
                 self._services[tuple_id] = rpc_method
-                method.method.__label__ = tuple_id
+                set_label(method.method, tuple_id)
 
     async def run_by_label(
         self,
@@ -69,12 +81,7 @@ class TestClient:
         context: Optional[AsyncContext] = None,
     ) -> Any:
 
-        try:
-            label = func.__label__
-        except AttributeError:
-            raise UnboundLocalError(
-                f'Function "{func.__name__}" is not linked to a grpcAPI module'
-            )
+        label = get_label(func)
         package, service_name, method_name = label
 
         return await self.run_by_label(

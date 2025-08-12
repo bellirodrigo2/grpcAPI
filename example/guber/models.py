@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+__all__ = ["CPF", "CarPlate", "EmailStr"]
+from pydantic import BaseModel, EmailStr
 
 
 class CPF(BaseModel):

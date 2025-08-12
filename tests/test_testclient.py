@@ -6,7 +6,7 @@ import pytest
 from grpcAPI import ErrorCode
 from grpcAPI.app import APIService
 from grpcAPI.testclient import ContextMock, TestClient
-from tests.conftest import AccountInput, AsyncIt, ListValue, StringValue, Timestamp
+from tests.conftest import AccountInput, AsyncIt, ListValue, StringValue, Timestamp, Empty
 
 
 @pytest.mark.asyncio
@@ -150,3 +150,18 @@ async def test_bilateral(testclient_fixture: TestClient) -> None:
         assert acc.name.startswith("account")
         assert acc.name[7:] in ["foo", "bar"]
         assert acc.email.endswith("@email.com")
+
+
+@pytest.mark.asyncio
+async def test_unary_request_input(
+    testclient_fixture: TestClient,
+    account_input: Dict[str, Any],
+    functional_service: APIService,
+) -> None:
+    request = account_input["request"]
+    for method in functional_service.methods:
+        if method.name == "log_accountinput":
+            log_accountinput = method.method
+            break
+    resp = await testclient_fixture.run(log_accountinput, request)
+    assert type(resp) is Empty

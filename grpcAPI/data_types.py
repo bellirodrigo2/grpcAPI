@@ -26,7 +26,7 @@ from typing_extensions import (
 )
 
 from grpcAPI.proto_ctxinject import DependsInject, ModelFieldInject
-from grpcAPI.prototypes.lib.prototypes_pb2 import (
+from grpcAPI.prototypes import (
     ListBool,
     ListBytes,
     ListDouble,
@@ -86,6 +86,16 @@ class AsyncContext(Protocol):
     def cancelled(self) -> bool: ...
     def done(self) -> bool: ...
 
+#add protobuf metadata to function
+
+def set_function_metadata(
+    func: Callable[..., Any],
+    request: Type[Message],)->None:
+    func.__grpc_metadata__ = request.__annotations__
+
+def get_function_metadata(
+    func: Callable[..., Any],) -> Optional[Mapping[str, Type[Any]]]:
+    return getattr(func, "__grpc_metadata__", None)
 
 # WellKnown types
 

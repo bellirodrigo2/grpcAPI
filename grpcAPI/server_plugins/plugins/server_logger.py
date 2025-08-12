@@ -25,13 +25,13 @@ def add_logger(name: str, **kwargs: Any) -> Tuple[str, List[str], bool]:
     level = kwargs.get("level", newlogger.get("level", "DEBUG"))
     newlogger["level"] = level
 
-    # file - CORREÇÃO: acessar handlers do LOGGING_CONFIG, não do newlogger
+    # file - FIX: access handlers from LOGGING_CONFIG, not from newlogger
     if "filename" in kwargs:
         handlers_config = LOGGING_CONFIG.get("handlers", {})
         new_handler = handlers_config.get("file", {}).copy()
         new_handler["filename"] = kwargs["filename"]
 
-        # Garantir que handlers existe no LOGGING_CONFIG
+        # Ensure handlers exists in LOGGING_CONFIG
         if "handlers" not in LOGGING_CONFIG:
             LOGGING_CONFIG["handlers"] = {}
 
@@ -66,9 +66,9 @@ class ServerLoggerPlugin(ServerPlugin):
     ) -> None:
         self._services: Dict[str, Iterable[str]] = {}
         self.level, self.handlers, self.propagate = add_logger(
-            "server_logger_plugin", **kwargs  # CORREÇÃO: nome consistente
+            "server_logger_plugin", **kwargs  # FIX: consistent name
         )
-        self._logger = getLogger("server_logger_plugin")  # CORREÇÃO: nome consistente
+        self._logger = getLogger("server_logger_plugin")  # FIX: consistent name
         self._server_starts: List[datetime] = []
         self._server_stops: List[datetime] = []
         self._wait_for_termination: bool = False
@@ -90,8 +90,8 @@ class ServerLoggerPlugin(ServerPlugin):
         }
 
     def on_register(self, server: "ServerWrapper") -> None:
-        # detalhes de config do logger
-        # versao do server, etc
+        # logger config details
+        # server version, etc
         # migration_thread_pool: Optional[Executor] = None,
         # maximum_concurrent_rpcs: Optional[int] = None,
         # compression: Optional[grpc.Compression] = None,

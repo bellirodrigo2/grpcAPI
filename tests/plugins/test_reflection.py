@@ -97,14 +97,14 @@ class TestReflectionPlugin:
         plugin: ReflectionPlugin,
         mock_server_wrapper: Mock,
     ) -> None:
-        """Testar se não adiciona serviços duplicados no conjunto."""
-        # Adicionar o mesmo serviço duas vezes
+        """Test if it does not add duplicate services to the set."""
+        # Add the same service twice
         plugin.on_add_service("TestService", [], mock_server_wrapper)
         plugin.on_add_service("TestService", [], mock_server_wrapper)
 
         # Deve ter chamado reflection duas vezes (comportamento normal)
         assert mock_enable_reflection.call_count == 2
-        # Mas só ter um serviço no set (sem duplicatas)
+        # But only have one service in set (no duplicates)
         assert len(plugin._services) == 1
         assert "TestService" in plugin._services
 
@@ -115,7 +115,7 @@ class TestReflectionPlugin:
         plugin: ReflectionPlugin,
         mock_server_wrapper: Mock,
     ) -> None:
-        """Testar se o state reflete corretamente os serviços atuais."""
+        """Test if state correctly reflects current services."""
         initial_state = plugin.state
         assert len(initial_state["services"]) == 0
 

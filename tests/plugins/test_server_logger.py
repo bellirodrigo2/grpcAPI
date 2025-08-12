@@ -313,21 +313,21 @@ class TestServerLoggerPlugin:
 
 
 class TestServerLoggerFileHandler:
-    """Testes adicionais para funcionalidade de arquivo de log"""
+    """Additional tests for log file functionality"""
 
     def setup_method(self):
-        """Reset LOGGING_CONFIG antes de cada teste"""
+        """Reset LOGGING_CONFIG before each test"""
         import copy
 
         self.original_config = copy.deepcopy(LOGGING_CONFIG)
 
     def teardown_method(self):
-        """Restore original config após cada teste"""
+        """Restore original config after each test"""
         LOGGING_CONFIG.clear()
         LOGGING_CONFIG.update(self.original_config)
 
     def test_add_logger_with_filename_creates_file_handler(self):
-        """Testa se add_logger cria handler de arquivo quando filename é fornecido"""
+        """Test if add_logger creates file handler when filename is provided"""
         import uuid
 
         filename = f"/tmp/test_{uuid.uuid4().hex[:8]}.log"
@@ -337,14 +337,14 @@ class TestServerLoggerFileHandler:
                 "test_logger", filename=filename, handlers=["file", "console"]
             )
 
-            # Verifica se o handler foi criado no LOGGING_CONFIG global
+            # Check if handler was created in global LOGGING_CONFIG
             assert "server_logger_handler" in LOGGING_CONFIG["handlers"]
 
-            # Verifica se o filename foi configurado corretamente
+            # Check if filename was configured correctly
             file_handler = LOGGING_CONFIG["handlers"]["server_logger_handler"]
             assert file_handler["filename"] == filename
 
-            # Verifica se 'file' foi substituído por 'server_logger_handler'
+            # Check if 'file' was replaced by 'server_logger_handler'
             assert "server_logger_handler" in handlers
             assert "file" not in handlers
             assert "console" in handlers
@@ -357,19 +357,19 @@ class TestServerLoggerFileHandler:
                     pass
 
     def test_add_logger_without_filename_no_file_handler(self):
-        """Testa se add_logger não cria handler de arquivo quando filename não é fornecido"""
-        # Limpar qualquer handler existente
+        """Test if add_logger does not create file handler when filename is not provided"""
+        # Clear any existing handler
         LOGGING_CONFIG.setdefault("handlers", {}).pop("server_logger_handler", None)
 
         level, handlers, propagate = add_logger("test_logger", handlers=["console"])
 
-        # Não deve criar o handler de arquivo
+        # Should not create file handler
         assert "server_logger_handler" not in LOGGING_CONFIG.get("handlers", {})
         assert "console" in handlers
         assert "file" not in handlers
 
     def test_plugin_state_includes_logger_config(self):
-        """Testa se o state do plugin inclui configuração do logger"""
+        """Test if plugin state includes logger configuration"""
         plugin = ServerLoggerPlugin(level="INFO", handlers=["console"])
 
         state = plugin.state
@@ -380,7 +380,7 @@ class TestServerLoggerFileHandler:
 
     @patch("logging.config.dictConfig")
     def test_multiple_file_handlers_different_names(self, mock_dict_config):
-        """Testa criação de múltiplos handlers de arquivo com nomes diferentes"""
+        """Test creation of multiple file handlers with different names"""
         # Setup handler base
         LOGGING_CONFIG.setdefault("handlers", {})["file"] = {
             "class": "logging.FileHandler",
@@ -390,10 +390,10 @@ class TestServerLoggerFileHandler:
         filename1 = "/tmp/test1.log"
         filename2 = "/tmp/test2.log"
 
-        # Primeiro logger
+        # First logger
         add_logger("logger1", filename=filename1, handlers=["file"])
 
-        # Segundo logger - deve sobrescrever o handler anterior
+        # Second logger - should override previous handler
         add_logger("logger2", filename=filename2, handlers=["file"])
 
         # Verifica se o handler foi atualizado com o novo filename
@@ -404,7 +404,7 @@ class TestServerLoggerFileHandler:
         assert mock_dict_config.call_count == 2
 
     def test_add_logger_with_custom_propagate_setting(self):
-        """Testa configuração personalizada de propagate"""
+        """Test custom propagate configuration"""
         level, handlers, propagate = add_logger(
             "test_logger", filename="/tmp/test.log", handlers=["file"], propagate=False
         )
@@ -414,22 +414,22 @@ class TestServerLoggerFileHandler:
 
     @patch("logging.config.dictConfig")
     def test_logging_config_called_when_adding_file_handler(self, mock_dict_config):
-        """Testa se logging.config.dictConfig é chamado quando handler de arquivo é adicionado"""
+        """Test if logging.config.dictConfig is called when file handler is added"""
         add_logger("test_logger", filename="/tmp/test.log", handlers=["file"])
 
-        # Verifica se dictConfig foi chamado com a configuração atualizada
+        # Check if dictConfig was called with updated configuration
         mock_dict_config.assert_called_once_with(LOGGING_CONFIG)
 
-        # Verifica se a configuração passada inclui o novo handler
+        # Check if passed configuration includes new handler
         call_args = mock_dict_config.call_args[0][0]
         assert "server_logger_handler" in call_args["handlers"]
 
     def test_existing_logger_name_returns_existing_config(self):
-        """Testa se logger existente retorna configuração sem modificar"""
+        """Test if existing logger returns configuration without modification"""
         # Limpar qualquer handler residual
         LOGGING_CONFIG.setdefault("handlers", {}).pop("server_logger_handler", None)
 
-        # Setup: logger existente
+        # Setup: existing logger
         existing_config = {
             "level": "WARNING",
             "handlers": ["console"],
@@ -439,15 +439,15 @@ class TestServerLoggerFileHandler:
 
         level, handlers, propagate = add_logger(
             "existing_logger",
-            filename="/tmp/should_not_create.log",  # Não deve criar arquivo
+            filename="/tmp/should_not_create.log",  # Should not create file
         )
 
-        # Deve retornar configuração existente
+        # Should return existing configuration
         assert level == "WARNING"
         assert handlers == ["console"]
         assert propagate is False
 
-        # Não deve criar novo handler
+        # Should not create new handler
         assert "server_logger_handler" not in LOGGING_CONFIG.get("handlers", {})
 
 
@@ -458,15 +458,15 @@ class TestServerLoggerPluginIntegration:
         """Teste básico de funcionalidade do plugin"""
         plugin = ServerLoggerPlugin(level="INFO", handlers=["console"])
 
-        # Verifica propriedades básicas
+        # Check basic properties
         assert plugin.plugin_name == "server_logger"
         assert plugin.level == "INFO"
         assert "console" in plugin.handlers
 
-        # Verifica logger
+        # Check logger
         assert plugin._logger.name == "server_logger_plugin"
 
-        # Verifica state
+        # Check state
         state = plugin.state
         assert "services" in state
         assert "logger" in state

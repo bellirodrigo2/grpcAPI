@@ -40,3 +40,8 @@ message MapIntStr {
 message MapIntBytes {
     map<int64,bytes> value = 1;
 }
+
+message KeyValueStr {
+    string key = 1;
+    string value = 2;
+}

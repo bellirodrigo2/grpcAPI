@@ -1,15 +1,24 @@
 {
+  // Protocol buffer generation paths
   "proto_path": "grpcAPI/proto",
   "lib_path": "grpcAPI/lib",
-  "lint": true,
+  
+  // Development settings
+  "lint": true, // Enable proto validation by default
+  
+  // Server configuration
   "host": "localhost",
   "port": 50051,
+  // Protocol buffer compilation settings
   "compile_proto": {
-    "clean_services": true,
-    "overwrite": false,
-    "zipcompress": false,
+    "clean_services": true, // Remove unused service files
+    "overwrite": false,     // Preserve existing files
+    "zipcompress": false,   // Generate individual files
     "output_path": "grpcAPI/output"
   },
+  
+  /* Service filtering configuration
+     Controls which services are included/excluded during compilation */
   "service_filter": {
     "package": {
       "include": [],
@@ -25,30 +34,41 @@
     },
     "rule_logic": "AND"
   },
+  
+  // Code formatting preferences
   "format": {
-    "max_char_per_line": 80,
-    "title_case": "none",
-    "comment_style": "multiline"
+    "max_char_per_line": 80,   // Line length limit
+    "title_case": "none",      // Case transformation: none, camel, pascal, snake
+    "comment_style": "multiline" // Comment style for generated code
   },
+  
+  // gRPC server configuration
   "server": {
     "compression": "gzip",
     "maximum_concurrent_rpcs": 100,
     "options": []
   },
+  
+  // Server plugins configuration
   "plugins": {
-    "health_check": {},
-    "reflection": {},
-    "server_logger": {
+    "health_check": {}, // Health check endpoint
+    "reflection": {},   // gRPC reflection service
+    "server_logger": {  // Server logging plugin
       "level": "INFO",
       "handlers": ["console"],
       "filename": ".",
       "propagate": false
     }
   },
-  "app_log_level": "INFO",
+  
+  "app_log_level": "INFO", // Application-wide log level
+  /* Python logging configuration
+     Standard Python logging.config.dictConfig format */
   "logger": {
     "version": 1,
     "disable_existing_loggers": false,
+    
+    // Log message formatters
     "formatters": {
       "short": {
         "format": "[%(asctime)s]: %(message)s"
@@ -60,6 +80,8 @@
         "format": "[%(asctime)s] [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
       }
     },
+    
+    // Log output handlers
     "handlers": {
       "console": {
         "class": "logging.StreamHandler",
@@ -68,12 +90,14 @@
       },
       "file": {
         "class": "logging.FileHandler",
-        "filename": "app.log",
-        "mode": "a",
+        "filename": "app.log",  // Log file location
+        "mode": "a",            // Append mode
         "level": "INFO",
         "formatter": "default"
       }
     },
+    
+    // Named logger configurations
     "loggers": {
       "grpcAPI": {
         "handlers": ["console"],
@@ -81,6 +105,8 @@
         "propagate": false
       }
     },
+    
+    // Root logger (catches all unspecified loggers)
     "root": {
       "handlers": ["console"],
       "level": "WARNING"

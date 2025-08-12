@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from typing_extensions import Any, Callable, Iterable, List, Mapping
 
 from grpcAPI.app import APIService
-from grpcAPI.data_types import AsyncContext, Message
+from grpcAPI.data_types import AsyncContext, Message, get_function_metadata
 from grpcAPI.makeproto import IProtoPackage, compile_service
 from grpcAPI.proto_ctxinject import (
     func_signature_check,
@@ -16,10 +16,11 @@ from grpcAPI.proto_ctxinject import (
 def validate_signature_pass(
     func: Callable[..., Any],
 ) -> List[str]:
+    bynames = get_function_metadata(func)
     return func_signature_check(
         func,
         [Message, AsyncIterator[Message], AsyncContext],
-        [],
+        bynames or {},
         True,
         [protobuf_types_predicate, ignore_enum],
     )

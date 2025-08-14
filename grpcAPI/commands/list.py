@@ -35,13 +35,13 @@ def display_services_list(services: List[APIService]) -> None:
         console.rule(f"[bold blue]Package: {package_name}")
 
         for module_name, module_services in modules.items():
-            
+
             # Create table for services in this module
             table = Table(
                 title=f"Module: {module_name}",
-                show_header=True, 
-                header_style="bold magenta", 
-                show_lines=True
+                show_header=True,
+                header_style="bold magenta",
+                show_lines=True,
             )
             table.add_column("Service", style="green", no_wrap=True)
             table.add_column("Methods", style="cyan")
@@ -58,9 +58,7 @@ def display_services_list(services: List[APIService]) -> None:
                     method_info.append(f"{method.name} {method_descriptor}")
 
                 methods_text = (
-                    "\n".join(method_info)
-                    if method_info
-                    else "No active methods"
+                    "\n".join(method_info) if method_info else "No active methods"
                 )
                 description = (
                     service.description or service.comments or "No description"

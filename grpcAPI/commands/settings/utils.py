@@ -8,7 +8,6 @@ import toml
 import yaml
 from typing_extensions import Any, Dict
 
-
 DEFAULT_CONFIG_PATH = Path("./grpcAPI/commands/settings/config.json")
 
 logger = logging.getLogger(__name__)

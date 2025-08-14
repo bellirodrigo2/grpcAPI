@@ -18,6 +18,9 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
+
+
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
     b'\n\x1b\x61\x63\x63ount/account_proto.proto\x12\x07\x61\x63\x63ount\x1a\x1fgoogle/protobuf/timestamp.proto"]\n\x0b\x41\x63\x63ountInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12\x0b\n\x03\x63pf\x18\x03 \x01(\t\x12\x11\n\tcar_plate\x18\x04 \x01(\t\x12\x11\n\tis_driver\x18\x05 \x01(\x08"q\n\x07\x41\x63\x63ount\x12\x12\n\naccount_id\x18\x01 \x01(\t\x12"\n\x04info\x18\x02 \x01(\x0b\x32\x14.account.AccountInfo\x12.\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestampb\x06proto3'
 )

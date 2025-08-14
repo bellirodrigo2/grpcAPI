@@ -21,10 +21,10 @@ enum RideStatus {
     CANCELED = 4;
 }
 
-message RideInfo {
-    string driver_id = 1;
+message Ride {
+    string ride_id = 1;
     RideRequest ride_request = 2;
-    string ride_id = 3;
+    string driver_id = 3;
     optional google.protobuf.Timestamp accepted_at = 4;
     optional google.protobuf.Timestamp finished_at = 5;
     RideStatus status = 6;

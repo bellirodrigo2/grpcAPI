@@ -65,8 +65,8 @@ def make_labeled_method(
         set_function_metadata(func, request_type_input)
     else:
         requests = extract_request_type(func)
-        
-    response_type= extract_response_type(func,response_type_input)
+
+    response_type = extract_response_type(func, response_type_input)
 
     method_name = func.__name__
     tags = tags or []
@@ -86,6 +86,7 @@ def make_labeled_method(
         options=options,
         tags=tags,
     )
+
 
 def extract_request_type(
     func: Callable[..., Any],

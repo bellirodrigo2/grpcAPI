@@ -43,8 +43,9 @@ def make_method_async(
     )
     return runner
 
+
 class CtxMngr:
-    def __init__(self, req: Type[Any], func: Callable[..., Any])->None:
+    def __init__(self, req: Type[Any], func: Callable[..., Any]) -> None:
         self.req = req
         self.bynames = get_function_metadata(func)
 
@@ -53,13 +54,22 @@ class CtxMngr:
             return {self.req: None, AsyncContext: None}
         return {**self.bynames, AsyncContext: None}
 
-    def get_ctx(self,req: Any,context: AsyncContext)-> Dict[Any, Any]:
+    def get_ctx(self, req: Any, context: AsyncContext) -> Dict[Any, Any]:
         if self.bynames is None:
             return {self.req: req, AsyncContext: context}
         ctx = {k: getattr(req, k) for k in self.bynames.keys()}
         return {**ctx, AsyncContext: context}
+
+
 class Runner:
-    __slots__ = ("func", "exception_registry", "mapped_ctx", "req", "ctx_mngr", "overrides")
+    __slots__ = (
+        "func",
+        "exception_registry",
+        "mapped_ctx",
+        "req",
+        "ctx_mngr",
+        "overrides",
+    )
 
     def __init__(
         self,
@@ -73,7 +83,7 @@ class Runner:
         self.exception_registry = exception_registry
         self.req = req
         self.ctx_mngr = CtxMngr(req, func)
-        
+
         context = self.ctx_mngr.get_ctx_template()
         self.mapped_ctx = get_mapped_ctx(
             func=func,

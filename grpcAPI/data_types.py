@@ -1,16 +1,5 @@
 import grpc
 from google.protobuf.message import Message
-from google.protobuf.wrappers_pb2 import (
-    BoolValue,
-    BytesValue,
-    DoubleValue,
-    FloatValue,
-    Int32Value,
-    Int64Value,
-    StringValue,
-    UInt32Value,
-    UInt64Value,
-)
 from typing_extensions import (
     Any,
     Callable,
@@ -26,17 +15,6 @@ from typing_extensions import (
 )
 
 from grpcAPI.proto_ctxinject import DependsInject, ModelFieldInject
-from grpcAPI.prototypes import (
-    ListBool,
-    ListBytes,
-    ListDouble,
-    ListInt,
-    ListStr,
-    MapIntBytes,
-    MapIntStr,
-    MapStrBytes,
-    MapStrStr,
-)
 
 
 class Depends(DependsInject):
@@ -86,113 +64,18 @@ class AsyncContext(Protocol):
     def cancelled(self) -> bool: ...
     def done(self) -> bool: ...
 
-#add protobuf metadata to function
+
+# add protobuf metadata to function
+
 
 def set_function_metadata(
     func: Callable[..., Any],
-    request: Type[Message],)->None:
+    request: Type[Message],
+) -> None:
     func.__grpc_metadata__ = request.__annotations__
 
+
 def get_function_metadata(
-    func: Callable[..., Any],) -> Optional[Mapping[str, Type[Any]]]:
+    func: Callable[..., Any],
+) -> Optional[Mapping[str, Type[Any]]]:
     return getattr(func, "__grpc_metadata__", None)
-
-# WellKnown types
-
-
-class _ProtoTypes(ModelFieldInject):
-    def __init__(self, model: Type[Message], **meta: Any):
-        super().__init__(model=model, field="value", **meta)
-
-
-class ProtoString(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=StringValue, **meta)
-
-
-class ProtoBytes(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=BytesValue, **meta)
-
-
-class ProtoBool(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=BoolValue, **meta)
-
-
-class ProtoDouble(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=DoubleValue, **meta)
-
-
-class ProtoFloat(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=FloatValue, **meta)
-
-
-class ProtoInt64(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=Int64Value, **meta)
-
-
-class ProtoInt(ProtoInt64): ...
-
-
-class ProtoUInt64(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=UInt64Value, **meta)
-
-
-class ProtoInt32(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=Int32Value, **meta)
-
-
-class ProtoUInt32(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=UInt32Value, **meta)
-
-
-class ProtoListStr(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=ListStr, **meta)
-
-
-class ProtoListInt(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=ListInt, **meta)
-
-
-class ProtoListBool(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=ListBool, **meta)
-
-
-class ProtoListDouble(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=ListDouble, **meta)
-
-
-class ProtoListBytes(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=ListBytes, **meta)
-
-
-class ProtoMapStrStr(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=MapStrStr, **meta)
-
-
-class ProtoMapStrBytes(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=MapStrBytes, **meta)
-
-
-class ProtoMapIntStr(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=MapIntStr, **meta)
-
-
-class ProtoMapIntBytes(_ProtoTypes):
-    def __init__(self, **meta: Any):
-        super().__init__(model=MapIntBytes, **meta)

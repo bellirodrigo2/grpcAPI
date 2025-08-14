@@ -1,7 +1,7 @@
 import asyncio
 from logging import Logger, getLogger
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
 from grpcAPI.app import App, GrpcAPI
 from grpcAPI.commands.settings.utils import (
@@ -13,7 +13,8 @@ from grpcAPI.process_service.run_process_service import run_process_service
 
 default_logger = getLogger(__name__)
 
-def resolve_settings(settings_path:Optional[str])-> Dict[str,Any]:
+
+def resolve_settings(settings_path: Optional[str]) -> Dict[str, Any]:
     if settings_path is not None:
         spath = Path(settings_path)
         user_settings = load_file_by_extension(spath)
@@ -21,11 +22,13 @@ def resolve_settings(settings_path:Optional[str])-> Dict[str,Any]:
         user_settings = {}
     return combine_settings(user_settings)
 
-def resolve_app(app_path:str, settings:Dict[str,Any])->App:
+
+def resolve_app(app_path: str, settings: Dict[str, Any]) -> App:
     load_app(app_path)
     app = GrpcAPI()
     run_process_service(app, settings)
     return app
+
 
 class BaseCommand:
     """
@@ -44,7 +47,7 @@ class BaseCommand:
         self.logger: Logger = default_logger
 
         self.settings = resolve_settings(settings_path)
-        
+
     async def run(self, **kwargs: Any) -> Any:
         """Default async run method - override for async commands"""
         raise NotImplementedError("Subclasses must implement run method.")
@@ -74,6 +77,6 @@ class GRPCAPICommand(BaseCommand):
         settings_path: Optional[str] = None,
         is_sync: bool = False,
     ) -> None:
-        super().__init__(command_name,settings_path,is_sync)
+        super().__init__(command_name, settings_path, is_sync)
         self.app_path = app_path
         self.app = resolve_app(app_path, self.settings)

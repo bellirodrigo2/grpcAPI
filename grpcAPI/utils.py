@@ -18,7 +18,7 @@ def is_service_dependent(service: IService, dep_func: Callable[..., Any]) -> boo
             if instance is not None:
                 if instance.default == dep_func:
                     return True
-                #protect against circular dependencies
+                # protect against circular dependencies
                 if is_service_dependent(service, instance.default):
                     return True
     return False

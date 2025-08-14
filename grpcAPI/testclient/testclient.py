@@ -13,9 +13,11 @@ default_test_settings = {
     "compile_proto": {"clean_services": True, "overwrite": False},
 }
 
+
 def set_label(func: Callable[..., Any], label: Tuple[str, str, str]) -> None:
     """Set a label for the function to identify it in the test client."""
     func.__testclient_label__ = label
+
 
 def get_label(func: Callable[..., Any]) -> Tuple[str, str, str]:
     """Get the label of the function."""
@@ -25,6 +27,7 @@ def get_label(func: Callable[..., Any]) -> Tuple[str, str, str]:
         raise UnboundLocalError(
             f'Function "{func.__name__}" is not linked to a grpcAPI module'
         )
+
 
 class TestClient:
     __test__ = False

@@ -1,13 +1,13 @@
 from datetime import datetime
 
-from sqlalchemy import  DateTime, Integer, String
+from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from example.guber.db import Base
+from example.guber.repo.sqlalchemy.db import Base
 
 
-class Account(Base):
+class AccountDB(Base):
     __tablename__ = "accounts"
 
     account_id: Mapped[str] = mapped_column(String, primary_key=True)

@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy import DateTime, Enum, Float, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from example.guber.db import Base
+from example.guber.repo.sqlalchemy.db import Base
 
 
 class RideStatusEnum(enum.Enum):

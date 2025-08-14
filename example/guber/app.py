@@ -1,5 +1,5 @@
-from example.guber.account import account_package
-from example.guber.ride import ride_package
+from example.guber.packages.account import account_package
+from example.guber.packages.ride import ride_package
 from grpcAPI.app import GrpcAPI
 
 app = GrpcAPI()

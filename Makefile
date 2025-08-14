@@ -18,16 +18,16 @@ test_coverage:
 
 lint:
 	@echo "Running linter (ruff)..."
-	ruff check . --exclude tests/lib
+	ruff check . --exclude tests/lib --exclude example/guber/domain/lib
 
 lint_fix:
 	@echo "Running linter --fix (ruff)..."
-	ruff check --fix . --exclude tests/lib
+	ruff check --fix . --exclude tests/lib --exclude example/guber/domain/lib
 
 format:
 	@echo "Formatting code (black e isort)..."
-	black .
-	isort .
+	black grpcAPI
+	isort grpcAPI
 
 build:
 	@echo "Building package ..."

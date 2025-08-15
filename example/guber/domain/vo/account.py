@@ -1,4 +1,3 @@
-__all__ = ["CPF", "CarPlate", "EmailStr"]
 from pydantic import BaseModel, EmailStr
 
 
@@ -8,3 +7,5 @@ class CPF(BaseModel):
 
 class CarPlate(BaseModel):
     value: str
+
+__all__ = ["CPF", "CarPlate", "EmailStr"]

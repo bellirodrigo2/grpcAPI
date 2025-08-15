@@ -16,7 +16,7 @@ class RideStatusEnum(enum.Enum):
     CANCELED = 4
 
 
-class Ride(Base):
+class RideDB(Base):
     __tablename__ = "ride_requests"
 
     id: Mapped[str] = mapped_column(primary_key=True)

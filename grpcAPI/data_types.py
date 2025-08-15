@@ -27,8 +27,8 @@ class FromContext(ModelFieldInject):
 
 
 class FromRequest(ModelFieldInject):
-    def __init__(self, model: Type[Message], field: Optional[str] = None, **meta: Any):
-        super().__init__(model=model, field=field, **meta)
+    def __init__(self, model: Type[Message], field: Optional[str] = None, validator: Optional[Callable[..., Any]] = None, **meta: Any):
+        super().__init__(model=model, field=field, validator=validator,**meta)
 
 
 @runtime_checkable

@@ -24,6 +24,7 @@ from grpcAPI.prototypes.lib.prototypes_pb2 import (
     MapStrBytes,
     MapStrStr,
 )
+from grpcAPI.prototypes.deriveds import FromKey, FromValue, ProtoKey, ProtoValue, FromListStr, ProtoListStr, FromStr, ProtoStr
 
 __all__ = [
     # google well-known types
@@ -49,4 +50,13 @@ __all__ = [
     "MapStrStr",
     "KeyValueStr",
     "Empty",
+    # grpcAPI derived types
+    "FromKey",
+    "FromValue",
+    "ProtoKey",
+    "ProtoValue",
+    "FromListStr",
+    "ProtoListStr",
+    "FromStr",
+    "ProtoStr",
 ]

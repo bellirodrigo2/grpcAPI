@@ -1,6 +1,6 @@
 import pytest
 
-from example.guber.server.application.usecase.account.account import signup_account
+from example.guber.server.application.usecase.account import signup_account
 from example.guber.server.domain import AccountInfo
 from grpcAPI.testclient import ContextMock, TestClient
 

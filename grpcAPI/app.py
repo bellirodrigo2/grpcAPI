@@ -24,7 +24,7 @@ from grpcAPI.makeproto import ILabeledMethod, IService
 from grpcAPI.process_service import ProcessService
 from grpcAPI.singleton import SingletonMeta
 
-Middleware = aio.ServerInterceptor
+Interceptor = aio.ServerInterceptor
 
 
 class MetaData:
@@ -89,6 +89,12 @@ class APIPackage(MetaData):
         self.modules: List[APIModule] = []
         super().__init__(name, options, comments)
 
+    def get_module(self, name: str) -> Optional[APIModule]:
+        for module in self.modules:
+            if module.name == name:
+                return module
+        return None
+
     def make_module(
         self,
         module_name: str,
@@ -105,6 +111,27 @@ class APIPackage(MetaData):
         )
         self.modules.append(module)
         return module
+
+    def make_service(
+        self,
+        service_name: str,
+        module: Optional[str] = None,
+        options: Optional[List[str]] = None,
+        comments: str = "",
+        title: Optional[str] = None,
+        description: str = "",
+        tags: Optional[List[str]] = None,
+    ) -> "APIService":
+        module = module or "service"
+        moduleapi = self.get_module(module)
+        if moduleapi is None:
+            moduleapi = self.make_module(module)
+
+        service = moduleapi.make_service(
+            service_name, options, comments, title, description, tags
+        )
+
+        return service
 
 
 class APIService(IService):
@@ -253,7 +280,7 @@ class App:
         elif isinstance(service, APIModule):
             # self._add_module(service)
             self._modules.append(service)
-        elif isinstance(service, APIPackage):
+        elif isinstance(service, APIPackage):  # type: ignore
             # self._add_package(service)
             self._packages.append(service)
         else:
@@ -277,11 +304,11 @@ class App:
         for module in package.modules:
             self._add_module(module)
 
-    def add_middleware(self, middleware: Type[Middleware]) -> None:
+    def add_middleware(self, middleware: Type[Interceptor]) -> None:
         self._middleware.append(middleware)
 
-    def middleware(self) -> Callable[[Type[Middleware]], Type[Middleware]]:
-        def decorator(cls: Type[Middleware]) -> Type[Middleware]:
+    def middleware(self) -> Callable[[Type[Interceptor]], Type[Interceptor]]:
+        def decorator(cls: Type[Interceptor]) -> Type[Interceptor]:
             self.add_middleware(cls)
             return cls
 

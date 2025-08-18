@@ -1,9 +1,17 @@
-from typing import Dict, Iterable, Mapping
-
 import grpc
-from typing_extensions import Any, List, Optional, Protocol, Sequence, Tuple
+from typing_extensions import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+)
 
-from grpcAPI.app import Middleware
+from grpcAPI.app import Interceptor
 
 
 class ServerPlugin(Protocol):
@@ -125,7 +133,7 @@ _compression_map = {
 
 
 def make_server(
-    middlewares: Optional[List[Middleware]], **server_settings: Any
+    middlewares: Optional[List[Interceptor]], **server_settings: Any
 ) -> ServerWrapper:
     options: Sequence[Tuple[str, Any]] = server_settings.get("options", [])
     maximum_concurrent_rpcs = server_settings.get("maximum_concurrent_rpcs", None)

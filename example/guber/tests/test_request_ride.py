@@ -1,6 +1,6 @@
 import pytest
 
-from example.guber.server.application.usecase.ride.user import request_ride
+from example.guber.server.application.usecase.ride import request_ride
 from example.guber.server.domain import RideRequest
 from grpcAPI.testclient import ContextMock, TestClient
 

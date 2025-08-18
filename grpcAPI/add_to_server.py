@@ -64,3 +64,41 @@ def get_deserializer_serializer(
         request_type.FromString,
         response_type.SerializeToString,
     )
+
+
+from google.protobuf import descriptor_pb2, descriptor_pool
+
+
+def register_fake_service(
+    file_name: str, package: str, service_name: str, methods: list[tuple[str, str, str]]
+):
+    """
+    Cria um FileDescriptorProto com um service e o registra no pool global.
+
+    Args:
+        file_name (str): nome do arquivo proto fictício (ex: "fake.proto")
+        package (str): nome do package (ex: "mypackage")
+        service_name (str): nome do service (ex: "MyService")
+        methods (list[tuple[str,str,str]]): lista de métodos no formato
+            (method_name, input_type, output_type)
+            Ex: [("SayHello", ".mypackage.HelloRequest", ".mypackage.HelloReply")]
+    """
+    file_desc_proto = descriptor_pb2.FileDescriptorProto()
+    file_desc_proto.name = file_name
+    file_desc_proto.package = package
+
+    # Cria service e métodos
+    service = file_desc_proto.service.add()
+    service.name = service_name
+
+    for method_name, input_type, output_type in methods:
+        rpc = service.method.add()
+        rpc.name = method_name
+        rpc.input_type = input_type
+        rpc.output_type = output_type
+
+    # Registra no pool global
+    pool = descriptor_pool.Default()
+    pool.Add(file_desc_proto)
+
+    return file_desc_proto

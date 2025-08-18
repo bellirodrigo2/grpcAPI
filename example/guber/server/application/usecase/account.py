@@ -1,25 +1,34 @@
+from typing import Any, Callable, Optional
+
 from typing_extensions import Annotated
 
 from example.guber.server.application.gateway import Authenticate
 from example.guber.server.application.repo import AccountRepository
-from example.guber.server.application.usecase.account import (
-    Account,
-    AccountInfo,
-    FromAccountInfo,
-    account_package,
-)
+from example.guber.server.domain import Account, AccountInfo
 from example.guber.server.domain.entity.account_rules import make_account_id
 from example.guber.server.domain.vo.account import (
     EmailStr,
     validate_car_plate,
     validate_sin,
 )
-from grpcAPI.data_types import Depends
+from grpcAPI.app import APIPackage
+from grpcAPI.data_types import Depends, FromRequest
 from grpcAPI.protobuf import BoolValue, FromValue, ProtoKey, ProtoStr, StringValue
 
-account_module = account_package.make_module("account")
+account_package = APIPackage("account")
 
-account_services = account_module.make_service("account_services")
+
+class FromAccountInfo(FromRequest):
+    def __init__(
+        self,
+        field: Optional[str] = None,
+        validator: Callable[..., Any] | None = None,
+        **meta: Any,
+    ):
+        super().__init__(AccountInfo, field, validator, **meta)
+
+
+account_services = account_package.make_service("account_services")
 
 
 @account_services(tags=["write:account"])

@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-package grpcAPI.prototypes;
+package grpcAPI.protobuf;
 
 option cc_enable_arenas = true;
-option go_package = "grpcAPI.golang.org/prototypes/prototypes";
-option java_package = "com.grpcAPI.prototypes";
+option go_package = "grpcAPI.golang.org/protobuf/protobuf";
+option java_package = "com.grpcAPI.protobuf";
 option java_outer_classname = "TypesProto";
 option java_multiple_files = true;
 option objc_class_prefix = "GRPCAPI";
-option csharp_namespace = "grpcAPI.ProtoTypes";
+option csharp_namespace = "grpcAPI.protobuf";
 
 message ListStr {
     repeated string value = 1;

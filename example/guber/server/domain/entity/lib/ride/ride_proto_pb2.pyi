@@ -78,11 +78,13 @@ class Ride(google.protobuf.message.Message):
     RIDE_ID_FIELD_NUMBER: builtins.int
     RIDE_REQUEST_FIELD_NUMBER: builtins.int
     DRIVER_ID_FIELD_NUMBER: builtins.int
+    FARE_FIELD_NUMBER: builtins.int
     ACCEPTED_AT_FIELD_NUMBER: builtins.int
     FINISHED_AT_FIELD_NUMBER: builtins.int
     STATUS_FIELD_NUMBER: builtins.int
     ride_id: builtins.str
     driver_id: builtins.str
+    fare: builtins.float
     status: global___RideStatus.ValueType
     @property
     def ride_request(self) -> global___RideRequest: ...
@@ -96,15 +98,68 @@ class Ride(google.protobuf.message.Message):
         ride_id: builtins.str = ...,
         ride_request: global___RideRequest | None = ...,
         driver_id: builtins.str = ...,
+        fare: builtins.float = ...,
         accepted_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
         finished_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
         status: global___RideStatus.ValueType = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["_accepted_at", b"_accepted_at", "_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "finished_at", b"finished_at", "ride_request", b"ride_request"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_accepted_at", b"_accepted_at", "_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "driver_id", b"driver_id", "finished_at", b"finished_at", "ride_id", b"ride_id", "ride_request", b"ride_request", "status", b"status"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["_accepted_at", b"_accepted_at", "_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "driver_id", b"driver_id", "fare", b"fare", "finished_at", b"finished_at", "ride_id", b"ride_id", "ride_request", b"ride_request", "status", b"status"]) -> None: ...
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_accepted_at", b"_accepted_at"]) -> typing.Literal["accepted_at"] | None: ...
     @typing.overload
     def WhichOneof(self, oneof_group: typing.Literal["_finished_at", b"_finished_at"]) -> typing.Literal["finished_at"] | None: ...
 
 global___Ride = Ride
+
+@typing.final
+class RideInfo(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    RIDE_FIELD_NUMBER: builtins.int
+    PASSENGER_NAME_FIELD_NUMBER: builtins.int
+    CURRENT_LAT_FIELD_NUMBER: builtins.int
+    CURRENT_LONG_FIELD_NUMBER: builtins.int
+    passenger_name: builtins.str
+    current_lat: builtins.float
+    current_long: builtins.float
+    @property
+    def ride(self) -> global___Ride: ...
+    def __init__(
+        self,
+        *,
+        ride: global___Ride | None = ...,
+        passenger_name: builtins.str = ...,
+        current_lat: builtins.float = ...,
+        current_long: builtins.float = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["ride", b"ride"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["current_lat", b"current_lat", "current_long", b"current_long", "passenger_name", b"passenger_name", "ride", b"ride"]) -> None: ...
+
+global___RideInfo = RideInfo
+
+@typing.final
+class Position(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    RIDE_ID_FIELD_NUMBER: builtins.int
+    LAT_FIELD_NUMBER: builtins.int
+    LONG_FIELD_NUMBER: builtins.int
+    UPDATED_AT_FIELD_NUMBER: builtins.int
+    ride_id: builtins.str
+    lat: builtins.float
+    long: builtins.float
+    @property
+    def updated_at(self) -> google.protobuf.timestamp_pb2.Timestamp: ...
+    def __init__(
+        self,
+        *,
+        ride_id: builtins.str = ...,
+        lat: builtins.float = ...,
+        long: builtins.float = ...,
+        updated_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
+    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["updated_at", b"updated_at"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["lat", b"lat", "long", b"long", "ride_id", b"ride_id", "updated_at", b"updated_at"]) -> None: ...
+
+global___Position = Position

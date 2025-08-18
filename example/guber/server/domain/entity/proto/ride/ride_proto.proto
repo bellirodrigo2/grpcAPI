@@ -25,7 +25,22 @@ message Ride {
     string ride_id = 1;
     RideRequest ride_request = 2;
     string driver_id = 3;
-    optional google.protobuf.Timestamp accepted_at = 4;
-    optional google.protobuf.Timestamp finished_at = 5;
-    RideStatus status = 6;
+    float fare = 4;
+    optional google.protobuf.Timestamp accepted_at = 5;
+    optional google.protobuf.Timestamp finished_at = 6;
+    RideStatus status = 7;
+}
+
+message RideInfo {
+    Ride ride = 1;
+    string passenger_name = 2;
+    float current_lat = 3;
+    float current_long = 4;
+}
+
+message Position {
+    string ride_id = 1;
+    float lat = 2;
+    float long = 3;
+    google.protobuf.Timestamp updated_at = 4;
 }

@@ -25,17 +25,21 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15ride/ride_proto.proto\x12\x04ride\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9b\x01\n\x0bRideRequest\x12\x14\n\x0cpassenger_id\x18\x01 \x01(\t\x12\x10\n\x08\x66rom_lat\x18\x02 \x01(\x01\x12\x11\n\tfrom_long\x18\x03 \x01(\x01\x12\x0e\n\x06to_lat\x18\x04 \x01(\x01\x12\x0f\n\x07to_long\x18\x05 \x01(\x01\x12\x30\n\x0crequested_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\x81\x02\n\x04Ride\x12\x0f\n\x07ride_id\x18\x01 \x01(\t\x12\'\n\x0cride_request\x18\x02 \x01(\x0b\x32\x11.ride.RideRequest\x12\x11\n\tdriver_id\x18\x03 \x01(\t\x12\x34\n\x0b\x61\x63\x63\x65pted_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x00\x88\x01\x01\x12\x34\n\x0b\x66inished_at\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x01\x88\x01\x01\x12 \n\x06status\x18\x06 \x01(\x0e\x32\x10.ride.RideStatusB\x0e\n\x0c_accepted_atB\x0e\n\x0c_finished_at*W\n\nRideStatus\x12\r\n\tREQUESTED\x10\x00\x12\x0c\n\x08\x41\x43\x43\x45PTED\x10\x01\x12\x0f\n\x0bIN_PROGRESS\x10\x02\x12\r\n\tCOMPLETED\x10\x03\x12\x0c\n\x08\x43\x41NCELED\x10\x04\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15ride/ride_proto.proto\x12\x04ride\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9b\x01\n\x0bRideRequest\x12\x14\n\x0cpassenger_id\x18\x01 \x01(\t\x12\x10\n\x08\x66rom_lat\x18\x02 \x01(\x01\x12\x11\n\tfrom_long\x18\x03 \x01(\x01\x12\x0e\n\x06to_lat\x18\x04 \x01(\x01\x12\x0f\n\x07to_long\x18\x05 \x01(\x01\x12\x30\n\x0crequested_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\x8f\x02\n\x04Ride\x12\x0f\n\x07ride_id\x18\x01 \x01(\t\x12\'\n\x0cride_request\x18\x02 \x01(\x0b\x32\x11.ride.RideRequest\x12\x11\n\tdriver_id\x18\x03 \x01(\t\x12\x0c\n\x04\x66\x61re\x18\x04 \x01(\x02\x12\x34\n\x0b\x61\x63\x63\x65pted_at\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x00\x88\x01\x01\x12\x34\n\x0b\x66inished_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x01\x88\x01\x01\x12 \n\x06status\x18\x07 \x01(\x0e\x32\x10.ride.RideStatusB\x0e\n\x0c_accepted_atB\x0e\n\x0c_finished_at\"g\n\x08RideInfo\x12\x18\n\x04ride\x18\x01 \x01(\x0b\x32\n.ride.Ride\x12\x16\n\x0epassenger_name\x18\x02 \x01(\t\x12\x13\n\x0b\x63urrent_lat\x18\x03 \x01(\x02\x12\x14\n\x0c\x63urrent_long\x18\x04 \x01(\x02\"f\n\x08Position\x12\x0f\n\x07ride_id\x18\x01 \x01(\t\x12\x0b\n\x03lat\x18\x02 \x01(\x02\x12\x0c\n\x04long\x18\x03 \x01(\x02\x12.\n\nupdated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp*W\n\nRideStatus\x12\r\n\tREQUESTED\x10\x00\x12\x0c\n\x08\x41\x43\x43\x45PTED\x10\x01\x12\x0f\n\x0bIN_PROGRESS\x10\x02\x12\r\n\tCOMPLETED\x10\x03\x12\x0c\n\x08\x43\x41NCELED\x10\x04\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ride.ride_proto_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_RIDESTATUS']._serialized_start=482
-  _globals['_RIDESTATUS']._serialized_end=569
+  _globals['_RIDESTATUS']._serialized_start=705
+  _globals['_RIDESTATUS']._serialized_end=792
   _globals['_RIDEREQUEST']._serialized_start=65
   _globals['_RIDEREQUEST']._serialized_end=220
   _globals['_RIDE']._serialized_start=223
-  _globals['_RIDE']._serialized_end=480
+  _globals['_RIDE']._serialized_end=494
+  _globals['_RIDEINFO']._serialized_start=496
+  _globals['_RIDEINFO']._serialized_end=599
+  _globals['_POSITION']._serialized_start=601
+  _globals['_POSITION']._serialized_end=703
 # @@protoc_insertion_point(module_scope)

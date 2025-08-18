@@ -23,7 +23,7 @@ message AccountCreated{
 }
 
 
-message Account{
+message AccountContent{
     string name=1;
     string email=2;
     google.protobuf.Struct payload = 3;

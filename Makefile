@@ -18,11 +18,11 @@ test_coverage:
 
 lint:
 	@echo "Running linter (ruff)..."
-	ruff check . --exclude tests/lib --exclude example/guber/domain/lib
+	ruff check . --exclude tests/lib --exclude example/guber/server/domain/entity/lib
 
 lint_fix:
 	@echo "Running linter --fix (ruff)..."
-	ruff check --fix . --exclude tests/lib --exclude example/guber/domain/lib
+	ruff check --fix . --exclude tests/lib --exclude example/guber/server/domain/entity/lib
 
 format:
 	@echo "Formatting code (black e isort)..."

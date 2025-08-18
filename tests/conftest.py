@@ -40,7 +40,8 @@ from grpcAPI.testclient import TestClient
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
 
-from tests.lib.account_pb2 import Account, AccountCreated, AccountInput, Inner
+from tests.lib.account_pb2 import AccountContent as Account
+from tests.lib.account_pb2 import AccountCreated, AccountInput, Inner
 from tests.lib.inner.inner_pb2 import InnerMessage  # noqa: F401
 from tests.lib.multi.inner.class_pb2 import ClassMsg  # noqa: F401
 from tests.lib.other_pb2 import Other  # noqa: F401
@@ -92,9 +93,7 @@ def functional_service() -> APIService:
             db.close()
             await asyncio.sleep(0.01)
 
-    def assert_db_connection(
-        db: str, db1: MockConnection, db2: MockConnection
-    ) -> None:
+    def assert_db_connection(db: str, db1: MockConnection, db2: MockConnection) -> None:
         assert db == "db_connection", "Database connection should be injected"
         assert (
             db1.connection == "sync_db_connection"
@@ -157,11 +156,13 @@ def functional_service() -> APIService:
             yield Account(name=v, email=f"{v}@email.com")
 
     @serviceapi
-    async def get_by_ids(ids: AsyncIterator[StringValue],
+    async def get_by_ids(
+        ids: AsyncIterator[StringValue],
         db: str = Depends(get_db),
         db1: MockConnection = Depends(sync_get_db),
-        db2: MockConnection = Depends(async_get_db),) -> AsyncIterator[Account]:
-        assert_db_connection(db, db1, db2)        
+        db2: MockConnection = Depends(async_get_db),
+    ) -> AsyncIterator[Account]:
+        assert_db_connection(db, db1, db2)
 
         async for id in ids:
             yield Account(
@@ -169,24 +170,32 @@ def functional_service() -> APIService:
             )
 
     @serviceapi
-    async def get_emails(ids: AsyncIterator[StringValue],
+    async def get_emails(
+        ids: AsyncIterator[StringValue],
         db: str = Depends(get_db),
         db1: MockConnection = Depends(sync_get_db),
-        db2: MockConnection = Depends(async_get_db),) -> ListValue:
-        assert_db_connection(db, db1, db2)    
+        db2: MockConnection = Depends(async_get_db),
+    ) -> ListValue:
+        assert_db_connection(db, db1, db2)
         emails = ListValue()
         async for id in ids:
             emails.extend([id])
         return emails
 
     @serviceapi(request_type_input=AccountInput, response_type_input=Empty)
-    async def log_accountinput(name:str, email:str,payload:Struct, itens:ListValue, inner:Inner,
+    async def log_accountinput(
+        name: str,
+        email: str,
+        payload: Struct,
+        itens: ListValue,
+        inner: Inner,
         db: str = Depends(get_db),
         db1: MockConnection = Depends(sync_get_db),
-        db2: MockConnection = Depends(async_get_db),):
-        
+        db2: MockConnection = Depends(async_get_db),
+    ):
+
         assert_db_connection(db, db1, db2)
-        
+
         return Empty()
 
     inject = InjectProtoTyping()

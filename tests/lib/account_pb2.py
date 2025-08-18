@@ -9,33 +9,36 @@ from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
-
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC, 6, 31, 0, "", "account.proto"
+    _runtime_version.Domain.PUBLIC,
+    6,
+    31,
+    0,
+    '',
+    'account.proto'
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
+from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\raccount.proto\x12\x07\x61\x63\x63ount\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto"\x9f\x01\n\x0c\x41\x63\x63ountInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12(\n\x07payload\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\x12)\n\x05itens\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.ListValue\x12\x1d\n\x05inner\x18\x05 \x01(\x0b\x32\x0e.account.Inner"#\n\x05Inner\x12\x11\n\x04name\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_name"L\n\x0e\x41\x63\x63ountCreated\x12\n\n\x02id\x18\x01 \x01(\t\x12.\n\ncreated_at\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp"\xb7\x01\n\x07\x41\x63\x63ount\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12(\n\x07payload\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\x12)\n\x05itens\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.ListValue\x12\n\n\x02id\x18\x05 \x01(\t\x12.\n\ncreated_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestampb\x06proto3'
-)
+
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\raccount.proto\x12\x07\x61\x63\x63ount\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\x9f\x01\n\x0c\x41\x63\x63ountInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12(\n\x07payload\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\x12)\n\x05itens\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.ListValue\x12\x1d\n\x05inner\x18\x05 \x01(\x0b\x32\x0e.account.Inner\"#\n\x05Inner\x12\x11\n\x04name\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_name\"L\n\x0e\x41\x63\x63ountCreated\x12\n\n\x02id\x18\x01 \x01(\t\x12.\n\ncreated_at\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"\xbe\x01\n\x0e\x41\x63\x63ountContent\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12(\n\x07payload\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\x12)\n\x05itens\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.ListValue\x12\n\n\x02id\x18\x05 \x01(\t\x12.\n\ncreated_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.Timestampb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "account_pb2", _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'account_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-    DESCRIPTOR._loaded_options = None
-    _globals["_ACCOUNTINPUT"]._serialized_start = 90
-    _globals["_ACCOUNTINPUT"]._serialized_end = 249
-    _globals["_INNER"]._serialized_start = 251
-    _globals["_INNER"]._serialized_end = 286
-    _globals["_ACCOUNTCREATED"]._serialized_start = 288
-    _globals["_ACCOUNTCREATED"]._serialized_end = 364
-    _globals["_ACCOUNT"]._serialized_start = 367
-    _globals["_ACCOUNT"]._serialized_end = 550
+  DESCRIPTOR._loaded_options = None
+  _globals['_ACCOUNTINPUT']._serialized_start=90
+  _globals['_ACCOUNTINPUT']._serialized_end=249
+  _globals['_INNER']._serialized_start=251
+  _globals['_INNER']._serialized_end=286
+  _globals['_ACCOUNTCREATED']._serialized_start=288
+  _globals['_ACCOUNTCREATED']._serialized_end=364
+  _globals['_ACCOUNTCONTENT']._serialized_start=367
+  _globals['_ACCOUNTCONTENT']._serialized_end=557
 # @@protoc_insertion_point(module_scope)

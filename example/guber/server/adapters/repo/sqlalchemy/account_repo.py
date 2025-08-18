@@ -1,6 +1,5 @@
-from collections.abc import Iterable
 from datetime import datetime
-from typing import Any as Any, AsyncGenerator,  Optional
+from typing_extensions import Any as Any, AsyncGenerator,  Optional,Iterable
 
 from sqlalchemy import select
 
@@ -28,7 +27,7 @@ class SqlAlchemyAccountRepo(AccountRepo, SqlAlchemyDB):
         return result.scalar_one_or_none() is not None
 
     async def create_account(self, id:str, account_info:AccountInfo) -> str:
-        account = proto_to_orm_account(account_info)
+        account = proto_to_orm_account(id,account_info)
         self.db.add(account)
         await self.db.commit()
         await self.db.refresh(account)
@@ -61,10 +60,17 @@ async def get_account_sqlalchemy_repo()->AsyncGenerator[SqlAlchemyAccountRepo, N
     async with get_db() as db:
         yield SqlAlchemyAccountRepo(db)
 
+async def is_passenger_sqlalchemy_repo() -> bool:
+    async with get_db() as db:
+        result = await db.execute(select(AccountDB).where(AccountDB.account_id == id))
+        account= result.scalar_one_or_none()
+        if account is None:
+            raise ValueError(f"Account not found: Id: {id}")
+        return not account.is_driver
 
-def proto_to_orm_account(account: AccountInfo) -> AccountDB:
+def proto_to_orm_account(id:str,account: AccountInfo) -> AccountDB:
     return AccountDB(
-        account_id=str(uuid4()),
+        account_id=id,
         name=account.name,
         email=account.email,
         cpf=account.cpf,

@@ -17,12 +17,12 @@ class AccountInfo(google.protobuf.message.Message):
 
     NAME_FIELD_NUMBER: builtins.int
     EMAIL_FIELD_NUMBER: builtins.int
-    CPF_FIELD_NUMBER: builtins.int
+    SIN_FIELD_NUMBER: builtins.int
     CAR_PLATE_FIELD_NUMBER: builtins.int
     IS_DRIVER_FIELD_NUMBER: builtins.int
     name: builtins.str
     email: builtins.str
-    cpf: builtins.str
+    sin: builtins.str
     car_plate: builtins.str
     is_driver: builtins.bool
     def __init__(
@@ -30,25 +30,11 @@ class AccountInfo(google.protobuf.message.Message):
         *,
         name: builtins.str = ...,
         email: builtins.str = ...,
-        cpf: builtins.str = ...,
+        sin: builtins.str = ...,
         car_plate: builtins.str = ...,
         is_driver: builtins.bool = ...,
     ) -> None: ...
-    def ClearField(
-        self,
-        field_name: typing.Literal[
-            "car_plate",
-            b"car_plate",
-            "cpf",
-            b"cpf",
-            "email",
-            b"email",
-            "is_driver",
-            b"is_driver",
-            "name",
-            b"name",
-        ],
-    ) -> None: ...
+    def ClearField(self, field_name: typing.Literal["car_plate", b"car_plate", "email", b"email", "is_driver", b"is_driver", "name", b"name", "sin", b"sin"]) -> None: ...
 
 global___AccountInfo = AccountInfo
 
@@ -71,14 +57,7 @@ class Account(google.protobuf.message.Message):
         info: global___AccountInfo | None = ...,
         created_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(
-        self, field_name: typing.Literal["created_at", b"created_at", "info", b"info"]
-    ) -> builtins.bool: ...
-    def ClearField(
-        self,
-        field_name: typing.Literal[
-            "account_id", b"account_id", "created_at", b"created_at", "info", b"info"
-        ],
-    ) -> None: ...
+    def HasField(self, field_name: typing.Literal["created_at", b"created_at", "info", b"info"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["account_id", b"account_id", "created_at", b"created_at", "info", b"info"]) -> None: ...
 
 global___Account = Account

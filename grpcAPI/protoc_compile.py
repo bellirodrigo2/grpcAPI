@@ -75,8 +75,10 @@ def list_proto_files(base_dir: Path, rel_path: Optional[Path] = None) -> List[st
 
 if __name__ == "__main__":
     compile_protoc(
-        Path("./example/guber/domain/proto"),
-        Path("./example/guber/domain/lib"),
+        Path("./example/guber/server/domain/entity/proto"),
+        Path("./example/guber/server/domain/entity/lib"),
+        # Path("./tests/proto"),
+        # Path("./tests/lib"),
         True,
         False,
         True,

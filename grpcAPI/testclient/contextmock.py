@@ -21,7 +21,6 @@ class ContextMock:
         self._deadline = deadline
         self._start_time = time.monotonic()
 
-        self._invocation_metadata = []
         self._trailing_metadata = []
         self._code = ""
         self._details = ""
@@ -64,7 +63,7 @@ class ContextMock:
 
     def invocation_metadata(self) -> Optional[Sequence[Tuple[str, str]]]:
         self.tracker.invocation_metadata()
-        return self._invocation_metadata
+        return self._trailing_metadata
 
     def set_code(self, code: grpc.StatusCode) -> None:
         self.tracker.set_code(code)

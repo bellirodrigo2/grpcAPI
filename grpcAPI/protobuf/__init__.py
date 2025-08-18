@@ -12,7 +12,18 @@ from google.protobuf.wrappers_pb2 import (
     UInt64Value,
 )
 
-from grpcAPI.prototypes.lib.prototypes_pb2 import (
+from grpcAPI.protobuf.deriveds import (
+    FromKey,
+    FromListStr,
+    FromStr,
+    FromValue,
+    Metadata,
+    ProtoKey,
+    ProtoListStr,
+    ProtoStr,
+    ProtoValue,
+)
+from grpcAPI.protobuf.lib.prototypes_pb2 import (
     KeyValueStr,
     ListBool,
     ListBytes,
@@ -24,7 +35,6 @@ from grpcAPI.prototypes.lib.prototypes_pb2 import (
     MapStrBytes,
     MapStrStr,
 )
-from grpcAPI.prototypes.deriveds import FromKey, FromValue, ProtoKey, ProtoValue, FromListStr, ProtoListStr, FromStr, ProtoStr
 
 __all__ = [
     # google well-known types
@@ -59,4 +69,5 @@ __all__ = [
     "ProtoListStr",
     "FromStr",
     "ProtoStr",
+    "Metadata",
 ]

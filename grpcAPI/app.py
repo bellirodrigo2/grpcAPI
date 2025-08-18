@@ -230,22 +230,32 @@ class App:
         self.dependency_overrides: DependencyRegistry = {}
         self._exception_handlers: ExceptionRegistry = {}
         self._process_service: List[ProcessService] = []
+        self._modules: List[APIModule] = []
+        self._packages: List[APIPackage] = []
 
     @property
     def services(self) -> Mapping[str, List[IService]]:
+        for module in self._modules:
+            self._add_module(module)
+        self._modules.clear()
+        for package in self._packages:
+            self._add_package(package)
+        self._packages.clear()
         return dict(self._services)
 
     @property
     def service_list(self) -> Sequence[IService]:
-        return list(itertools.chain.from_iterable(self._services.values()))
+        return list(itertools.chain.from_iterable(self.services.values()))
 
     def add_service(self, service: Union[APIService, APIModule, APIPackage]) -> None:
         if isinstance(service, APIService):
             self._add_service(service)
         elif isinstance(service, APIModule):
-            self._add_module(service)
+            # self._add_module(service)
+            self._modules.append(service)
         elif isinstance(service, APIPackage):
-            self._add_package(service)
+            # self._add_package(service)
+            self._packages.append(service)
         else:
             raise TypeError(
                 f"Expected APIService, APIModule, or APIPackage, got {type(service).__name__}"

@@ -1,37 +1,41 @@
 from typing_extensions import Annotated
-from example.guber.server.domain.entity.account_rules import make_account_id
-from grpcAPI.prototypes import StringValue, ProtoStr
 
-from example.guber.server.application.services import Authenticate
+from example.guber.server.application.gateway import Authenticate
 from example.guber.server.application.repo import AccountRepository
-from example.guber.server.domain.vo.account import CPF, CarPlate, EmailStr
-
 from example.guber.server.application.usecase.account import (
-    account_package,
     Account,
     AccountInfo,
-    FromAccountInfo
+    FromAccountInfo,
+    account_package,
 )
-from grpcAPI.prototypes import FromValue, ProtoKey
+from example.guber.server.domain.entity.account_rules import make_account_id
+from example.guber.server.domain.vo.account import (
+    EmailStr,
+    validate_car_plate,
+    validate_sin,
+)
+from grpcAPI.data_types import Depends
+from grpcAPI.protobuf import BoolValue, FromValue, ProtoKey, ProtoStr, StringValue
 
 account_module = account_package.make_module("account")
 
 account_services = account_module.make_service("account_services")
 
+
 @account_services(tags=["write:account"])
 async def signup_account(
     account_info: AccountInfo,
-    cpf: Annotated[CPF, FromAccountInfo()],
+    sin: Annotated[str, FromAccountInfo(validator=validate_sin)],
     email: Annotated[EmailStr, FromAccountInfo()],
-    car_plate: Annotated[CarPlate, FromAccountInfo()],
+    car_plate: Annotated[str, FromAccountInfo(validator=validate_car_plate)],
+    id: Annotated[str, Depends(make_account_id)],
     _: Authenticate,
     acc_repo: AccountRepository,
 ) -> StringValue:
-    # cpf, email and car_plate are here for validation, and to define the input protobuf class
-    await acc_repo.exist_cpf(cpf=str(cpf))
+    # sin, email and car_plate are here for validation, and to define the input protobuf class
+    await acc_repo.exist_sin(sin=str(sin))
     await acc_repo.exist_email(email=str(email))
-    id = make_account_id()
-    user_id = await acc_repo.create_account(id,account_info)
+    user_id = await acc_repo.create_account(id, account_info)
     return StringValue(value=str(user_id))
 
 
@@ -51,13 +55,14 @@ async def get_account(
 @account_services
 async def update_car_plate(
     id: ProtoKey,
-    car_plate: Annotated[CarPlate, FromValue()],
+    car_plate: Annotated[str, FromValue(validator=validate_car_plate)],
     _: Authenticate,
     acc_repo: AccountRepository,
-) -> None:
+) -> BoolValue:
     updated = await acc_repo.update_account_field(id, "car_plate", str(car_plate))
     if not updated:
         raise ValueError(f"Account with id {id} not found or car plate not updated")
+    return BoolValue(value=True)
 
 
 @account_services
@@ -66,8 +71,21 @@ async def update_email(
     value: Annotated[EmailStr, FromValue()],
     _: Authenticate,
     acc_repo: AccountRepository,
-) -> None:
+) -> BoolValue:
     id, email = key, value
     updated = await acc_repo.update_account_field(id, "email", str(email))
     if not updated:
-        raise ValueError(f"Account with id {id} not found or car plate not updated")
+        raise ValueError(f"Account with id {id} not found or email not updated")
+    return BoolValue(value=True)
+
+
+@account_services(tags=["read:account", "read:gateway"])
+async def is_passenger(
+    id: ProtoKey,
+    _: Authenticate,
+    acc_repo: AccountRepository,
+) -> BoolValue:
+    account = await acc_repo.get_by_id(id)
+    if account is None:
+        raise ValueError(f"Account with id {id} not found")
+    return BoolValue(value=not account.info.is_driver)

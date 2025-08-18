@@ -1,6 +1,6 @@
 from typing_extensions import Any, Iterable, Optional, Protocol
 
-from example.guber.server.domain import Account,AccountInfo
+from example.guber.server.domain import Account, AccountInfo
 
 
 class AccountRepo(Protocol):
@@ -9,9 +9,9 @@ class AccountRepo(Protocol):
 
     async def exist_email(self, email: str) -> bool: ...
 
-    async def exist_cpf(self, cpf: str) -> bool: ...
+    async def exist_sin(self, sin: str) -> bool: ...
 
-    async def create_account(self, id:str, account_info:AccountInfo) -> str: ...
+    async def create_account(self, id: str, account_info: AccountInfo) -> str: ...
 
     async def list_accounts(self, ids: Iterable[str]) -> Iterable[Account]: ...
 

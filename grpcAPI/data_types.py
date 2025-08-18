@@ -22,13 +22,24 @@ class Depends(DependsInject):
 
 
 class FromContext(ModelFieldInject):
-    def __init__(self, field: Optional[str] = None, **meta: Any):
-        super().__init__(model=AsyncContext, field=field, **meta)
+    def __init__(
+        self,
+        field: Optional[str] = None,
+        validator: Optional[Callable[..., Any]] = None,
+        **meta: Any,
+    ):
+        super().__init__(model=AsyncContext, field=field, validator=validator, **meta)
 
 
 class FromRequest(ModelFieldInject):
-    def __init__(self, model: Type[Message], field: Optional[str] = None, validator: Optional[Callable[..., Any]] = None, **meta: Any):
-        super().__init__(model=model, field=field, validator=validator,**meta)
+    def __init__(
+        self,
+        model: Type[Message],
+        field: Optional[str] = None,
+        validator: Optional[Callable[..., Any]] = None,
+        **meta: Any,
+    ):
+        super().__init__(model=model, field=field, validator=validator, **meta)
 
 
 @runtime_checkable
@@ -47,7 +58,7 @@ class AsyncContext(Protocol):
     def set_trailing_metadata(
         self, trailing_metadata: Sequence[Tuple[str, str]]
     ) -> None: ...
-    def invocation_metadata(self) -> Optional[Sequence[Tuple[str, str]]]: ...
+    def invocation_metadata(self) -> Sequence[Tuple[str, str]]: ...
     def set_code(self, code: grpc.StatusCode) -> None: ...
     def set_details(self, details: str) -> None: ...
     def set_compression(self, compression: grpc.Compression) -> None: ...

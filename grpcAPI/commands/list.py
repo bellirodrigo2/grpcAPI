@@ -96,4 +96,4 @@ class ListCommand(GRPCAPICommand):
 
     def run_sync(self, **kwargs: Any) -> None:
         """List all active services with summarized info about services and methods"""
-        display_services_list(self.app.services)
+        display_services_list(self.app.service_list)

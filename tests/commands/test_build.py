@@ -143,16 +143,11 @@ class TestBuildCommand:
             with patch("grpcAPI.commands.build.build_protos") as mock_build:
                 mock_build.return_value = {"test.proto"}
 
-                with patch(
-                    "grpcAPI.commands.utils.get_proto_lib_path"
-                ) as mock_paths, patch(
-                    "grpcAPI.commands.utils.get_compile_proto_settings"
-                ) as mock_settings:
+                with patch("grpcAPI.commands.build.get_proto_lib_path") as mock_paths:
 
                     mock_paths.return_value = (Path("proto"), Path("lib"))
-                    mock_settings.return_value = (True, False)
-
-                    await cmd.run(zipcompress=True)
+                    cmd.settings["compile_proto"]["zipcompress"] = True
+                    await cmd.run()
 
                     mock_build.assert_called_once_with(
                         app=cmd.app,

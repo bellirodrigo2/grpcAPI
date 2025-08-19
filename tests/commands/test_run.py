@@ -104,7 +104,9 @@ class TestRunCommand:
         ) as mock_load_file:
 
             mock_load_file.return_value = {
-                "plugins": {"health": {}, "reflection": {"enabled": True}}
+                "plugins": {
+                    "additional": {},
+                }
             }
 
             cmd = RunCommand(app_fixture, "settings.json")
@@ -141,7 +143,7 @@ class TestRunCommand:
                     await cmd.run()
 
                     # Verify plugins were created and registered
-                    assert mock_make_plugin.call_count == 2  # health and reflection
+                    assert mock_make_plugin.call_count == 4  # health and reflection
                     mock_server.register_plugin.assert_called()
 
     @pytest.mark.asyncio

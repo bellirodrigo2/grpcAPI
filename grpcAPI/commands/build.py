@@ -3,7 +3,7 @@ import tempfile
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Any, Optional, Set
+from typing import Any, Dict, Optional, Set, Tuple
 
 from grpcAPI.app import App
 from grpcAPI.commands import GRPCAPICommand, lint
@@ -82,20 +82,47 @@ def zip_directory(source_dir: Path, zip_path: Path, logger: Logger) -> None:
     logger.info(f"Created zip file: {zip_path}")
 
 
+def get_compile_proto_settings(
+    settings: Dict[str, Any],
+) -> Tuple[bool, bool, bool]:
+    compile_settings = settings.get("compile_proto", {})
+    clean_services = compile_settings.get("clean_services", True)
+    overwrite = compile_settings.get("overwrite", False)
+    zipcompress = compile_settings.get("zipcompress", False)
+    return clean_services, overwrite, zipcompress
+
+
+def get_proto_lib_path(
+    settings: Dict[str, Any],
+) -> Tuple[Path, Path]:
+
+    root_path = Path("./").resolve()
+
+    proto_str: str = settings.get("proto_path", "proto")
+    proto_path = root_path / proto_str
+    if not proto_path.exists():
+        raise FileNotFoundError(str(proto_path))
+
+    compile_settings = settings.get("compile_proto", {})
+    lib_str: str = compile_settings.get("output_path", "dist")
+    lib_path = root_path / lib_str
+    if not lib_path.exists():
+        raise FileNotFoundError(str(lib_path))
+    return proto_path, lib_path
+
+
 class BuildCommand(GRPCAPICommand):
 
     def __init__(self, app: App, settings_path: Optional[str] = None) -> None:
         super().__init__("build", app, settings_path)
 
     async def run(self, **kwargs: Any) -> None:
-        from grpcAPI.commands.utils import (
-            get_compile_proto_settings,
-            get_proto_lib_path,
-        )
+        # from grpcAPI.commands.utils import get_proto_lib_path
 
         proto_path, output_path = get_proto_lib_path(self.settings)
-        clean_services, overwrite = get_compile_proto_settings(self.settings)
-        zipcompress = kwargs.get("zipcompress", False)
+        clean_services, overwrite, zipcompress = get_compile_proto_settings(
+            self.settings
+        )
 
         build_protos(
             app=self.app,

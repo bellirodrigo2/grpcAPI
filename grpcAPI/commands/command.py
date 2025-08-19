@@ -3,12 +3,8 @@ from logging import Logger, getLogger
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from grpcAPI.app import App, GrpcAPI
-from grpcAPI.commands.settings.utils import (
-    combine_settings,
-    load_app,
-    load_file_by_extension,
-)
+from grpcAPI.app import App
+from grpcAPI.commands.settings.utils import combine_settings, load_file_by_extension
 from grpcAPI.process_service.run_process_service import run_process_service
 
 default_logger = getLogger(__name__)
@@ -21,13 +17,6 @@ def resolve_settings(settings_path: Optional[str]) -> Dict[str, Any]:
     else:
         user_settings = {}
     return combine_settings(user_settings)
-
-
-def resolve_app(app_path: str, settings: Dict[str, Any]) -> App:
-    load_app(app_path)
-    app = GrpcAPI()
-    run_process_service(app, settings)
-    return app
 
 
 class BaseCommand:
@@ -49,16 +38,12 @@ class BaseCommand:
         self.settings = resolve_settings(settings_path)
 
     async def run(self, **kwargs: Any) -> Any:
-        """Default async run method - override for async commands"""
         raise NotImplementedError("Subclasses must implement run method.")
 
     def run_sync(self, **kwargs: Any) -> Any:
-        """Sync run method - override for sync commands"""
-        # Default: run the async version
         return asyncio.run(self.run(**kwargs))
 
     def execute(self, **kwargs: Any) -> Any:
-        """Universal executor that handles both sync and async commands"""
         if self._is_sync:
             return self.run_sync(**kwargs)
         else:

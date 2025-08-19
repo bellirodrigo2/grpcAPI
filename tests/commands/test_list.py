@@ -77,7 +77,7 @@ class TestDisplayServicesList:
         """Test display shows service description properly"""
         mock_service.description = "Test service description"
         mock_service.comments = "Test comments"
-        
+
         with patch("grpcAPI.commands.list.Console") as mock_console:
             console_instance = Mock()
             mock_console.return_value = console_instance
@@ -87,7 +87,7 @@ class TestDisplayServicesList:
             # Should call console.rule for package and console.print for table
             rule_calls = console_instance.rule.call_args_list
             print_calls = console_instance.print.call_args_list
-            
+
             # Should have at least one rule call for package
             assert len(rule_calls) >= 1
             # Should have at least one print call for table
@@ -104,10 +104,10 @@ class TestDisplayServicesList:
             # Should call console.rule for package and console.print for table
             rule_calls = console_instance.rule.call_args_list
             print_calls = console_instance.print.call_args_list
-            
+
             # Should have at least one rule call for package
             assert len(rule_calls) >= 1
-            
+
             # Check that package is mentioned in rule call
             package_rule_call = str(rule_calls[0])
             assert "test.package" in package_rule_call
@@ -125,21 +125,23 @@ class TestDisplayServicesList:
         )
         service.comments = "Service comments"
         service._APIService__methods = [mock_method]
-        
+
         with patch("grpcAPI.commands.list.Console") as mock_console:
             console_instance = Mock()
             mock_console.return_value = console_instance
             mock_table = Mock()
-            
+
             with patch("grpcAPI.commands.list.Table") as mock_table_class:
                 mock_table_class.return_value = mock_table
-                
+
                 display_services_list([service])
-                
+
                 # Check that add_row was called with the service description
                 mock_table.add_row.assert_called()
                 call_args = mock_table.add_row.call_args[0]
-                assert call_args[2] == "Service description"  # Third argument is description
+                assert (
+                    call_args[2] == "Service description"
+                )  # Third argument is description
 
     def test_service_fallback_to_comments(self, mock_method):
         """Test that service falls back to comments when no description"""
@@ -151,21 +153,23 @@ class TestDisplayServicesList:
         )
         service.comments = "Service comments"
         service._APIService__methods = [mock_method]
-        
+
         with patch("grpcAPI.commands.list.Console") as mock_console:
             console_instance = Mock()
             mock_console.return_value = console_instance
             mock_table = Mock()
-            
+
             with patch("grpcAPI.commands.list.Table") as mock_table_class:
                 mock_table_class.return_value = mock_table
-                
+
                 display_services_list([service])
-                
+
                 # Check that add_row was called with the service comments
                 mock_table.add_row.assert_called()
                 call_args = mock_table.add_row.call_args[0]
-                assert call_args[2] == "Service comments"  # Third argument is description
+                assert (
+                    call_args[2] == "Service comments"
+                )  # Third argument is description
 
     def test_service_no_description_or_comments(self, mock_method):
         """Test that service shows 'No description' when neither description nor comments"""
@@ -177,17 +181,17 @@ class TestDisplayServicesList:
         )
         service.comments = ""
         service._APIService__methods = [mock_method]
-        
+
         with patch("grpcAPI.commands.list.Console") as mock_console:
             console_instance = Mock()
             mock_console.return_value = console_instance
             mock_table = Mock()
-            
+
             with patch("grpcAPI.commands.list.Table") as mock_table_class:
                 mock_table_class.return_value = mock_table
-                
+
                 display_services_list([service])
-                
+
                 # Check that add_row was called with "No description"
                 mock_table.add_row.assert_called()
                 call_args = mock_table.add_row.call_args[0]
@@ -251,7 +255,7 @@ class TestListCommand:
                 result = cmd.execute()
 
                 # Verify display_services_list was called with the app's services
-                mock_display.assert_called_once_with(cmd.app.services)
+                mock_display.assert_called_once_with(cmd.app.service_list)
 
                 # Result should be None for sync commands that don't return values
                 assert result is None
@@ -275,72 +279,74 @@ class TestListCommand:
 class TestListOutputDemo:
     """Demo test to show list command output format"""
 
-    def test_real_console_output(self, mock_service, capsys: pytest.CaptureFixture[str]):
+    def test_real_console_output(
+        self, mock_service, capsys: pytest.CaptureFixture[str]
+    ):
         """Test that actually shows console output"""
-        
+
         # Create multiple mock services for demo
         service1 = APIService(
             name="UserService",
-            package="account", 
+            package="account",
             module="user",
-            description="Manages user accounts and authentication"
+            description="Manages user accounts and authentication",
         )
-        
+
         service2 = APIService(
             name="RideService",
             package="ride",
-            module="booking", 
-            description="Handles ride booking and management"
+            module="booking",
+            description="Handles ride booking and management",
         )
-        
+
         # Create mock methods
         method1 = Mock(spec=ILabeledMethod)
         method1.name = "GetUser"
         method1.active = True
         method1.options = []
         method1.description = ""
-        
+
         # Mock request/response types for method1
         req_type1 = Mock(spec=IMetaType)
         req_type1.argtype = Mock()
         req_type1.argtype.__name__ = "GetUserRequest"
         method1.request_types = [req_type1]
-        
+
         resp_type1 = Mock(spec=IMetaType)
         resp_type1.argtype = Mock()
         resp_type1.argtype.__name__ = "UserResponse"
         method1.response_types = resp_type1
-        
+
         method2 = Mock(spec=ILabeledMethod)
         method2.name = "BookRide"
         method2.active = True
         method2.options = []
         method2.description = ""
-        
+
         # Mock request/response types for method2
         req_type2 = Mock(spec=IMetaType)
         req_type2.argtype = Mock()
         req_type2.argtype.__name__ = "BookRideRequest"
         method2.request_types = [req_type2]
-        
+
         resp_type2 = Mock(spec=IMetaType)
         resp_type2.argtype = Mock()
         resp_type2.argtype.__name__ = "RideResponse"
         method2.response_types = resp_type2
-        
+
         # Add methods to services
         service1._APIService__methods = [method1]
         service2._APIService__methods = [method2]
-        
+
         services = [service1, service2]
-        
+
         # Actually execute the console output
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("GRPC API LIST COMMAND OUTPUT EXAMPLE")
-        print("="*60)
+        print("=" * 60)
         display_services_list(services)
-        print("="*60)
-        
+        print("=" * 60)
+
         # Capture and verify output was generated
         captured = capsys.readouterr()
         assert "GRPC API LIST COMMAND OUTPUT EXAMPLE" in captured.out
@@ -359,65 +365,67 @@ class TestListCommandWithFunctionalService:
             app.add_service(functional_service)
 
             cmd = ListCommand(app, None)
-            
+
             # Verify functional service was added
             assert len(cmd.app.service_list) == 1
             service = cmd.app.service_list[0]
             assert service.name == "functional"
             assert service.module == "account_service"
             assert service.active is True
-            
+
             # Verify it has real methods
             assert len(service.methods) > 0
             method_names = [method.name for method in service.methods]
             assert "create_account" in method_names
             assert "get_accounts" in method_names
 
-    def test_functional_service_display_output(self, functional_service, capsys: pytest.CaptureFixture[str]):
+    def test_functional_service_display_output(
+        self, functional_service, capsys: pytest.CaptureFixture[str]
+    ):
         """Test display output with functional service - shows real method signatures"""
-        
-        print("\n" + "="*70)
+
+        print("\n" + "=" * 70)
         print("FUNCTIONAL SERVICE LIST OUTPUT")
-        print("="*70)
+        print("=" * 70)
         display_services_list([functional_service])
-        print("="*70)
-        
+        print("=" * 70)
+
         # Capture and verify output was generated
         captured = capsys.readouterr()
         assert "FUNCTIONAL SERVICE LIST OUTPUT" in captured.out
         assert "functional" in captured.out
         assert "create_account" in captured.out
-        
+
         # Verify the service can be displayed without errors
         with patch("grpcAPI.commands.list.Console") as mock_console:
             console_instance = Mock()
             mock_console.return_value = console_instance
-            
+
             display_services_list([functional_service])
-            
+
             # Should call console.rule for package header
             rule_calls = console_instance.rule.call_args_list
             assert len(rule_calls) >= 1
-            
+
             # Should call console.print for tables
             print_calls = console_instance.print.call_args_list
             assert len(print_calls) >= 1
 
     def test_multiple_services_mixed_types(self, functional_service, mock_service):
         """Test display with both functional and mock services"""
-        
+
         services = [functional_service, mock_service]
-        
+
         with patch("grpcAPI.commands.list.Console") as mock_console:
             console_instance = Mock()
             mock_console.return_value = console_instance
-            
+
             display_services_list(services)
-            
+
             # Should handle both service types
             rule_calls = console_instance.rule.call_args_list
             print_calls = console_instance.print.call_args_list
-            
+
             # Should have rule calls for packages
             assert len(rule_calls) >= 1
             # Should have print calls for tables
@@ -430,81 +438,81 @@ class TestGetMethodDescriptor:
     def test_method_with_description(self, mock_method):
         """Test method descriptor returns description when available"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = "Creates a new user account"
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "Creates a new user account"
 
     def test_method_with_empty_description(self, mock_method):
         """Test method descriptor falls back to signature when description is empty"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = ""
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "(TestRequest) -> TestResponse [unary]"
 
     def test_method_with_whitespace_description(self, mock_method):
         """Test method descriptor handles whitespace-only descriptions"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = "   "
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "(TestRequest) -> TestResponse [unary]"
 
     def test_method_description_is_stripped(self, mock_method):
         """Test method description is properly stripped of whitespace"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = "  Handles user authentication  "
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "Handles user authentication"
 
     def test_method_fallback_to_signature_with_streaming(self, mock_method):
         """Test signature generation with streaming options"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = ""
         mock_method.options = ["client_streaming"]
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "(TestRequest) -> TestResponse [streaming]"
 
     def test_method_fallback_with_multiple_request_types(self, mock_method):
         """Test signature generation with multiple request types"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = ""
-        
+
         # Add second request type
         mock_req_type2 = Mock(spec=IMetaType)
         mock_argtype2 = Mock()
         mock_argtype2.__name__ = "SecondRequest"
         mock_req_type2.argtype = mock_argtype2
         mock_method.request_types = [mock_method.request_types[0], mock_req_type2]
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "(TestRequest, SecondRequest) -> TestResponse [unary]"
 
     def test_method_fallback_with_no_request_types(self, mock_method):
         """Test signature generation with no request types"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = ""
         mock_method.request_types = []
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "(Empty) -> TestResponse [unary]"
 
     def test_method_fallback_with_no_response_type(self, mock_method):
         """Test signature generation with no response type"""
         from grpcAPI.commands.list import _get_method_descriptor
-        
+
         mock_method.description = ""
         mock_method.response_types = None
-        
+
         result = _get_method_descriptor(mock_method)
         assert result == "(TestRequest) -> Empty [unary]"

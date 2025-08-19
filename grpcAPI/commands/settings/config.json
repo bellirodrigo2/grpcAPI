@@ -14,7 +14,7 @@
     "clean_services": true, // Remove unused service files
     "overwrite": false,     // Preserve existing files
     "zipcompress": false,   // Generate individual files
-    "output_path": "grpcAPI/output"
+    "output_path": "dist"
   },
   
   /* Service filtering configuration

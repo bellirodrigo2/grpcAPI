@@ -1,3 +1,4 @@
+# pragma: no cover
 from typing import Any, Callable, Dict, List, Optional, Type
 
 from google.protobuf.wrappers_pb2 import StringValue

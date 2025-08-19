@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-from typing import Never
+from typing import Iterable, Never
 
 from grpc import aio
 from typing_extensions import (
@@ -12,7 +12,6 @@ from typing_extensions import (
     List,
     Mapping,
     Optional,
-    Sequence,
     Type,
     Union,
 )
@@ -271,7 +270,7 @@ class App:
         return dict(self._services)
 
     @property
-    def service_list(self) -> Sequence[IService]:
+    def service_list(self) -> Iterable[IService]:
         return list(itertools.chain.from_iterable(self.services.values()))
 
     def add_service(self, service: Union[APIService, APIModule, APIPackage]) -> None:

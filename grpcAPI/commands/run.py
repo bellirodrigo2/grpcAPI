@@ -1,15 +1,26 @@
 from contextlib import AsyncExitStack
-from typing import Optional
 
-from typing_extensions import Any
+from typing_extensions import Any, Dict, Optional, Tuple
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import App
 from grpcAPI.commands.command import GRPCAPICommand
-from grpcAPI.commands.utils import get_host_port
+
+# from grpcAPI.commands.utils import get_host_port
 from grpcAPI.proto_build import make_protos
+from grpcAPI.register_descriptor import register_service_descriptors
 from grpcAPI.server import ServerWrapper, make_server
 from grpcAPI.server_plugins.loader import make_plugin
+
+
+def get_host_port(
+    settings: Dict[str, Any],
+) -> Tuple[str, int]:
+    host = settings.get("host", "localhost")
+    port = settings.get("port", 50051)
+    port = int(port)
+
+    return host, port
 
 
 class RunCommand(GRPCAPICommand):
@@ -40,7 +51,7 @@ class RunCommand(GRPCAPICommand):
             server = make_server(middlewares, **server_settings)
 
         if "reflection" in plugins_settings:
-            pass
+            register_service_descriptors(app.service_list)
 
         plugins = [
             make_plugin(plugin_name, **kwargs)

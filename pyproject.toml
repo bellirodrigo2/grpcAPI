@@ -20,6 +20,7 @@ dependencies = [
     "pyyaml",
     "toml",
     "json5",
+    "mergedeep"
 ]
 
 [project.optional-dependencies]

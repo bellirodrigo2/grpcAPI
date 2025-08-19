@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from rich.console import Console
 from rich.table import Table
 
-from grpcAPI.app import APIService
+from grpcAPI.app import APIService, App
 from grpcAPI.commands.command import GRPCAPICommand
 from grpcAPI.makeproto.interface import ILabeledMethod
 
@@ -13,30 +13,24 @@ def display_services_list(services: List[APIService]) -> None:
     """Display a formatted list of services and their methods using rich tables"""
     console = Console()
 
-    # Filter out disabled services
-    active_services = [service for service in services if service.active]
-
-    if not active_services:
-        console.print("[yellow]No active services found[/]")
+    if not services:
+        console.print("[yellow]No services found[/]")
         return
 
-    # Group services by package and module
     grouped: Dict[str, Dict[str, List[APIService]]] = defaultdict(
         lambda: defaultdict(list)
     )
 
-    for service in active_services:
+    for service in services:
         package = service.package or "(default)"
         module = service.module or "(default)"
         grouped[package][module].append(service)
 
-    # Display services grouped by package and module
     for package_name, modules in grouped.items():
         console.rule(f"[bold blue]Package: {package_name}")
 
         for module_name, module_services in modules.items():
 
-            # Create table for services in this module
             table = Table(
                 title=f"Module: {module_name}",
                 show_header=True,
@@ -48,21 +42,22 @@ def display_services_list(services: List[APIService]) -> None:
             table.add_column("Description", style="dim")
 
             for service in module_services:
-                # Get active methods
-                active_methods = [method for method in service.methods if method.active]
-
-                # Format methods info
                 method_info = []
-                for method in active_methods:
+                for method in service.methods:
                     method_descriptor = _get_method_descriptor(method)
                     method_info.append(f"{method.name} {method_descriptor}")
 
-                methods_text = (
-                    "\n".join(method_info) if method_info else "No active methods"
-                )
+                methods_text = "\n".join(method_info) if method_info else "No methods"
+
                 description = (
                     service.description or service.comments or "No description"
                 )
+                if service.description and service.description.strip():
+                    description = service.description.strip()
+                elif service.comments and service.comments.strip():
+                    description = service.comments.strip()
+                else:
+                    description = "No description"
 
                 table.add_row(service.name, methods_text, description)
 
@@ -71,7 +66,9 @@ def display_services_list(services: List[APIService]) -> None:
 
 
 def _get_method_descriptor(method: ILabeledMethod) -> str:
-    """Generate a descriptor string for a method showing request/response types"""
+    if method.description and method.description.strip():
+        return method.description.strip()
+
     request_types = (
         ", ".join([t.argtype.__name__ for t in method.request_types])
         if method.request_types
@@ -94,8 +91,8 @@ def _get_method_descriptor(method: ILabeledMethod) -> str:
 
 class ListCommand(GRPCAPICommand):
 
-    def __init__(self, app_path: str, settings_path: Optional[str] = None) -> None:
-        super().__init__("list", app_path, settings_path, is_sync=True)
+    def __init__(self, app: App, settings_path: Optional[str] = None) -> None:
+        super().__init__("list", app, settings_path, is_sync=True)
 
     def run_sync(self, **kwargs: Any) -> None:
         """List all active services with summarized info about services and methods"""

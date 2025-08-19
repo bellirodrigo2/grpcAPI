@@ -96,71 +96,54 @@ class TestRunLint:
 class TestLintCommand:
     """Test the LintCommand class"""
 
-    def test_lint_command_init(self):
+    def test_lint_command_init(self, functional_service: APIService):
         """Test LintCommand initialization"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ) as mock_run_process:
+        with patch("grpcAPI.commands.command.run_process_service") as mock_run_process:
+            # Create app directly and pass to command
+            app = App()
+            app.add_service(functional_service)
 
-            # Mock load_app to setup singleton
-            def setup_singleton(app_path: str):
-                GrpcAPI()
-                # Add empty services to avoid errors
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = LintCommand("test_app:app", None)
+            cmd = LintCommand(app, None)
 
             assert cmd.command_name == "lint"
-            assert cmd.app_path == "test_app:app"
+            assert cmd.app is app
             assert cmd.settings_path is None
-            assert isinstance(cmd.app, GrpcAPI)
+            assert isinstance(cmd.app, App)
 
-            # Verify load_app was called
-            mock_load_app.assert_called_once_with("test_app:app")
-            mock_run_process.assert_called_once()
+            # Verify run_process_service was called
+            mock_run_process.assert_called_once_with(app, cmd.settings)
 
-    def test_lint_command_with_settings(self):
+    def test_lint_command_with_settings(self, app_fixture: App):
         """Test LintCommand with settings file"""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             f.write('{"test": "value"}')
             settings_path = f.name
 
         try:
-            with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-                "grpcAPI.commands.command.run_process_service"
-            ), patch(
+            with patch("grpcAPI.commands.command.run_process_service"), patch(
                 "grpcAPI.commands.command.load_file_by_extension"
             ) as mock_load_file:
 
                 # Mock file loading
                 mock_load_file.return_value = {"test": "value"}
 
-                def setup_singleton(app_path: str):
-                    GrpcAPI()
+                # Use app_fixture directly
+                app = app_fixture
 
-                mock_load_app.side_effect = setup_singleton
-
-                cmd = LintCommand("test_app:app", settings_path)
+                cmd = LintCommand(app, settings_path)
 
                 assert cmd.settings_path == settings_path
                 mock_load_file.assert_called_once()
         finally:
             Path(settings_path).unlink()
 
-    def test_lint_command_run(self, functional_service: APIService) -> None:
+    def test_lint_command_run(self, app_fixture: App) -> None:
         """Test LintCommand.run() method"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
+        with patch("grpcAPI.commands.command.run_process_service"):
+            # Use app_fixture directly
+            app = app_fixture
 
-            def setup_singleton(app_path: str):
-                app = GrpcAPI()
-                app.add_service(functional_service)
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = LintCommand("test_app:app", None)
+            cmd = LintCommand(app, None)
 
             with patch("grpcAPI.commands.lint.run_lint") as mock_run_lint:
                 mock_proto = Mock(spec=IProtoPackage)
@@ -168,71 +151,44 @@ class TestLintCommand:
 
                 cmd.execute()
 
-                # Verify run_lint was called with the singleton app instance
+                # Verify run_lint was called with the app instance
                 mock_run_lint.assert_called_once_with(cmd.app, cmd.logger)
 
-    def test_singleton_behavior_across_commands(
-        self, functional_service: APIService
+    def test_multiple_commands_with_same_app(
+        self, app_fixture: App
     ) -> None:
-        """Test that multiple LintCommand instances share the same GrpcAPI singleton"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
+        """Test that multiple LintCommand instances can use the same app instance"""
+        with patch("grpcAPI.commands.command.run_process_service"):
+            # Use app_fixture directly
+            app = app_fixture
 
-            call_count = 0
+            # Create multiple commands with same app
+            cmd1 = LintCommand(app, None)
+            cmd2 = LintCommand(app, None)
 
-            def setup_singleton(app_path: str):
-                nonlocal call_count
-                app = GrpcAPI()
-                if call_count == 0:  # Only add service once
-                    app.add_service(functional_service)
-                call_count += 1
-
-            mock_load_app.side_effect = setup_singleton
-
-            # Create first command
-            cmd1 = LintCommand("test_app:app", None)
-            first_app_id = id(cmd1.app)
-
-            # Create second command
-            cmd2 = LintCommand("another_app:app", None)
-            second_app_id = id(cmd2.app)
-
-            # Both should reference the same singleton instance
+            # Both should reference the same app instance
             assert cmd1.app is cmd2.app
-            assert first_app_id == second_app_id
+            assert cmd1.app is app
 
-    def test_app_vs_grpcapi_difference(self, functional_service: APIService) -> None:
-        """Test that App() creates new instances but GrpcAPI() is singleton"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
-
-            call_count = 0
-
-            def setup_singleton(app_path: str):
-                nonlocal call_count
-                app = GrpcAPI()
-                if call_count == 0:
-                    app.add_service(functional_service)
-                call_count += 1
-
-            mock_load_app.side_effect = setup_singleton
-
+    def test_app_vs_grpcapi_difference(self, app_fixture: App) -> None:
+        """Test that App() creates new instances while commands can use either"""
+        with patch("grpcAPI.commands.command.run_process_service"):
             # Create regular App instances (not singleton)
             app1 = App()
             app2 = App()
-
+            
             # Regular App instances are different
             assert app1 is not app2
 
-            # Create LintCommand instances (uses GrpcAPI singleton)
-            cmd1 = LintCommand("test_app:app", None)
-            cmd2 = LintCommand("another_app:app", None)
+            # Create LintCommand instances with different apps
+            cmd1 = LintCommand(app1, None)
+            cmd2 = LintCommand(app2, None)
 
-            # GrpcAPI instances are the same (singleton)
-            assert cmd1.app is cmd2.app
-
-            # But different from regular App instances
-            assert cmd1.app is not app1
-            assert cmd1.app is not app2
+            # Commands use different app instances
+            assert cmd1.app is not cmd2.app
+            assert cmd1.app is app1
+            assert cmd2.app is app2
+            
+            # Test with app_fixture
+            cmd3 = LintCommand(app_fixture, None)
+            assert cmd3.app is app_fixture

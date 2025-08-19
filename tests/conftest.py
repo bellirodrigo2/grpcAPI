@@ -34,7 +34,7 @@ from grpcAPI.commands.settings.utils import combine_settings
 from grpcAPI.data_types import AsyncContext, Depends, FromRequest
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType, IService
 from grpcAPI.process_service.inject_typing import InjectProtoTyping
-from grpcAPI.protoc_compile import compile_protoc
+from grpcAPI.protoc.compile import compile_protoc
 from grpcAPI.testclient import TestClient
 
 lib_path = Path(__file__).parent / "lib"
@@ -245,6 +245,44 @@ def app_fixture(functional_service: APIService) -> App:
         await context.abort(ErrorCode.ABORTED, str(exc))
 
     return app
+
+
+@pytest.fixture(autouse=True)
+def isolate_logging_config():
+    """Isolate LOGGING_CONFIG to prevent test interference"""
+    import copy
+    import logging.config
+
+    from grpcAPI.logger import LOGGING_CONFIG
+
+    # Deep copy to preserve nested dicts
+    original_config = copy.deepcopy(LOGGING_CONFIG)
+
+    # Also backup actual logger state
+    original_loggers = {}
+    for name in logging.Logger.manager.loggerDict:
+        if isinstance(logging.Logger.manager.loggerDict[name], logging.Logger):
+            logger = logging.Logger.manager.loggerDict[name]
+            original_loggers[name] = {
+                "level": logger.level,
+                "handlers": logger.handlers.copy(),
+                "propagate": logger.propagate,
+            }
+
+    yield
+
+    # Restore LOGGING_CONFIG
+    LOGGING_CONFIG.clear()
+    LOGGING_CONFIG.update(original_config)
+
+    # Restore logger states
+    for name, state in original_loggers.items():
+        if name in logging.Logger.manager.loggerDict:
+            logger = logging.Logger.manager.loggerDict[name]
+            if isinstance(logger, logging.Logger):
+                logger.setLevel(state["level"])
+                logger.handlers = state["handlers"]
+                logger.propagate = state["propagate"]
 
 
 @pytest.fixture

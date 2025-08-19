@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from grpcAPI.protoc_compile import compile_protoc
+from grpcAPI.protoc.compile import compile_protoc
 
 
 def main() -> None:

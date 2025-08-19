@@ -17,8 +17,8 @@ def run_lint(app: App, logger: Logger) -> Iterable[IProtoPackage]:
 
 class LintCommand(GRPCAPICommand):
 
-    def __init__(self, app_path: str, settings_path: Optional[str] = None) -> None:
-        super().__init__("lint", app_path, settings_path, is_sync=True)
+    def __init__(self, app: App, settings_path: Optional[str] = None) -> None:
+        super().__init__("lint", app, settings_path, is_sync=True)
 
     def run_sync(self, **kwargs: Any) -> Iterable[IProtoPackage]:
         return run_lint(self.app, self.logger)

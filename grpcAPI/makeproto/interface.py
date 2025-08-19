@@ -24,14 +24,28 @@ class ILabeledMethod(IFilter):
     service: str
     options: Iterable[str]
     comments: str
+    description: str
     request_types: Iterable[IMetaType]
     response_types: Optional[IMetaType]
+
+    @property
+    def input_type(self) -> Type[Any]: ...
+
+    @property
+    def output_type(self) -> Type[Any]: ...
+
+    @property
+    def is_client_stream(self) -> bool: ...
+
+    @property
+    def is_server_stream(self) -> bool: ...
 
 
 class IService(IFilter):
     name: str
     options: Iterable[str]
     comments: str
+    description: str
 
     module_level_options: List[str]
     module_level_comments: List[str]

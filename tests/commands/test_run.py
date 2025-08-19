@@ -4,100 +4,40 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from grpcAPI.app import APIService, GrpcAPI
+from grpcAPI.app import App
 from grpcAPI.commands.run import RunCommand
-from grpcAPI.singleton import SingletonMeta
-
-
-@pytest.fixture(autouse=True)
-def reset_singleton():
-    """Clear GrpcAPI singleton state before each test"""
-    SingletonMeta._instances.clear()
-    yield
-    SingletonMeta._instances.clear()
-
-
-@pytest.fixture(autouse=True)
-def isolate_logging_config():
-    """Isolate LOGGING_CONFIG to prevent test interference"""
-    from grpcAPI.logger import LOGGING_CONFIG
-    import logging.config
-    
-    # Deep copy to preserve nested dicts
-    import copy
-    original_config = copy.deepcopy(LOGGING_CONFIG)
-    
-    # Also backup actual logger state
-    original_loggers = {}
-    for name in logging.Logger.manager.loggerDict:
-        if isinstance(logging.Logger.manager.loggerDict[name], logging.Logger):
-            logger = logging.Logger.manager.loggerDict[name]
-            original_loggers[name] = {
-                'level': logger.level,
-                'handlers': logger.handlers.copy(),
-                'propagate': logger.propagate
-            }
-    
-    yield
-    
-    # Restore LOGGING_CONFIG
-    LOGGING_CONFIG.clear()
-    LOGGING_CONFIG.update(original_config)
-    
-    # Restore logger states
-    for name, state in original_loggers.items():
-        if name in logging.Logger.manager.loggerDict:
-            logger = logging.Logger.manager.loggerDict[name]
-            if isinstance(logger, logging.Logger):
-                logger.setLevel(state['level'])
-                logger.handlers = state['handlers']
-                logger.propagate = state['propagate']
 
 
 class TestRunCommand:
     """Test the RunCommand class"""
 
-    def test_run_command_init(self):
+    def test_run_command_init(self, app_fixture: App):
         """Test RunCommand initialization"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ) as mock_run_process:
-
-            def setup_singleton(app_path: str):
-                GrpcAPI()
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = RunCommand("test_app:app", None)
+        with patch("grpcAPI.commands.command.run_process_service") as mock_run_process:
+            # Use app_fixture directly
+            cmd = RunCommand(app_fixture, None)
 
             assert cmd.command_name == "run"
-            assert cmd.app_path == "test_app:app"
-            assert isinstance(cmd.app, GrpcAPI)
+            assert cmd.app is app_fixture
+            assert isinstance(cmd.app, App)
 
-            mock_load_app.assert_called_once_with("test_app:app")
-            mock_run_process.assert_called_once()
+            # Verify run_process_service was called
+            mock_run_process.assert_called_once_with(app_fixture, cmd.settings)
 
-    def test_run_command_with_settings(self):
+    def test_run_command_with_settings(self, app_fixture: App):
         """Test RunCommand with settings file"""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             f.write('{"host": "0.0.0.0", "port": 8080}')
             settings_path = f.name
 
         try:
-            with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-                "grpcAPI.commands.command.run_process_service"
-            ), patch(
+            with patch("grpcAPI.commands.command.run_process_service"), patch(
                 "grpcAPI.commands.command.load_file_by_extension"
             ) as mock_load_file:
 
                 mock_load_file.return_value = {"host": "0.0.0.0", "port": 8080}
 
-                def setup_singleton(app_path: str):
-                    GrpcAPI()
-
-                mock_load_app.side_effect = setup_singleton
-
-                cmd = RunCommand("test_app:app", settings_path)
+                cmd = RunCommand(app_fixture, settings_path)
 
                 assert cmd.settings_path == settings_path
                 mock_load_file.assert_called_once()
@@ -105,19 +45,10 @@ class TestRunCommand:
             Path(settings_path).unlink()
 
     @pytest.mark.asyncio
-    async def test_run_command_execution_flow(self, functional_service: APIService):
+    async def test_run_command_execution_flow(self, app_fixture: App):
         """Test RunCommand.run() method without actually starting server"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
-
-            def setup_singleton(app_path: str):
-                app = GrpcAPI()
-                app.add_service(functional_service)
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = RunCommand("test_app:app", None)
+        with patch("grpcAPI.commands.command.run_process_service"):
+            cmd = RunCommand(app_fixture, None)
 
             # Mock all the server-related operations
             with patch("grpcAPI.commands.run.make_protos") as mock_make_protos, patch(
@@ -166,31 +97,23 @@ class TestRunCommand:
                     mock_server.wait_for_termination.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_run_command_with_plugins(self, functional_service: APIService):
+    async def test_run_command_with_plugins(self, app_fixture: App):
         """Test RunCommand with plugins enabled"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ), patch("grpcAPI.commands.command.load_file_by_extension") as mock_load_file:
+        with patch("grpcAPI.commands.command.run_process_service"), patch(
+            "grpcAPI.commands.command.load_file_by_extension"
+        ) as mock_load_file:
 
             mock_load_file.return_value = {
                 "plugins": {"health": {}, "reflection": {"enabled": True}}
             }
 
-            def setup_singleton(app_path: str):
-                app = GrpcAPI()
-                app.add_service(functional_service)
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = RunCommand("test_app:app", "settings.json")
+            cmd = RunCommand(app_fixture, "settings.json")
 
             with patch("grpcAPI.commands.run.make_protos") as mock_make_protos, patch(
                 "grpcAPI.commands.run.make_server"
             ) as mock_make_server, patch(
                 "grpcAPI.commands.run.make_plugin"
             ) as mock_make_plugin, patch(
-                "grpcAPI.commands.run.add_to_server"
-            ) as mock_add_to_server, patch(
                 "grpcAPI.commands.run.get_host_port"
             ) as mock_get_host_port:
 
@@ -222,29 +145,19 @@ class TestRunCommand:
                     mock_server.register_plugin.assert_called()
 
     @pytest.mark.asyncio
-    async def test_run_command_with_custom_server(self, functional_service: APIService):
+    async def test_run_command_with_custom_server(self, app_fixture: App):
         """Test RunCommand when app already has a server"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
+        with patch("grpcAPI.commands.command.run_process_service"):
+            # Set a custom server on the app_fixture
+            app_fixture.server = Mock()
 
-            def setup_singleton(app_path: str):
-                app = GrpcAPI()
-                app.add_service(functional_service)
-                # Set a custom server
-                app.server = Mock()
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = RunCommand("test_app:app", None)
+            cmd = RunCommand(app_fixture, None)
 
             with patch("grpcAPI.commands.run.make_protos") as mock_make_protos, patch(
                 "grpcAPI.commands.run.ServerWrapper"
             ) as mock_server_wrapper, patch(
                 "grpcAPI.commands.run.make_server"
             ) as mock_make_server, patch(
-                "grpcAPI.commands.run.add_to_server"
-            ) as mock_add_to_server, patch(
                 "grpcAPI.commands.run.get_host_port"
             ) as mock_get_host_port:
 
@@ -272,24 +185,13 @@ class TestRunCommand:
                     mock_server_wrapper.assert_called_once_with(cmd.app.server)
                     mock_make_server.assert_not_called()
 
-    def test_singleton_behavior_across_commands(self, functional_service: APIService):
-        """Test that multiple RunCommand instances share the same GrpcAPI singleton"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
+    def test_multiple_commands_with_same_app(self, app_fixture: App):
+        """Test that multiple RunCommand instances can use the same app instance"""
+        with patch("grpcAPI.commands.command.run_process_service"):
+            # Create multiple commands with same app
+            cmd1 = RunCommand(app_fixture, None)
+            cmd2 = RunCommand(app_fixture, None)
 
-            call_count = 0
-
-            def setup_singleton(app_path: str):
-                nonlocal call_count
-                app = GrpcAPI()
-                if call_count == 0:
-                    app.add_service(functional_service)
-                call_count += 1
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd1 = RunCommand("test_app:app", None)
-            cmd2 = RunCommand("another_app:app", None)
-
+            # Both should reference the same app instance
             assert cmd1.app is cmd2.app
+            assert cmd1.app is app_fixture

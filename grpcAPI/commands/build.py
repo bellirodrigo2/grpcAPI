@@ -84,8 +84,8 @@ def zip_directory(source_dir: Path, zip_path: Path, logger: Logger) -> None:
 
 class BuildCommand(GRPCAPICommand):
 
-    def __init__(self, app_path: str, settings_path: Optional[str] = None) -> None:
-        super().__init__("build", app_path, settings_path)
+    def __init__(self, app: App, settings_path: Optional[str] = None) -> None:
+        super().__init__("build", app, settings_path)
 
     async def run(self, **kwargs: Any) -> None:
         from grpcAPI.commands.utils import (

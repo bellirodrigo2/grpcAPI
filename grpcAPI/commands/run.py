@@ -4,6 +4,7 @@ from typing import Optional
 from typing_extensions import Any
 
 from grpcAPI.add_to_server import add_to_server
+from grpcAPI.app import App
 from grpcAPI.commands.command import GRPCAPICommand
 from grpcAPI.commands.utils import get_host_port
 from grpcAPI.proto_build import make_protos
@@ -13,8 +14,8 @@ from grpcAPI.server_plugins.loader import make_plugin
 
 class RunCommand(GRPCAPICommand):
 
-    def __init__(self, app_path: str, settings_path: Optional[str] = None) -> None:
-        super().__init__("run", app_path, settings_path)
+    def __init__(self, app: App, settings_path: Optional[str] = None) -> None:
+        super().__init__("run", app, settings_path)
 
     async def run(self, **kwargs: Any) -> None:
 
@@ -23,20 +24,12 @@ class RunCommand(GRPCAPICommand):
 
         lint = settings.get("lint", True)
         plugins_settings = settings.get("plugins", {})
-        reflection = "reflection" in plugins_settings
 
-        if lint or reflection:
+        if lint:
             proto_files = make_protos(app.services)
             self.logger.debug(
                 "Generated files:", [(f.package, f.filename) for f in proto_files]
             )
-            # if reflection:
-            # proto_path, lib_path = get_proto_lib_path(settings)
-            # clean_services, overwrite = get_compile_proto_settings(settings)
-            # files = write_protos(proto_files, proto_path, overwrite, clean_services)
-            # compile_protoc(
-            # Path("./"), lib_path, True, False, False, files, self.logger
-            # )
 
         middlewares = [middleware() for middleware in set(app._middleware)]
 
@@ -45,6 +38,9 @@ class RunCommand(GRPCAPICommand):
         else:
             server_settings = settings.get("server", {})
             server = make_server(middlewares, **server_settings)
+
+        if "reflection" in plugins_settings:
+            pass
 
         plugins = [
             make_plugin(plugin_name, **kwargs)

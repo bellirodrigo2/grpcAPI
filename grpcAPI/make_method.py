@@ -1,5 +1,5 @@
 import inspect
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from contextlib import AsyncExitStack
 from typing import Type
 
@@ -27,19 +27,19 @@ def make_method_async(
     """Async implementarion for MakeMethod using ctxinject"""
 
     try:
-        req_t = labeledmethod.request_types[0]
+        req_t = labeledmethod.input_type
         func = labeledmethod.method
-        is_stream = labeledmethod.response_types.origin is AsyncIterator
+        cls_factory = StreamRunner if labeledmethod.is_server_stream else UnaryRunner
+
     except (AttributeError, IndexError) as e:
         raise type(e)(
             f"Not able to make method for: {labeledmethod.name}:\n Error:{str(e)}"
         )
-    cls_factory = StreamRunner if is_stream else UnaryRunner
     runner = cls_factory(
         func=func,
         overrides=overrides,
         exception_registry=exception_registry,
-        req=req_t.argtype,
+        req=req_t,
     )
     return runner
 

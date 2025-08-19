@@ -73,10 +73,10 @@ class GRPCAPICommand(BaseCommand):
     def __init__(
         self,
         command_name: str,
-        app_path: str,
+        app: App,
         settings_path: Optional[str] = None,
         is_sync: bool = False,
     ) -> None:
         super().__init__(command_name, settings_path, is_sync)
-        self.app_path = app_path
-        self.app = resolve_app(app_path, self.settings)
+        self.app = app
+        run_process_service(app, self.settings)

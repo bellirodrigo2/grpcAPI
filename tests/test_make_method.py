@@ -25,7 +25,7 @@ def make_labeled_method(req: List[MetaType], resp: Optional[MetaType]) -> Labele
 
 def test_make_method_no_request() -> None:
     lbl_method = make_labeled_method([], None)
-    with pytest.raises(IndexError):
+    with pytest.raises(ValueError):
         make_method_async(lbl_method, {}, {})
 
 

@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from grpcAPI.app import APIService, App, GrpcAPI
+from grpcAPI.app import App
 from grpcAPI.commands.build import BuildCommand, build_protos
 from grpcAPI.makeproto.interface import IProtoPackage
 from grpcAPI.singleton import SingletonMeta
@@ -21,10 +21,9 @@ def reset_singleton():
 class TestBuildProtos:
     """Test the build_protos function directly"""
 
-    def test_build_protos_normal_mode(self, functional_service: APIService) -> None:
+    def test_build_protos_normal_mode(self, app_fixture: App) -> None:
         """Test build_protos without zip compression"""
-        app = App()
-        app.add_service(functional_service)
+        app = app_fixture
         logger = Mock()
 
         mock_proto = Mock(spec=IProtoPackage)
@@ -69,10 +68,9 @@ class TestBuildProtos:
                 mock_copy.assert_called_once_with(proto_path, output_path, logger)
                 assert result == {"test_service.proto"}
 
-    def test_build_protos_zip_mode(self, functional_service: APIService) -> None:
+    def test_build_protos_zip_mode(self, app_fixture: App) -> None:
         """Test build_protos with zip compression"""
-        app = App()
-        app.add_service(functional_service)
+        app = app_fixture
         logger = Mock()
 
         mock_proto = Mock(spec=IProtoPackage)
@@ -119,39 +117,28 @@ class TestBuildProtos:
 class TestBuildCommand:
     """Test the BuildCommand class"""
 
-    def test_build_command_init(self):
+    def test_build_command_init(self, app_fixture: App):
         """Test BuildCommand initialization"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ) as mock_run_process:
+        with patch("grpcAPI.commands.command.run_process_service") as mock_run_process:
+            # Use app_fixture directly
+            app = app_fixture
 
-            def setup_singleton(app_path: str):
-                GrpcAPI()
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = BuildCommand("test_app:app", None)
+            cmd = BuildCommand(app, None)
 
             assert cmd.command_name == "build"
-            assert cmd.app_path == "test_app:app"
-            assert isinstance(cmd.app, GrpcAPI)
+            assert cmd.app is app
+            assert isinstance(cmd.app, App)
 
-            mock_load_app.assert_called_once_with("test_app:app")
-            mock_run_process.assert_called_once()
+            # Verify run_process_service was called
+            mock_run_process.assert_called_once_with(app, cmd.settings)
 
-    async def test_build_command_run(self, functional_service):
+    async def test_build_command_run(self, app_fixture: App):
         """Test BuildCommand.run() method"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
+        with patch("grpcAPI.commands.command.run_process_service"):
+            # Use app_fixture directly
+            app = app_fixture
 
-            def setup_singleton(app_path: str):
-                app = GrpcAPI()
-                app.add_service(functional_service)
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd = BuildCommand("test_app:app", None)
+            cmd = BuildCommand(app, None)
 
             with patch("grpcAPI.commands.build.build_protos") as mock_build:
                 mock_build.return_value = {"test.proto"}
@@ -177,24 +164,16 @@ class TestBuildCommand:
                         zipcompress=True,
                     )
 
-    def test_singleton_behavior_across_commands(self, functional_service):
-        """Test that multiple BuildCommand instances share the same GrpcAPI singleton"""
-        with patch("grpcAPI.commands.command.load_app") as mock_load_app, patch(
-            "grpcAPI.commands.command.run_process_service"
-        ):
+    def test_multiple_commands_with_same_app(self, app_fixture: App):
+        """Test that multiple BuildCommand instances can use the same app instance"""
+        with patch("grpcAPI.commands.command.run_process_service"):
+            # Use app_fixture directly
+            app = app_fixture
 
-            call_count = 0
+            # Create multiple commands with same app
+            cmd1 = BuildCommand(app, None)
+            cmd2 = BuildCommand(app, None)
 
-            def setup_singleton(app_path: str):
-                nonlocal call_count
-                app = GrpcAPI()
-                if call_count == 0:
-                    app.add_service(functional_service)
-                call_count += 1
-
-            mock_load_app.side_effect = setup_singleton
-
-            cmd1 = BuildCommand("test_app:app", None)
-            cmd2 = BuildCommand("another_app:app", None)
-
+            # Both should reference the same app instance
             assert cmd1.app is cmd2.app
+            assert cmd1.app is app

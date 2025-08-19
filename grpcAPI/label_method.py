@@ -46,6 +46,32 @@ class LabeledMethod(ILabeledMethod):
     def active(self) -> bool:
         return self._active
 
+    @property
+    def input_type(self) -> Type[Any]:
+        if not self.request_types:
+            raise ValueError("No request types available")
+        return self.request_types[0].argtype
+
+    @property
+    def output_type(self) -> Type[Any]:
+        if not self.response_types:
+            raise ValueError("No response types available")
+        return self.response_types.argtype
+
+    @property
+    def is_client_stream(self) -> bool:
+        if not self.request_types:
+            raise ValueError("No request types available")
+        req = self.request_types[0]
+        return req.origin is AsyncIterator
+
+    @property
+    def is_server_stream(self) -> bool:
+        resp = self.response_types
+        if resp is None:
+            raise ValueError("No response types available")
+        return resp.origin is AsyncIterator
+
 
 def make_labeled_method(
     title: str,

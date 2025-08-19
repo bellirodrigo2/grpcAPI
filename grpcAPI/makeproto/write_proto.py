@@ -17,20 +17,22 @@ def write_protos(
         file_path = proto.qual_name
         abs_file_path = out_dir / file_path
         ensure_dirs(abs_file_path.parent, clean_services)
-        write_proto(
+        created = write_proto(
             proto_str=proto.content,
             file_path=abs_file_path,
             overwrite=overwrite,
         )
-        if clean_services:
+        if created and clean_services:
             register_path(abs_file_path, False)
         generated_files.add(file_path)
     return generated_files
 
 
-def write_proto(proto_str: str, file_path: Path, overwrite: bool) -> None:
-    if file_path.exists() and not overwrite:
+def write_proto(proto_str: str, file_path: Path, overwrite: bool) -> bool:
+    file_existed = file_path.exists()
+    if file_existed and not overwrite:
         raise FileExistsError(f"{file_path} already exists.")
 
     with open(file_path, "w") as f:
         f.write(proto_str)
+    return not file_existed

@@ -27,7 +27,7 @@ async def test_request_ride(
     assert ride_repo.calls[1] == ("create_ride", get_ride_request)
 
     # Verify ride was created correctly
-    ride = await ride_repo.get_by_id("ride_1")
+    ride = await ride_repo.get_by_ride_id("ride_1")
     assert ride is not None
     assert ride.ride_request.passenger_id == "test_passenger_id"
     assert ride.ride_request.from_lat == -27.584905257808835
@@ -98,7 +98,7 @@ async def test_request_ride_different_coordinates(
 
     assert resp.value == "ride_1"
     ride_repo = context._mock_ride_repo
-    ride = await ride_repo.get_by_id("ride_1")
+    ride = await ride_repo.get_by_ride_id("ride_1")
     assert ride is not None
     assert ride.ride_request.from_lat == -23.550520
     assert ride.ride_request.from_long == -46.633309

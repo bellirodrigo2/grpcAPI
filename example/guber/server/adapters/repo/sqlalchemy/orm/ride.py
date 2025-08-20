@@ -28,7 +28,7 @@ class RideDB(Base):
     to_long: Mapped[float] = mapped_column(Float, nullable=False)
     requested_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    # driver_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    driver_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     status: Mapped[Optional[RideStatus]] = mapped_column(

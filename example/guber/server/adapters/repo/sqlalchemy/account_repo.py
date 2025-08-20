@@ -1,38 +1,45 @@
 from datetime import datetime
-from typing_extensions import Any as Any, AsyncGenerator,  Optional,Iterable
 
 from sqlalchemy import select
+from typing_extensions import Any as Any
+from typing_extensions import AsyncGenerator, Iterable, Optional
 
-from example.guber.server.domain import AccountInfo, Account
+from example.guber.server.adapters.repo.sqlalchemy import (
+    AccountDB,
+    SqlAlchemyDB,
+    get_db,
+)
 from example.guber.server.application.repo.account_repo import AccountRepo
-from example.guber.server.adapters.repo.sqlalchemy import get_db,AccountDB, SqlAlchemyDB
+from example.guber.server.domain import Account, AccountInfo
 
 
-class SqlAlchemyAccountRepo(AccountRepo, SqlAlchemyDB):
-    
+class SqlAlchemyAccountRepo(SqlAlchemyDB, AccountRepo):
+
     async def get_by_id(self, id: str) -> Optional[Account]:
-        result = await self.db.execute(select(AccountDB).where(AccountDB.account_id == id))
-        account= result.scalar_one_or_none()
+        result = await self.db.execute(
+            select(AccountDB).where(AccountDB.account_id == id)
+        )
+        account = result.scalar_one_or_none()
         if account is None:
             return account
         return orm_to_proto_account(account)
 
-
     async def exist_email(self, email: str) -> bool:
-        result = await self.db.execute(select(AccountDB).where(AccountDB.email == email))
+        result = await self.db.execute(
+            select(AccountDB).where(AccountDB.email == email)
+        )
         return result.scalar_one_or_none() is not None
 
-    async def exist_cpf(self, cpf: str) -> bool:
-        result = await self.db.execute(select(AccountDB).where(AccountDB.cpf == cpf))
+    async def exist_sin(self, sin: str) -> bool:
+        result = await self.db.execute(select(AccountDB).where(AccountDB.sin == sin))
         return result.scalar_one_or_none() is not None
 
-    async def create_account(self, id:str, account_info:AccountInfo) -> str:
-        account = proto_to_orm_account(id,account_info)
+    async def create_account(self, id: str, account_info: AccountInfo) -> str:
+        account = proto_to_orm_account(id, account_info)
         self.db.add(account)
         await self.db.commit()
         await self.db.refresh(account)
         return id
-
 
     async def list_accounts(self, ids: Iterable[str]) -> Iterable[Account]:
         result = await self.db.execute(select(AccountDB))
@@ -44,7 +51,9 @@ class SqlAlchemyAccountRepo(AccountRepo, SqlAlchemyDB):
         if field not in keys:
             raise ValueError(f"Invalid field. Use {keys}.")
 
-        result = await self.db.execute(select(AccountDB).where(AccountDB.account_id == id))
+        result = await self.db.execute(
+            select(AccountDB).where(AccountDB.account_id == id)
+        )
         account = result.scalar_one_or_none()
 
         if not account:
@@ -56,24 +65,26 @@ class SqlAlchemyAccountRepo(AccountRepo, SqlAlchemyDB):
         return True
 
 
-async def get_account_sqlalchemy_repo()->AsyncGenerator[SqlAlchemyAccountRepo, None]:
+async def get_account_sqlalchemy_repo() -> AsyncGenerator[SqlAlchemyAccountRepo, None]:
     async with get_db() as db:
         yield SqlAlchemyAccountRepo(db)
+
 
 async def is_passenger_sqlalchemy_repo() -> bool:
     async with get_db() as db:
         result = await db.execute(select(AccountDB).where(AccountDB.account_id == id))
-        account= result.scalar_one_or_none()
+        account = result.scalar_one_or_none()
         if account is None:
             raise ValueError(f"Account not found: Id: {id}")
         return not account.is_driver
 
-def proto_to_orm_account(id:str,account: AccountInfo) -> AccountDB:
+
+def proto_to_orm_account(id: str, account: AccountInfo) -> AccountDB:
     return AccountDB(
         account_id=id,
         name=account.name,
         email=account.email,
-        cpf=account.cpf,
+        sin=account.sin,
         car_plate=account.car_plate,
         is_driver=account.is_driver,
         created_at=datetime.now(),
@@ -86,7 +97,7 @@ def orm_to_proto_account(account: AccountDB) -> Account:
         info=AccountInfo(
             name=account.name,
             email=account.email,
-            cpf=account.cpf,
+            sin=account.sin,
             car_plate=account.car_plate,
             is_driver=account.is_driver,
         ),

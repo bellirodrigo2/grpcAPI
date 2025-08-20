@@ -3,7 +3,7 @@ import tempfile
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple
+from typing import Any, Dict, Optional, Set
 
 from grpcAPI.app import App
 from grpcAPI.commands import GRPCAPICommand, lint
@@ -82,19 +82,9 @@ def zip_directory(source_dir: Path, zip_path: Path, logger: Logger) -> None:
     logger.info(f"Created zip file: {zip_path}")
 
 
-def get_compile_proto_settings(
+def get_proto_path(
     settings: Dict[str, Any],
-) -> Tuple[bool, bool, bool]:
-    compile_settings = settings.get("compile_proto", {})
-    clean_services = compile_settings.get("clean_services", True)
-    overwrite = compile_settings.get("overwrite", False)
-    zipcompress = compile_settings.get("zipcompress", False)
-    return clean_services, overwrite, zipcompress
-
-
-def get_proto_lib_path(
-    settings: Dict[str, Any],
-) -> Tuple[Path, Path]:
+) -> Path:
 
     root_path = Path("./").resolve()
 
@@ -102,13 +92,21 @@ def get_proto_lib_path(
     proto_path = root_path / proto_str
     if not proto_path.exists():
         raise FileNotFoundError(str(proto_path))
+    return proto_path
+
+
+def get_lib_path(
+    settings: Dict[str, Any],
+) -> Path:
+
+    root_path = Path("./").resolve()
 
     compile_settings = settings.get("compile_proto", {})
-    lib_str: str = compile_settings.get("output_path", "dist")
+    lib_str: str = compile_settings.get("outdir", "dist")
     lib_path = root_path / lib_str
     if not lib_path.exists():
         raise FileNotFoundError(str(lib_path))
-    return proto_path, lib_path
+    return lib_path
 
 
 class BuildCommand(GRPCAPICommand):
@@ -117,18 +115,24 @@ class BuildCommand(GRPCAPICommand):
         super().__init__("build", app, settings_path)
 
     async def run(self, **kwargs: Any) -> None:
-        # from grpcAPI.commands.utils import get_proto_lib_path
 
-        proto_path, output_path = get_proto_lib_path(self.settings)
-        clean_services, overwrite, zipcompress = get_compile_proto_settings(
-            self.settings
+        proto_path = kwargs.get("proto_path") or get_proto_path(self.settings)
+        outdir = kwargs.get("outdir") or get_lib_path(self.settings)
+
+        compile_settings = self.settings.get("compile_proto", {})
+        clean_services = kwargs.get("clean_services") or compile_settings.get(
+            "clean_services", True
+        )
+        overwrite = kwargs.get("overwrite") or compile_settings.get("overwrite", False)
+        zipcompress = kwargs.get("zipcompress") or compile_settings.get(
+            "zipcompress", False
         )
 
         build_protos(
             app=self.app,
             logger=self.logger,
             proto_path=proto_path,
-            output_path=output_path,
+            output_path=outdir,
             overwrite=overwrite,
             clean_services=clean_services,
             zipcompress=zipcompress,

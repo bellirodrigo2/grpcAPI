@@ -57,9 +57,7 @@ class TestRunCommand:
                 "grpcAPI.commands.run.make_plugin"
             ) as mock_make_plugin, patch(
                 "grpcAPI.commands.run.add_to_server"
-            ) as mock_add_to_server, patch(
-                "grpcAPI.commands.run.get_host_port"
-            ) as mock_get_host_port:
+            ) as mock_add_to_server:
 
                 # Setup mocks
                 mock_server = Mock()
@@ -71,7 +69,6 @@ class TestRunCommand:
                 mock_make_server.return_value = mock_server
                 mock_make_protos.return_value = []
                 mock_make_plugin.return_value = []
-                mock_get_host_port.return_value = ("localhost", 50051)
 
                 # Mock AsyncExitStack to avoid actual lifespan management
                 with patch("grpcAPI.commands.run.AsyncExitStack") as mock_stack:
@@ -83,12 +80,11 @@ class TestRunCommand:
                     mock_stack_instance.enter_async_context = AsyncMock()
 
                     # Execute the run command
-                    await cmd.run()
+                    await cmd.run(host="localhost", port=50051)
 
                     # Verify the execution flow
                     mock_make_protos.assert_called_once_with(cmd.app.services)
                     mock_make_server.assert_called_once()
-                    mock_get_host_port.assert_called_once()
                     mock_server.add_insecure_port.assert_called_once_with(
                         "localhost:50051"
                     )
@@ -115,9 +111,7 @@ class TestRunCommand:
                 "grpcAPI.commands.run.make_server"
             ) as mock_make_server, patch(
                 "grpcAPI.commands.run.make_plugin"
-            ) as mock_make_plugin, patch(
-                "grpcAPI.commands.run.get_host_port"
-            ) as mock_get_host_port:
+            ) as mock_make_plugin:
 
                 # Setup mocks
                 mock_server = Mock()
@@ -130,7 +124,6 @@ class TestRunCommand:
                 mock_make_server.return_value = mock_server
                 mock_make_protos.return_value = []
                 mock_make_plugin.return_value = mock_plugin
-                mock_get_host_port.return_value = ("localhost", 50051)
 
                 with patch("grpcAPI.commands.run.AsyncExitStack") as mock_stack:
                     mock_stack_instance = AsyncMock()
@@ -140,10 +133,10 @@ class TestRunCommand:
                     mock_stack.return_value.__aexit__ = AsyncMock(return_value=None)
                     mock_stack_instance.enter_async_context = AsyncMock()
 
-                    await cmd.run()
+                    await cmd.run(host="localhost", port=50051)
 
                     # Verify plugins were created and registered
-                    assert mock_make_plugin.call_count == 4  # health and reflection
+                    assert mock_make_plugin.call_count == 1  # health and reflection
                     mock_server.register_plugin.assert_called()
 
     @pytest.mark.asyncio
@@ -159,9 +152,7 @@ class TestRunCommand:
                 "grpcAPI.commands.run.ServerWrapper"
             ) as mock_server_wrapper, patch(
                 "grpcAPI.commands.run.make_server"
-            ) as mock_make_server, patch(
-                "grpcAPI.commands.run.get_host_port"
-            ) as mock_get_host_port:
+            ) as mock_make_server:
 
                 mock_server = Mock()
                 mock_server.add_insecure_port = Mock(return_value=50051)
@@ -171,7 +162,6 @@ class TestRunCommand:
 
                 mock_server_wrapper.return_value = mock_server
                 mock_make_protos.return_value = []
-                mock_get_host_port.return_value = ("localhost", 50051)
 
                 with patch("grpcAPI.commands.run.AsyncExitStack") as mock_stack:
                     mock_stack_instance = AsyncMock()
@@ -181,7 +171,7 @@ class TestRunCommand:
                     mock_stack.return_value.__aexit__ = AsyncMock(return_value=None)
                     mock_stack_instance.enter_async_context = AsyncMock()
 
-                    await cmd.run()
+                    await cmd.run(host="localhost", port=50051)
 
                     # Verify custom server path was taken
                     mock_server_wrapper.assert_called_once_with(cmd.app.server)

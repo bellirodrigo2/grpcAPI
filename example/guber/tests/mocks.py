@@ -67,8 +67,8 @@ class MockRideRepo:
         self.calls.append(("has_active_ride", user_id))
         return user_id in self.active_rides
 
-    async def get_by_id(self, ride_id: str) -> Optional[Ride]:
-        self.calls.append(("get_by_id", ride_id))
+    async def get_by_ride_id(self, ride_id: str) -> Optional[Ride]:
+        self.calls.append(("get_by_ride_id", ride_id))
         return self.rides.get(ride_id)
 
     async def create_ride(self, request: RideRequest) -> str:
@@ -80,8 +80,6 @@ class MockRideRepo:
             driver_id="",
             status=RideStatus.REQUESTED,
             fare=0.0,
-            accepted_at=None,
-            finished_at=None,
         )
         self.rides[ride_id] = ride
         self.active_rides[request.passenger_id] = ride_id
@@ -90,12 +88,21 @@ class MockRideRepo:
     async def update_ride(self, ride: Ride) -> None:
         self.calls.append(("update_ride", ride))
         self.rides[ride.ride_id] = ride
-        if ride.status == RideStatus.COMPLETED:
-            # Remove from active rides when completed
+        if ride.status == RideStatus.ACCEPTED and ride.driver_id:
+            # Add driver to active rides when ride is accepted
+            self.active_rides[ride.driver_id] = ride.ride_id
+        elif ride.status == RideStatus.COMPLETED:
+            # Remove ALL users from active rides when completed (both passenger and driver)
             for user_id, ride_id in list(self.active_rides.items()):
                 if ride_id == ride.ride_id:
                     del self.active_rides[user_id]
-                    break
+
+    async def is_ride_finished(self, ride_id: str) -> bool:
+        self.calls.append(("is_ride_finished", ride_id))
+        ride = self.rides.get(ride_id)
+        if ride is None:
+            return True  # Non-existent ride is considered finished
+        return ride.status in [RideStatus.COMPLETED, RideStatus.CANCELED]
 
 
 class MockPositionRepo:
@@ -107,6 +114,10 @@ class MockPositionRepo:
 
     def set_position(self, ride_id: str, lat: float, lng: float):
         self.positions[ride_id] = (lat, lng)
+
+    async def update_position(self, position):
+        """Update position and store it (called by update_position use case)"""
+        self.positions[position.ride_id] = (position.lat, position.long)
 
 
 def get_mock_account_repo(context: AsyncContext):
@@ -121,8 +132,10 @@ def get_mock_ride_repo(context: AsyncContext):
     return context._mock_ride_repo
 
 
-def get_mock_position_repo():
-    return MockPositionRepo()
+def get_mock_position_repo(context: AsyncContext):
+    if not hasattr(context, "_mock_position_repo"):
+        context._mock_position_repo = MockPositionRepo()
+    return context._mock_position_repo
 
 
 async def get_mock_authentication(metadata: Metadata) -> None:
@@ -132,7 +145,7 @@ async def get_mock_authentication(metadata: Metadata) -> None:
 
 
 def get_mock_is_passenger(context: AsyncContext):
-    # Default to True, can be overridden in tests
+    # Default to True, can be overridden in tests via context
     if not hasattr(context, "_is_passenger"):
         context._is_passenger = True
     return context._is_passenger

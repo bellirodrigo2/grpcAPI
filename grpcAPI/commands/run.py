@@ -1,6 +1,6 @@
 from contextlib import AsyncExitStack
 
-from typing_extensions import Any, Dict, Optional, Tuple
+from typing_extensions import Any, Optional
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import App
@@ -13,16 +13,6 @@ from grpcAPI.server import ServerWrapper, make_server
 from grpcAPI.server_plugins.loader import make_plugin
 
 
-def get_host_port(
-    settings: Dict[str, Any],
-) -> Tuple[str, int]:
-    host = settings.get("host", "localhost")
-    port = settings.get("port", 50051)
-    port = int(port)
-
-    return host, port
-
-
 class RunCommand(GRPCAPICommand):
 
     def __init__(self, app: App, settings_path: Optional[str] = None) -> None:
@@ -33,7 +23,7 @@ class RunCommand(GRPCAPICommand):
         settings = self.settings
         app = self.app
 
-        lint = settings.get("lint", True)
+        lint = kwargs.get("lint") or settings.get("lint", True)
         plugins_settings = settings.get("plugins", {})
 
         if lint:
@@ -65,7 +55,9 @@ class RunCommand(GRPCAPICommand):
                 add_to_server(
                     service, server, app.dependency_overrides, app._exception_handlers
                 )
-        host, port = get_host_port(settings)
+        host = kwargs.get("host") or settings.get("host", "localhost")
+        port = kwargs.get("port") or settings.get("port", 50051)
+        port = int(port)
         server.add_insecure_port(f"{host}:{port}")
 
         async with AsyncExitStack() as stack:

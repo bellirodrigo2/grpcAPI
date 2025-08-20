@@ -1,54 +1,67 @@
-from typing import Optional
+from typing import Any, Optional
 
-from google.protobuf.timestamp_pb2 import Timestamp
 from sqlalchemy import select
 
-from example.guber.adapters.repo.sqlalchemy import RideDB, SqlAlchemyDB
-from example.guber.application.repo import RideRepo
-from example.guber.domain import Ride, RideRequest
+from example.guber.server.adapters.repo.sqlalchemy import RideDB
+from example.guber.server.adapters.repo.sqlalchemy import RideStatus as RideStatusDB
+from example.guber.server.adapters.repo.sqlalchemy import SqlAlchemyDB
+from example.guber.server.application.repo import RideRepo
+from example.guber.server.domain import Ride, RideRequest, RideStatus
+from grpcAPI.protobuf import Timestamp
 
 
 class SqlAlchemyRideRepo(RideRepo, SqlAlchemyDB):
+
     async def has_active_ride(self, passenger_id: str) -> bool:
-        results = await self.db.execute(
+
+        result = await self.db.execute(
             select(RideDB).where(
                 RideDB.passenger_id == passenger_id,
-                RideDB.status == RideDB.RideStatusEnum.IN_PROGRESS,
+                RideDB.status == RideStatusDB.IN_PROGRESS,
             )
         )
-        return results.scalar_one_or_none() is not None
+        return result.scalars().first() is not None
 
-    async def get_by_id(self, ride_id: str) -> Optional[Ride]:
-        result = await self.db.execute(select(RideDB).where(RideDB.id == ride_id))
+    async def get_by_ride_id(self, ride_id: str) -> Optional[Ride]:
+        result = await self.db.execute(select(RideDB).where(RideDB.ride_id == ride_id))
         ride = result.scalar_one_or_none()
-        if ride is None:
-            return None
-        timestamp = Timestamp()
-        timestamp.FromDatetime(ride.requested_at)
-        return orm_to_proto_ride(ride, timestamp)
+
+        return orm_to_proto(ride)
 
     async def create_ride(self, request: RideRequest) -> str: ...
 
     async def update_ride(self, ride: Ride) -> None: ...
 
+    async def is_ride_finished(self, ride_id: str) -> bool: ...
 
-def orm_to_proto_ride(ride: RideDB, timestamp: Timestamp) -> Ride:
+
+async def get_ride_repo(**kwargs: Any) -> RideRepo:  # type: ignore
+    pass
+
+
+def orm_to_proto(ride: Optional[RideDB]) -> Optional[Ride]:
+    if ride is None:
+        return None
+    ride_request = RideRequest(
+        passenger_id=ride.passenger_id,
+        from_lat=ride.from_lat,
+        from_long=ride.from_long,
+        to_lat=ride.to_lat,
+        to_long=ride.to_long,
+    )
+    accepted_at = (
+        Timestamp().FromDatetime(ride.accepted_at) if ride.accepted_at else None
+    )
+    finished_at = (
+        Timestamp().FromDatetime(ride.finished_at) if ride.finished_at else None
+    )
+    status_val = RideStatus.Value(ride.status.name)
     return Ride(
         ride_id=ride.id,
-        ride_request=RideRequest(
-            passenger_id=ride.passenger_id,
-            from_lat=ride.from_lat,
-            from_long=ride.from_long,
-            to_lat=ride.to_lat,
-            to_long=ride.to_long,
-            requested_at=timestamp,
-        ),
-        driver_id=ride.driver_id,
-        accepted_at=ride.accepted_at,
-        finished_at=ride.finished_at,
-        status=ride.status.value if ride.status else None,
+        driver_id=ride.driver_id if ride.driver_id else "",
+        ride_request=ride_request,
+        fare=ride.fare,
+        status=RideStatus.Name(status_val),
+        accepted_at=accepted_at,
+        finished_at=finished_at,
     )
-
-
-def proto_to_orm_ride(ride):
-    pass

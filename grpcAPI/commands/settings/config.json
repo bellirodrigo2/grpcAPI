@@ -14,7 +14,7 @@
     "clean_services": true, // Remove unused service files
     "overwrite": false,     // Preserve existing files
     "zipcompress": false,   // Generate individual files
-    "output_path": "dist"
+    "outdir": "dist"
   },
   
   /* Service filtering configuration

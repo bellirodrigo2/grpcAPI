@@ -20,6 +20,7 @@ def unregister(plugin_name: str) -> None:
 
 
 def make_plugin(plugin_name: str, **kwargs: Any) -> ServerPlugin:
+
     try:
         if plugin_name not in _get_plugin:
             load_plugins([plugin_name])

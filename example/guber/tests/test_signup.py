@@ -20,18 +20,19 @@ async def test_signup_passenger(
         request=get_account_info,
         context=context,
     )
-    assert resp.value == "test_account_id"
+    assert resp.value.startswith("test_account_id_")
     context.tracker.invocation_metadata.assert_called_once()
     account_repo = context._mockrepo
 
     assert account_repo.calls[0] == ("exist_sin", "046454286")
     assert account_repo.calls[1] == ("exist_email", "test@example.com")
+    account_id = resp.value
     assert account_repo.calls[2] == (
         "create_account",
-        "test_account_id",
+        account_id,
         get_account_info,
     )
-    account = await account_repo.get_by_id("test_account_id")
+    account = await account_repo.get_by_id(account_id)
     assert account is not None
     assert account.info.name == "Test User"
     assert account.info.email == "test@example.com"
@@ -55,9 +56,10 @@ async def test_signup_driver(
         request=driver_info,
         context=context,
     )
-    assert resp.value == "test_account_id"
+    assert resp.value.startswith("test_account_id_")
     account_repo = context._mockrepo
-    account = await account_repo.get_by_id("test_account_id")
+    account_id = resp.value
+    account = await account_repo.get_by_id(account_id)
     assert account is not None
     assert account.info.car_plate == "DEF-5678"
     assert account.info.is_driver is True

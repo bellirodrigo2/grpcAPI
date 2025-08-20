@@ -12,11 +12,11 @@ class TestInitCommand:
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             init_cmd = InitCommand()
-            init_cmd.run_sync(dst_folder=tmp_path)
-            
+            init_cmd.run_sync(dst=tmp_path)
+
             config_file = tmp_path / "grpcapi.config.json"
             assert config_file.exists()
-            
+
             # Verify content is copied from source
             content = config_file.read_text(encoding="utf-8")
             assert "proto_path" in content
@@ -28,10 +28,10 @@ class TestInitCommand:
             tmp_path = Path(tmp_dir)
             config_file = tmp_path / "grpcapi.config.json"
             config_file.write_text("{}", encoding="utf-8")
-            
+
             init_cmd = InitCommand()
-            init_cmd.run_sync(dst_folder=tmp_path)
-            
+            init_cmd.run_sync(dst=tmp_path)
+
             # File should not be overwritten without force flag
             assert config_file.read_text(encoding="utf-8") == "{}"
 
@@ -41,10 +41,10 @@ class TestInitCommand:
             tmp_path = Path(tmp_dir)
             config_file = tmp_path / "grpcapi.config.json"
             config_file.write_text("{}", encoding="utf-8")
-            
+
             init_cmd = InitCommand()
-            init_cmd.run_sync(dst_folder=tmp_path, force=True)
-            
+            init_cmd.run_sync(dst=tmp_path, force=True)
+
             # File should be overwritten
             content = config_file.read_text(encoding="utf-8")
             assert "proto_path" in content
@@ -54,11 +54,11 @@ class TestInitCommand:
         """Test the standalone run_init function."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
-            run_init(dst_folder=tmp_path)
-            
+            run_init(dst=tmp_path)
+
             config_file = tmp_path / "grpcapi.config.json"
             assert config_file.exists()
-            
+
             content = config_file.read_text(encoding="utf-8")
             assert "proto_path" in content
 
@@ -68,9 +68,9 @@ class TestInitCommand:
             tmp_path = Path(tmp_dir)
             config_file = tmp_path / "grpcapi.config.json"
             config_file.write_text("{}", encoding="utf-8")
-            
-            run_init(force=True, dst_folder=tmp_path)
-            
+
+            run_init(force=True, dst=tmp_path)
+
             content = config_file.read_text(encoding="utf-8")
             assert "proto_path" in content
             assert content != "{}"

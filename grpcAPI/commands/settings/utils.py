@@ -6,7 +6,6 @@ from pathlib import Path
 import json5
 import toml
 import yaml
-from mergedeep import merge
 from typing_extensions import Any, Dict
 
 DEFAULT_CONFIG_PATH = Path("./grpcAPI/commands/settings/config.json")
@@ -47,8 +46,8 @@ def combine_settings(
     If 'field' is defined, merges only that section.
     """
     default_settings = load_file_by_extension(default_path)
-    merge(default_settings, user_settings)
-    return default_settings
+
+    return {**default_settings, **user_settings}
 
 
 def load_app(app_path: str) -> None:

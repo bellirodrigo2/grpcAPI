@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from grpcAPI.commands.command import BaseCommand
+from grpcAPI.commands.settings.utils import DEFAULT_CONFIG_PATH
 
 
 class InitCommand(BaseCommand):
@@ -12,8 +13,8 @@ class InitCommand(BaseCommand):
         super().__init__("init", settings_path, True)
 
     def run_sync(self, **kwargs: Any) -> None:
-        source_config = Path(__file__).parent / "settings" / "config.json"
-        dst_folder = kwargs.get("dst_folder", Path.cwd())
+        source_config = DEFAULT_CONFIG_PATH
+        dst_folder = kwargs.get("dst", Path.cwd())
         dest_config = Path(dst_folder) / "grpcapi.config.json"
 
         if dest_config.exists():
@@ -47,13 +48,13 @@ Use --force to overwrite existing file."""
             raise
 
 
-def run_init(force: bool = False, dst_folder: Optional[Path] = None) -> None:
+def run_init(force: bool = False, dst: Optional[Path] = None) -> None:
     """Standalone function to run init command."""
     try:
         init_command = InitCommand()
         kwargs = {"force": force}
-        if dst_folder is not None:
-            kwargs["dst_folder"] = dst_folder
+        if dst is not None:
+            kwargs["dst"] = dst
         init_command.run_sync(**kwargs)
     except Exception as e:
         from logging import getLogger

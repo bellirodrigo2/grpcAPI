@@ -1,3 +1,6 @@
+import asyncio
+from typing import AsyncIterator
+
 from typing_extensions import Annotated
 
 from example.guber.server.application.gateway import Authenticate
@@ -10,7 +13,7 @@ from example.guber.server.application.internal_access import (
     passenger_name,
 )
 from example.guber.server.application.repo import PositionRepository, RideRepository
-from example.guber.server.domain import Position, RideInfo, RideRequest
+from example.guber.server.domain import Position, Ride, RideInfo, RideRequest
 from example.guber.server.domain.entity.ride_rules import (
     accept_ride as accept_ride_rules,
 )
@@ -84,7 +87,7 @@ async def accept_ride(
     if has_active_ride:
         raise ValueError("This driver has an active ride")
 
-    ride = await ride_repo.get_by_id(ride_id)
+    ride = await ride_repo.get_by_ride_id(ride_id)
     if ride is None:
         raise ValueError(f"Ride not found: Id: {ride_id}")
     accept_ride_rules(ride, driver_id)
@@ -107,7 +110,7 @@ async def get_ride(
     position_repo: PositionRepository,
 ) -> RideInfo:
 
-    ride = await ride_repo.get_by_id(ride_id)
+    ride = await ride_repo.get_by_ride_id(ride_id)
     if ride is None:
         raise ValueError(f"Ride with id {ride_id} not found")
     lat, long = await position_repo.get_current_position(ride_id)
@@ -122,7 +125,7 @@ async def start_ride(
     _: Authenticate,
     ride_repo: RideRepository,
 ) -> Empty:
-    ride = await ride_repo.get_by_id(ride_id)
+    ride = await ride_repo.get_by_ride_id(ride_id)
     if ride is None:
         raise ValueError(f"Ride with id {ride_id} not found")
 
@@ -140,7 +143,7 @@ async def update_position(
     position_repo: PositionRepository,
 ) -> Empty:
     ride_id = position.ride_id
-    ride = await ride_repo.get_by_id(ride_id)
+    ride = await ride_repo.get_by_ride_id(ride_id)
     if ride is None:
         raise ValueError(f"Ride with id {ride_id} not found")
 
@@ -148,6 +151,8 @@ async def update_position(
 
     update_position_rules(ride, (last_lat, last_long), (position.lat, position.long))
     await ride_repo.update_ride(ride)
+
+    await position_repo.update_position(position)
 
     return Empty()
 
@@ -160,10 +165,77 @@ async def finish_ride(
     payment_gateway: Annotated[PaymentGateway, Depends(get_payment_gateway)],
 ) -> Empty:
 
-    ride = await ride_repo.get_by_id(ride_id)
+    ride = await ride_repo.get_by_ride_id(ride_id)
     if ride is None:
         raise ValueError(f"Ride with id {ride_id} not found")
     finish_ride_rules(ride)
     await payment_gateway.process_payment({"rideId": ride.ride_id, "amount": ride.fare})
     await ride_repo.update_ride(ride)
     return Empty()
+
+
+@ride_services
+async def update_position_stream(
+    position_stream: AsyncIterator[Position],
+    _: Authenticate,
+    ride_repo: RideRepository,
+    position_repo: PositionRepository,
+) -> Empty:
+
+    ride = None
+
+    async def _get_ride(id: str) -> Ride:
+        ride = await ride_repo.get_by_ride_id(id)
+        if ride is None:
+            raise ValueError(f"Ride with id {id} not found")
+        return ride
+
+    ride_id = None
+    async for position in position_stream:
+        if ride_id is not None and ride_id != position.ride_id:
+            raise ValueError(f"Unexpected ride_id: {position.ride_id}")
+        ride_id = position.ride_id
+        if ride is None:
+            ride = await _get_ride(ride_id)
+
+        last_lat, last_long = await position_repo.get_current_position(ride_id)
+
+        update_position_rules(
+            ride, (last_lat, last_long), (position.lat, position.long)
+        )
+        await ride_repo.update_ride(ride)
+        await position_repo.update_position(position)
+
+    return Empty()
+
+
+def get_counter() -> int:
+    return 10
+
+
+def get_delay() -> float:
+    return 30.0
+
+
+@ride_services
+async def get_position_stream(
+    ride_id: StringValue,
+    _: Authenticate,
+    ride_repo: RideRepository,
+    position_repo: PositionRepository,
+    counter: Annotated[int, Depends(get_counter)],
+    delay: Annotated[float, Depends(get_delay)],
+) -> AsyncIterator[Position]:
+
+    finished = False
+    if counter < 1:
+        counter = 1
+    while not finished:
+        lat, long = await position_repo.get_current_position(ride_id.value)
+        yield Position(ride_id=ride_id.value, lat=lat, long=long)
+        await asyncio.sleep(delay)
+
+        finished = await ride_repo.is_ride_finished(ride_id.value)
+        counter -= 1
+        if counter == 0:
+            finished = True

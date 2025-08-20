@@ -12,6 +12,7 @@ from example.guber.server.application.internal_access import (
 from example.guber.server.application.repo.account_repo import get_account_repo
 from example.guber.server.application.repo.position_repo import get_position_repo
 from example.guber.server.application.repo.ride_repo import get_ride_repo
+from example.guber.server.application.usecase.ride import get_counter, get_delay
 from example.guber.server.domain.entity.account_rules import make_account_id
 from example.guber.server.domain.entity.lib.account.account_proto_pb2 import AccountInfo
 from example.guber.server.domain.entity.lib.ride.ride_proto_pb2 import RideRequest
@@ -30,11 +31,24 @@ from .mocks import (
 )
 
 
+def make_unique_account_id():
+    counter = 0
+
+    def _generate_id():
+        nonlocal counter
+        counter += 1
+        return f"test_account_id_{counter}"
+
+    return _generate_id
+
+
 @pytest.fixture
 def guber_test_app() -> Generator[App, Any, None]:
-    app.dependency_overrides[make_account_id] = lambda: "test_account_id"
+    app.dependency_overrides[make_account_id] = make_unique_account_id()
     app.dependency_overrides[async_authentication] = get_mock_authentication
     app.dependency_overrides[is_passenger] = get_mock_is_passenger
+    app.dependency_overrides[get_counter] = lambda: 2  # choose you number here
+    app.dependency_overrides[get_delay] = lambda: 0.1
     app.dependency_overrides[passenger_name] = get_mock_passenger_name
     app.dependency_overrides[get_payment_gateway] = get_mock_payment_gateway
     app.dependency_overrides[get_account_repo] = get_mock_account_repo

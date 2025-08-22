@@ -1,5 +1,6 @@
 import asyncio
-from typing import AsyncIterator
+from datetime import datetime
+from typing import AsyncIterator, List, Tuple
 
 from example.guber.server.application.usecase.account import signup_account
 from example.guber.server.application.usecase.ride import (
@@ -9,36 +10,33 @@ from example.guber.server.application.usecase.ride import (
     start_ride,
     update_position,
 )
-from example.guber.server.domain import AccountInfo, Position, RideRequest, RideStatus
-from example.guber.tests.mocks import get_mock_position_repo, get_mock_ride_repo
-from grpcAPI.protobuf import StringValue
-from grpcAPI.protobuf.lib.prototypes_pb2 import KeyValueStr
+from example.guber.server.domain import Position, RideStatus
+from example.guber.tests.fixtures import get_position_repo_test, get_ride_repo_test
+from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
-pytest_plugins = ["example.guber.tests.fixtures"]
-
-
-def create_position(ride_id: str, lat: float, long: float) -> Position:
-    """Helper function to create Position objects"""
-    position = Position()
-    position.ride_id = ride_id
-    position.lat = lat
-    position.long = long
-    position.updated_at.GetCurrentTime()
-    return position
+from .helpers import (
+    create_coord,
+    create_driver_info,
+    create_passenger_info,
+    create_position,
+    create_ride_request,
+    get_unique_email,
+    get_unique_sin,
+)
 
 
 async def setup_ride_for_streaming(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     context: ContextMock,
-) -> tuple[str, str, str]:
+    unique_index: int = 0,
+) -> Tuple[str, str, str]:
     """Helper function to set up ride ready for position streaming"""
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 200 + unique_index),
+        sin=get_unique_sin(unique_index % 5),
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -49,8 +47,7 @@ async def setup_ride_for_streaming(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -59,13 +56,10 @@ async def setup_ride_for_streaming(
     )
     ride_id = ride_resp.value
 
-    # Create driver account
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 200 + unique_index),
+        sin=get_unique_sin((unique_index + 1) % 5),
     )
     context._is_passenger = False
 
@@ -96,7 +90,7 @@ async def setup_ride_for_streaming(
 
 async def collect_stream_positions(
     position_stream: AsyncIterator[Position], max_positions: int = 5
-) -> list[Position]:
+) -> List[Position]:
     """Helper function to collect positions from stream with timeout"""
     positions = []
     count = 0
@@ -110,20 +104,26 @@ async def collect_stream_positions(
 
 async def test_get_position_stream_basic_streaming(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test basic position streaming functionality"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_for_streaming(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=0
     )
 
-    # Set initial position
-    position_repo = get_mock_position_repo(context)
-    position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+    # Set initial position using SQLAlchemy repo
+    from example.guber.server.domain import Coord
+
+    initial_coord = Coord(lat=-27.584905257808835, long=-48.545022195325124)
+
+    async with get_position_repo_test() as position_repo:
+        async with get_ride_repo_test() as ride_repo:
+            ride = await ride_repo.get_by_ride_id(ride_id)
+            await position_repo.create_position(
+                ride_id, initial_coord, ride.accepted_at.ToDatetime()
+            )
 
     # Get position stream (uses injected counter=2 and delay=0.1)
     position_stream = await app_test_client.run(
@@ -140,25 +140,32 @@ async def test_get_position_stream_basic_streaming(
     for position in positions:
         assert isinstance(position, Position)
         assert position.ride_id == ride_id
-        assert abs(position.lat - (-27.584905257808835)) < 0.0001
-        assert abs(position.long - (-48.545022195325124)) < 0.0001
+        assert abs(position.coord.lat - (-27.584905257808835)) < 0.0001
+        assert abs(position.coord.long - (-48.545022195325124)) < 0.0001
 
 
 async def test_get_position_stream_position_updates(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test position streaming reflects position updates during stream"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_for_streaming(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=1
     )
 
-    position_repo = get_mock_position_repo(context)
-    position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+    # Set initial position using SQLAlchemy repo
+    from example.guber.server.domain import Coord
+
+    initial_coord = Coord(lat=-27.584905257808835, long=-48.545022195325124)
+
+    async with get_position_repo_test() as position_repo:
+        async with get_ride_repo_test() as ride_repo:
+            ride = await ride_repo.get_by_ride_id(ride_id)
+            await position_repo.create_position(
+                ride_id, initial_coord, ride.accepted_at.ToDatetime()
+            )
 
     collected_positions = []
 
@@ -198,8 +205,8 @@ async def test_get_position_stream_position_updates(
 
     # First position should have initial coordinates
     first_pos = collected_positions[0]
-    assert abs(first_pos.lat - (-27.584905257808835)) < 0.0001
-    assert abs(first_pos.long - (-48.545022195325124)) < 0.0001
+    assert abs(first_pos.coord.lat - (-27.584905257808835)) < 0.0001
+    assert abs(first_pos.coord.long - (-48.545022195325124)) < 0.0001
 
     # Later positions might have updated coordinates
     for position in collected_positions:
@@ -208,30 +215,34 @@ async def test_get_position_stream_position_updates(
 
 async def test_get_position_stream_ride_completion(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test position stream stops when ride is completed"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_for_streaming(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=2
     )
 
-    position_repo = get_mock_position_repo(context)
-    position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+    # Set initial position using SQLAlchemy repo
+    initial_coord = create_coord(lat=-27.584905257808835, long=-48.545022195325124)
 
-    ride_repo = get_mock_ride_repo(context)
+    async with get_position_repo_test() as position_repo:
+        async with get_ride_repo_test() as ride_repo:
+            ride = await ride_repo.get_by_ride_id(ride_id)
+            await position_repo.create_position(
+                ride_id, initial_coord, ride.accepted_at.ToDatetime()
+            )
+
+    # Use SQLAlchemy ride repo
     collected_positions = []
 
     async def complete_ride_after_delay():
-        """Complete the ride after some positions are streamed"""
-        await asyncio.sleep(0.15)  # Wait for at least one position
-        # Mark ride as completed
-        ride = await ride_repo.get_by_ride_id(ride_id)
-        ride.status = RideStatus.COMPLETED
-        await ride_repo.update_ride(ride)
+        await asyncio.sleep(0.15)
+        async with get_ride_repo_test() as ride_repo:
+            ride = await ride_repo.get_by_ride_id(ride_id)
+            ride.status = RideStatus.COMPLETED
+            await ride_repo.update_ride(ride)
 
     # Start ride completion task
     completion_task = asyncio.create_task(complete_ride_after_delay())
@@ -258,19 +269,26 @@ async def test_get_position_stream_ride_completion(
 
 async def test_get_position_stream_counter_limit(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test position stream respects counter limit"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_for_streaming(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=3
     )
 
-    position_repo = get_mock_position_repo(context)
-    position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+    # Set initial position using SQLAlchemy repo
+    from example.guber.server.domain import Coord
+
+    initial_coord = Coord(lat=-27.584905257808835, long=-48.545022195325124)
+
+    async with get_position_repo_test() as position_repo:
+        async with get_ride_repo_test() as ride_repo:
+            ride = await ride_repo.get_by_ride_id(ride_id)
+            await position_repo.create_position(
+                ride_id, initial_coord, ride.accepted_at.ToDatetime()
+            )
 
     # Get position stream (uses injected counter=2 and delay=0.1)
     position_stream = await app_test_client.run(
@@ -294,26 +312,22 @@ async def test_get_position_stream_nonexistent_ride(
     app_test_client: TestClient,
     get_mock_context: ContextMock,
 ):
-    """Test position stream with non-existent ride"""
+    """Test position stream with non-existent ride should raise ValueError"""
+    import pytest
+    
     context = get_mock_context
 
-    # Get position stream for non-existent ride (uses injected counter=2 and delay=0.1)
-    position_stream = await app_test_client.run(
-        func=get_position_stream,
-        request=StringValue(value="nonexistent_ride"),
-        context=context,
-    )
-
-    # Collect positions
-    positions = await collect_stream_positions(position_stream, max_positions=2)
-
-    # Should get positions with default coordinates (0.0, 0.0) but stream ends immediately due to is_ride_finished=True
-    assert (
-        len(positions) == 1
-    )  # Only first position before ride is detected as finished
-    assert positions[0].ride_id == "nonexistent_ride"
-    assert positions[0].lat == 0.0
-    assert positions[0].long == 0.0
+    # Get position stream for non-existent ride should fail immediately
+    with pytest.raises(ValueError, match="Current position not found for ride id nonexistent_ride"):
+        position_stream = await app_test_client.run(
+            func=get_position_stream,
+            request=StringValue(value="nonexistent_ride"),
+            context=context,
+        )
+        
+        # Try to get first position - should raise ValueError before this
+        async for position in position_stream:
+            break
 
 
 async def test_get_position_stream_zero_counter_test():
@@ -326,30 +340,38 @@ async def test_get_position_stream_zero_counter_test():
 
 async def test_get_position_stream_canceled_ride(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test position stream stops when ride is canceled"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_for_streaming(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=4
     )
 
-    position_repo = get_mock_position_repo(context)
-    position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+    # Set initial position using SQLAlchemy repo
+    from example.guber.server.domain import Coord
 
-    ride_repo = get_mock_ride_repo(context)
+    initial_coord = Coord(lat=-27.584905257808835, long=-48.545022195325124)
+
+    async with get_position_repo_test() as position_repo:
+        async with get_ride_repo_test() as ride_repo:
+            ride = await ride_repo.get_by_ride_id(ride_id)
+            await position_repo.create_position(
+                ride_id, initial_coord, ride.accepted_at.ToDatetime()
+            )
+
+    # Use SQLAlchemy ride repo
     collected_positions = []
 
     async def cancel_ride_after_delay():
         """Cancel the ride after some positions are streamed"""
         await asyncio.sleep(0.15)  # Wait for at least one position
         # Mark ride as canceled
-        ride = await ride_repo.get_by_ride_id(ride_id)
-        ride.status = RideStatus.CANCELED
-        await ride_repo.update_ride(ride)
+        async with get_ride_repo_test() as ride_repo:
+            ride = await ride_repo.get_by_ride_id(ride_id)
+            ride.status = RideStatus.CANCELED
+            await ride_repo.update_ride(ride)
 
     # Start ride cancellation task
     cancellation_task = asyncio.create_task(cancel_ride_after_delay())
@@ -376,21 +398,23 @@ async def test_get_position_stream_canceled_ride(
 
 async def test_get_position_stream_position_data_structure(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test that streamed positions have correct data structure"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_for_streaming(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=5
     )
 
-    position_repo = get_mock_position_repo(context)
-    test_lat = -27.584905257808835
-    test_long = -48.545022195325124
-    position_repo.set_position(ride_id, test_lat, test_long)
+    async with get_position_repo_test() as position_repo:
+        test_lat = -27.584905257808835
+        test_long = -48.545022195325124
+        await position_repo.create_position(
+            ride_id,
+            create_coord(test_lat, test_long),
+            updated_at=datetime.now(),
+        )
 
     # Get position stream (uses injected counter=2 and delay=0.1)
     position_stream = await app_test_client.run(
@@ -408,14 +432,13 @@ async def test_get_position_stream_position_data_structure(
     # Verify Position structure
     assert isinstance(position, Position)
     assert hasattr(position, "ride_id")
-    assert hasattr(position, "lat")
-    assert hasattr(position, "long")
+    assert hasattr(position, "coord")
     assert hasattr(position, "updated_at")
 
     # Verify data values
     assert position.ride_id == ride_id
-    assert abs(position.lat - test_lat) < 0.0001
-    assert abs(position.long - test_long) < 0.0001
+    assert abs(position.coord.lat - test_lat) < 0.0001
+    assert abs(position.coord.long - test_long) < 0.0001
 
     # Verify timestamp is set (protobuf timestamp should be valid)
     assert position.updated_at is not None

@@ -40,12 +40,16 @@ from grpcAPI.testclient import TestClient
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
 
+import warnings
+
 from tests.lib.account_pb2 import AccountContent as Account
 from tests.lib.account_pb2 import AccountCreated, AccountInput, Inner
 from tests.lib.inner.inner_pb2 import InnerMessage  # noqa: F401
 from tests.lib.multi.inner.class_pb2 import ClassMsg  # noqa: F401
 from tests.lib.other_pb2 import Other  # noqa: F401
 from tests.lib.user_pb2 import User, UserCode  # noqa: F401
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 root = Path("./tests/proto")
 

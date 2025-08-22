@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -9,43 +10,38 @@ from example.guber.server.application.usecase.ride import (
     start_ride,
     update_position,
 )
-from example.guber.server.domain import AccountInfo, Position, RideRequest, RideStatus
+from example.guber.server.domain import RideStatus
 from example.guber.server.domain.service.farecalc import (
     NormalFare,
     OvernightFare,
     SundayFare,
 )
-from example.guber.tests.mocks import get_mock_position_repo
-from grpcAPI.protobuf import StringValue
-from grpcAPI.protobuf.lib.prototypes_pb2 import KeyValueStr
+from example.guber.tests.fixtures import get_position_repo_test, get_ride_repo_test
+from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
-pytest_plugins = ["example.guber.tests.fixtures"]
-
-
-def create_position(ride_id: str, lat: float, long: float) -> Position:
-    """Helper function to create Position objects"""
-    position = Position()
-    position.ride_id = ride_id
-    position.lat = lat
-    position.long = long
-    # Set current timestamp
-    position.updated_at.GetCurrentTime()
-    return position
+from .helpers import (
+    create_coord,
+    create_driver_info,
+    create_passenger_info,
+    create_position,
+    create_ride_request,
+    get_unique_email,
+    get_unique_sin,
+)
 
 
 async def setup_ride_in_progress(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     context: ContextMock,
+    unique_index: int = 0,
 ) -> tuple[str, str, str]:
     """Helper function to set up a ride in progress status"""
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
-    context._is_passenger = True
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 300 + unique_index),
+        sin=get_unique_sin(unique_index % 5),
+    )
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -55,8 +51,7 @@ async def setup_ride_in_progress(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -65,13 +60,10 @@ async def setup_ride_in_progress(
     )
     ride_id = ride_resp.value
 
-    # Create driver account
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 300 + unique_index),
+        sin=get_unique_sin((unique_index + 1) % 20),
     )
     context._is_passenger = False  # Switch to driver
 
@@ -102,19 +94,14 @@ async def setup_ride_in_progress(
 
 async def test_update_position_normal_fare(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test position update during normal business hours (rate: 2.1/km)"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_in_progress(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=0
     )
-
-    # Mock the accepted_at timestamp to be during business hours (10:00 AM on a Wednesday)
-    ride_repo = context._mock_ride_repo
 
     # Mock fare calculator to return normal fare
     with patch(
@@ -122,8 +109,11 @@ async def test_update_position_normal_fare(
         return_value=NormalFare(),
     ):
         # Set initial position
-        position_repo = get_mock_position_repo(context)
-        position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+        async with get_position_repo_test() as position_repo:
+            coord = create_coord(lat=-27.584905257808835, long=-48.545022195325124)
+            await position_repo.create_position(
+                ride_id, coord, updated_at=datetime.now()
+            )
 
         # Update to new position
         new_position = create_position(
@@ -137,15 +127,16 @@ async def test_update_position_normal_fare(
         )
 
     # Verify position was updated and fare calculated
-    updated_ride = await ride_repo.get_by_ride_id(ride_id)
-    assert updated_ride is not None
-    assert updated_ride.status == RideStatus.IN_PROGRESS
+    async with get_ride_repo_test() as ride_repo:
+        updated_ride = await ride_repo.get_by_ride_id(ride_id)
+        assert updated_ride is not None
+        assert updated_ride.status == RideStatus.IN_PROGRESS
 
     # Verify position was updated in position repo
-    position_repo = get_mock_position_repo(context)
-    current_lat, current_long = await position_repo.get_current_position(ride_id)
-    assert abs(current_lat - (-27.496887588317275)) < 0.0001
-    assert abs(current_long - (-48.522234807851476)) < 0.0001
+    async with get_position_repo_test() as position_repo:
+        current_pos = await position_repo.get_current_position(ride_id)
+        assert abs(current_pos.coord.lat - (-27.496887588317275)) < 0.0001
+        assert abs(current_pos.coord.long - (-48.522234807851476)) < 0.0001
 
     # Distance between the coordinates is approximately 10 km, normal rate is 2.1
     # So fare should be approximately 10 * 2.1 = 21
@@ -157,18 +148,14 @@ async def test_update_position_normal_fare(
 
 async def test_update_position_overnight_fare(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test position update during overnight hours (rate: 3.9/km)"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_in_progress(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=1
     )
-
-    ride_repo = context._mock_ride_repo
 
     # Mock fare calculator to return overnight fare
     with patch(
@@ -176,8 +163,11 @@ async def test_update_position_overnight_fare(
         return_value=OvernightFare(),
     ):
         # Set initial position
-        position_repo = get_mock_position_repo(context)
-        position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+        async with get_position_repo_test() as position_repo:
+            coord = create_coord(lat=-27.584905257808835, long=-48.545022195325124)
+            await position_repo.create_position(
+                ride_id, coord, updated_at=datetime.now()
+            )
 
         # Update to new position
         new_position = create_position(
@@ -191,25 +181,22 @@ async def test_update_position_overnight_fare(
         )
 
     # Verify fare calculated with overnight rate
-    updated_ride = await ride_repo.get_by_ride_id(ride_id)
-    expected_fare = 10 * 3.9  # 39.0
-    assert abs(updated_ride.fare - expected_fare) < 1.0
+    async with get_ride_repo_test() as ride_repo:
+        updated_ride = await ride_repo.get_by_ride_id(ride_id)
+        expected_fare = 10 * 3.9  # 39.0
+        assert abs(updated_ride.fare - expected_fare) < 1.0
 
 
 async def test_update_position_sunday_fare(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test position update during Sunday (rate: 5.0/km)"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_in_progress(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=2
     )
-
-    ride_repo = context._mock_ride_repo
 
     # Mock fare calculator to return Sunday fare
     with patch(
@@ -217,8 +204,12 @@ async def test_update_position_sunday_fare(
         return_value=SundayFare(),
     ):
         # Set initial position
-        position_repo = get_mock_position_repo(context)
-        position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+        async with get_position_repo_test() as position_repo:
+            await position_repo.create_position(
+                ride_id,
+                create_coord(-27.584905257808835, -48.545022195325124),
+                updated_at=datetime.now(),
+            )
 
         # Update to new position
         new_position = create_position(
@@ -232,24 +223,23 @@ async def test_update_position_sunday_fare(
         )
 
     # Verify fare calculated with Sunday rate
-    updated_ride = await ride_repo.get_by_ride_id(ride_id)
-    expected_fare = 10 * 5.0  # 50.0
-    assert abs(updated_ride.fare - expected_fare) < 1.0
+    async with get_ride_repo_test() as ride_repo:
+        updated_ride = await ride_repo.get_by_ride_id(ride_id)
+        expected_fare = 10 * 5.0  # 50.0
+        assert abs(updated_ride.fare - expected_fare) < 1.0
 
 
 async def test_update_position_invalid_status(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test that position update fails for rides not in progress"""
     context = get_mock_context
 
-    # Create passenger and request ride (but don't start it)
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger and request ride (but don't start it)
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 17), sin=get_unique_sin(7)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -259,8 +249,7 @@ async def test_update_position_invalid_status(
     )
     passenger_id = passenger_resp.value
 
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -273,6 +262,14 @@ async def test_update_position_invalid_status(
     new_position = create_position(ride_id, -27.496887588317275, -48.522234807851476)
 
     context._is_passenger = False  # Switch to driver context
+
+    async with get_position_repo_test() as position_repo:
+        await position_repo.create_position(
+            ride_id,
+            create_coord(-27.584905257808835, -48.545022195325124),
+            updated_at=datetime.now(),
+        )
+
     with pytest.raises(ValueError, match="Invalid status"):
         await app_test_client.run(
             func=update_position,
@@ -304,29 +301,30 @@ async def test_update_position_nonexistent_ride(
 
 async def test_update_position_multiple_updates(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test multiple position updates accumulate fare correctly"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_in_progress(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=3
     )
-
-    ride_repo = context._mock_ride_repo
 
     # Mock fare calculator to return normal fare
     with patch(
         "example.guber.server.domain.entity.ride_rules.create_fare_calculator",
         return_value=NormalFare(),
     ):
-        position_repo = get_mock_position_repo(context)
-
-        # First position update
-        position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
-        position1 = create_position(ride_id, -27.590000000000000, -48.550000000000000)
+        async with get_position_repo_test() as position_repo:
+            # First position update
+            await position_repo.create_position(
+                ride_id,
+                create_coord(-27.584905257808835, -48.545022195325124),
+                updated_at=datetime.now(),
+            )
+            position1 = create_position(
+                ride_id, -27.590000000000000, -48.550000000000000
+            )
 
         await app_test_client.run(
             func=update_position,
@@ -342,14 +340,13 @@ async def test_update_position_multiple_updates(
             request=position2,
             context=context,
         )
+        # Verify final position
+        current = await position_repo.get_current_position(ride_id)
+        assert abs(current.coord.lat - (-27.496887588317275)) < 0.0001
+        assert abs(current.coord.long - (-48.522234807851476)) < 0.0001
 
-    # Verify fare accumulated from both updates
-    updated_ride = await ride_repo.get_by_ride_id(ride_id)
-    assert (
-        updated_ride.fare > 0
-    )  # Should have accumulated fare from both position updates
-
-    # Verify final position
-    current_lat, current_long = await position_repo.get_current_position(ride_id)
-    assert abs(current_lat - (-27.496887588317275)) < 0.0001
-    assert abs(current_long - (-48.522234807851476)) < 0.0001
+    async with get_ride_repo_test() as ride_repo:
+        updated_ride = await ride_repo.get_by_ride_id(ride_id)
+        assert (
+            updated_ride.fare > 0
+        )  # Should have accumulated fare from both position updates

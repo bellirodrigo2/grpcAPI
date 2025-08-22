@@ -8,7 +8,12 @@ from typing_extensions import Any, Dict
 from grpcAPI import ExceptionRegistry
 from grpcAPI.data_types import AsyncContext, get_function_metadata
 from grpcAPI.makeproto import ILabeledMethod
-from grpcAPI.proto_ctxinject import get_mapped_ctx, resolve_mapped_ctx
+from grpcAPI.proto_ctxinject import (
+    get_mapped_ctx,
+    get_mapped_ctx_ordered,
+    resolve_mapped_ctx,
+    resolve_mapped_ctx_ordered,
+)
 
 
 async def safe_run(
@@ -66,6 +71,7 @@ class Runner:
         "func",
         "exception_registry",
         "mapped_ctx",
+        "resolve_func",
         "req",
         "ctx_mngr",
         "overrides",
@@ -77,6 +83,7 @@ class Runner:
         overrides: Dict[Callable[..., Any], Callable[..., Any]],
         exception_registry: ExceptionRegistry,
         req: Type[Any],
+        order: bool = False,
     ):
         self.func = func
         self.overrides = overrides
@@ -84,8 +91,15 @@ class Runner:
         self.req = req
         self.ctx_mngr = CtxMngr(req, func)
 
+        if order:
+            get_mapped = get_mapped_ctx_ordered
+            self.resolve_func = resolve_mapped_ctx_ordered
+        else:
+            get_mapped = get_mapped_ctx
+            self.resolve_func = resolve_mapped_ctx
+
         context = self.ctx_mngr.get_ctx_template()
-        self.mapped_ctx = get_mapped_ctx(
+        self.mapped_ctx = get_mapped(
             func=func,
             context=context,
             allow_incomplete=False,
@@ -97,7 +111,7 @@ class Runner:
         self, request: Any, context: AsyncContext, stack: AsyncExitStack
     ) -> Any:
         ctx = self.ctx_mngr.get_ctx(request, context)
-        return await resolve_mapped_ctx(ctx, self.mapped_ctx, stack)
+        return await self.resolve_func(ctx, self.mapped_ctx, stack)
 
     async def _handle_exception(self, e: Exception, context: AsyncContext) -> None:
         exc_handler = self.exception_registry.get(type(e), None)

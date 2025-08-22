@@ -1,7 +1,6 @@
 import math
-from typing import Tuple
 
-Coord = Tuple[float, float]
+from example.guber.server.domain import Coord
 
 
 class Segment:
@@ -18,8 +17,8 @@ class Segment:
         earth_radius = 6371
         degrees_to_radians = math.pi / 180
 
-        from_lat, from_lon = self.from_coord
-        to_lat, to_lon = self.to_coord
+        from_lat, from_lon = self.from_coord.lat, self.from_coord.long
+        to_lat, to_lon = self.to_coord.lat, self.to_coord.long
 
         delta_lat = (to_lat - from_lat) * degrees_to_radians
         delta_lon = (to_lon - from_lon) * degrees_to_radians

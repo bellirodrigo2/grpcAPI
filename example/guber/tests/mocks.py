@@ -17,6 +17,9 @@ class MockAccountRepo:
         self.emails: set[str] = set()
         self.sins: set[str] = set()
         self.calls = []
+        
+        # Add default test accounts
+        self._add_default_accounts()
 
     async def get_by_id(self, id: str) -> Optional[Account]:
         self.calls.append(("get_by_id", id))
@@ -55,6 +58,23 @@ class MockAccountRepo:
             setattr(account.info, field, value)
             return True
         return False
+    
+    def _add_default_accounts(self):
+        """Add default test accounts for fixtures"""
+        from example.guber.server.domain import AccountInfo, Account
+        
+        # Default passenger account
+        passenger_info = AccountInfo(
+            name="Test Passenger",
+            email="passenger@test.com", 
+            sin="123456789",
+            car_plate="",
+            is_driver=False
+        )
+        passenger_account = Account(account_id="test_passenger_id", info=passenger_info)
+        self.accounts["test_passenger_id"] = passenger_account
+        self.emails.add("passenger@test.com")
+        self.sins.add("123456789")
 
 
 class MockRideRepo:
@@ -76,11 +96,13 @@ class MockRideRepo:
         ride_id = f"ride_{len(self.rides) + 1}"
         ride = Ride(
             ride_id=ride_id,
-            ride_request=request,
+            passenger_id=request.passenger_id,
             driver_id="",
             status=RideStatus.REQUESTED,
             fare=0.0,
         )
+        ride.start_point.CopyFrom(request.start_point)
+        ride.end_point.CopyFrom(request.end_point)
         self.rides[ride_id] = ride
         self.active_rides[request.passenger_id] = ride_id
         return ride_id
@@ -109,15 +131,27 @@ class MockPositionRepo:
     def __init__(self):
         self.positions: Dict[str, Tuple[float, float]] = {}
 
-    async def get_current_position(self, ride_id: str) -> Tuple[float, float]:
-        return self.positions.get(ride_id, (0.0, 0.0))
+    async def create_position(self, ride_id: str, coord, updated_at) -> None:
+        """Create an initial position for a ride"""
+        self.positions[ride_id] = (coord.lat, coord.long)
+
+    async def get_current_position(self, ride_id: str):
+        from example.guber.server.domain import Position
+
+        lat, long = self.positions.get(ride_id, (0.0, 0.0))
+        position = Position()
+        position.ride_id = ride_id
+        position.coord.lat = lat
+        position.coord.long = long
+        position.updated_at.GetCurrentTime()
+        return position
 
     def set_position(self, ride_id: str, lat: float, lng: float):
         self.positions[ride_id] = (lat, lng)
 
     async def update_position(self, position):
         """Update position and store it (called by update_position use case)"""
-        self.positions[position.ride_id] = (position.lat, position.long)
+        self.positions[position.ride_id] = (position.coord.lat, position.coord.long)
 
 
 def get_mock_account_repo(context: AsyncContext):
@@ -144,16 +178,6 @@ async def get_mock_authentication(metadata: Metadata) -> None:
     raise ValueError("Invalid metadata")
 
 
-def get_mock_is_passenger(context: AsyncContext):
-    # Default to True, can be overridden in tests via context
-    if not hasattr(context, "_is_passenger"):
-        context._is_passenger = True
-    return context._is_passenger
-
-
-def get_mock_passenger_name(context: AsyncContext):
-    # Default passenger name for testing
-    return "Test Passenger"
 
 
 class MockPaymentGateway:

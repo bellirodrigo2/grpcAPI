@@ -1,54 +1,54 @@
 import pytest
 
 from example.guber.server.application.usecase.account import signup_account
-from example.guber.server.domain import AccountInfo
+from example.guber.server.domain.vo.account import validate_sin
+from example.guber.tests.fixtures import get_account_repo_test
 from grpcAPI.testclient import ContextMock, TestClient
 
-pytest_plugins = ["example.guber.tests.fixtures"]
+from .helpers import (
+    create_account_info,
+    create_driver_info,
+    create_passenger_info,
+    get_unique_email,
+    get_unique_sin,
+)
 
 
 async def test_signup_passenger(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
     get_mock_context: ContextMock,
 ):
     context = get_mock_context
-    get_account_info.car_plate = ""  # Passengers do not have car plates
-    get_account_info.is_driver = False  # Passengers are not drivers
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 15), sin=get_unique_sin(0)
+    )
     resp = await app_test_client.run(
         func=signup_account,
-        request=get_account_info,
+        request=passenger_info,
         context=context,
     )
     assert resp.value.startswith("test_account_id_")
     context.tracker.invocation_metadata.assert_called_once()
-    account_repo = context._mockrepo
 
-    assert account_repo.calls[0] == ("exist_sin", "046454286")
-    assert account_repo.calls[1] == ("exist_email", "test@example.com")
-    account_id = resp.value
-    assert account_repo.calls[2] == (
-        "create_account",
-        account_id,
-        get_account_info,
-    )
-    account = await account_repo.get_by_id(account_id)
-    assert account is not None
-    assert account.info.name == "Test User"
-    assert account.info.email == "test@example.com"
-    assert account.info.sin == "046454286"
-    assert account.info.car_plate == ""
-    assert account.info.is_driver is False
+    async with get_account_repo_test() as account_repo:
+        account_id = resp.value
+        account = await account_repo.get_by_id(account_id)
+        assert account is not None
+        assert account.info.name == "Test Passenger"
+        assert account.info.email.startswith("passenger")
+        assert account.info.email.endswith("@example.com")
+        assert bool(validate_sin(account.info.sin))
+        assert account.info.car_plate == ""
+        assert account.info.is_driver is False
 
 
 async def test_signup_driver(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
     get_mock_context: ContextMock,
 ):
-    driver_info = get_account_info
-    driver_info.car_plate = "DEF-5678"
-    driver_info.is_driver = True
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 15), sin=get_unique_sin(1)
+    )
 
     context = get_mock_context
     resp = await app_test_client.run(
@@ -57,21 +57,21 @@ async def test_signup_driver(
         context=context,
     )
     assert resp.value.startswith("test_account_id_")
-    account_repo = context._mockrepo
-    account_id = resp.value
-    account = await account_repo.get_by_id(account_id)
-    assert account is not None
-    assert account.info.car_plate == "DEF-5678"
-    assert account.info.is_driver is True
+    async with get_account_repo_test() as account_repo:
+        account_id = resp.value
+        account = await account_repo.get_by_id(account_id)
+        assert account is not None
+        assert account.info.car_plate == "DEF-5678"
+        assert account.info.is_driver is True
 
 
 async def test_signup_invalid_email(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
     get_mock_context: ContextMock,
 ):
-    invalid_email_info = get_account_info
-    invalid_email_info.email = "invalid-email"
+    invalid_email_info = create_account_info(
+        email="invalid-email", sin=get_unique_sin(2)  # Invalid email format
+    )
 
     context = get_mock_context
     with pytest.raises(Exception):  # Email validation should fail
@@ -84,11 +84,12 @@ async def test_signup_invalid_email(
 
 async def test_signup_invalid_sin(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
     get_mock_context: ContextMock,
 ):
-    invalid_sin_info = get_account_info
-    invalid_sin_info.sin = "123456789012345"  # Invalid SIN - too long
+    invalid_sin_info = create_account_info(
+        email=get_unique_email("test", 16),
+        sin="123456789012345",  # Invalid SIN - too long
+    )
 
     context = get_mock_context
     with pytest.raises(ValueError):  # SIN validation should fail
@@ -101,34 +102,45 @@ async def test_signup_invalid_sin(
 
 async def test_signup_duplicate_email(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
     get_mock_context: ContextMock,
 ):
     context = get_mock_context
+
+    # Create account info with unique email for this test
+    duplicate_email = get_unique_email("duplicate", 17)
+    account_info = create_account_info(email=duplicate_email, sin=get_unique_sin(3))
+
     # First signup should succeed
     await app_test_client.run(
         func=signup_account,
-        request=get_account_info,
+        request=account_info,
         context=context,
     )
 
+    # Second signup with same email should fail
+    duplicate_account_info = create_account_info(
+        email=duplicate_email, sin=get_unique_sin(4)  # Same email  # Different SIN
+    )
     with pytest.raises(
         ValueError,
     ):
         await app_test_client.run(
             func=signup_account,
-            request=get_account_info,
+            request=duplicate_account_info,
             context=context,
         )
 
 
 async def test_signup_invalid_car_plate(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
     get_mock_context: ContextMock,
 ):
-    invalid_plate_info = get_account_info
-    invalid_plate_info.car_plate = "INVALID"  # Invalid car plate format
+    invalid_plate_info = create_account_info(
+        email=get_unique_email("test", 18),
+        sin=get_unique_sin(0),
+        car_plate="INVALID",  # Invalid car plate format
+        is_driver=True,
+    )
 
     context = get_mock_context
     with pytest.raises(ValueError):  # Car plate validation should fail

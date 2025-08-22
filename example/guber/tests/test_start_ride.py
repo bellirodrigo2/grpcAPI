@@ -6,26 +6,31 @@ from example.guber.server.application.usecase.ride import (
     request_ride,
     start_ride,
 )
-from example.guber.server.domain import AccountInfo, RideRequest, RideStatus
+from example.guber.server.domain import RideStatus
+from example.guber.tests.fixtures import get_ride_repo_test
 from grpcAPI.protobuf import StringValue
 from grpcAPI.protobuf.lib.prototypes_pb2 import KeyValueStr
 from grpcAPI.testclient import ContextMock, TestClient
 
-pytest_plugins = ["example.guber.tests.fixtures"]
+from .helpers import (
+    create_driver_info,
+    create_passenger_info,
+    create_ride_request,
+    get_unique_email,
+    get_unique_sin,
+)
 
 
 async def test_start_ride(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     context = get_mock_context
 
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 8), sin=get_unique_sin(0)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -36,8 +41,7 @@ async def test_start_ride(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -46,13 +50,9 @@ async def test_start_ride(
     )
     ride_id = ride_resp.value
 
-    # Create driver account
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 8), sin=get_unique_sin(1)
     )
     context._is_passenger = False  # Switch to driver
 
@@ -79,8 +79,8 @@ async def test_start_ride(
     )
 
     # Verify ride was started
-    ride_repo = context._mock_ride_repo
-    ride = await ride_repo.get_by_ride_id(ride_id)
+    async with get_ride_repo_test() as ride_repo:
+        ride = await ride_repo.get_by_ride_id(ride_id)
     assert ride is not None
     assert ride.status == RideStatus.IN_PROGRESS
     assert ride.driver_id == driver_id
@@ -89,16 +89,14 @@ async def test_start_ride(
 
 async def test_start_ride_invalid_status_requested(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     context = get_mock_context
 
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 9), sin=get_unique_sin(2)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -109,8 +107,7 @@ async def test_start_ride_invalid_status_requested(
     passenger_id = passenger_resp.value
 
     # Create ride request (status will be REQUESTED)
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -147,16 +144,14 @@ async def test_start_ride_nonexistent_ride(
 
 async def test_start_ride_already_in_progress(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     context = get_mock_context
 
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 10), sin=get_unique_sin(3)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -167,8 +162,7 @@ async def test_start_ride_already_in_progress(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -177,13 +171,9 @@ async def test_start_ride_already_in_progress(
     )
     ride_id = ride_resp.value
 
-    # Create driver account
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 10), sin=get_unique_sin(4)
     )
     context._is_passenger = False  # Switch to driver
 
@@ -219,16 +209,14 @@ async def test_start_ride_already_in_progress(
 
 async def test_start_ride_completed_status(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     context = get_mock_context
 
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 11), sin=get_unique_sin(0)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -239,8 +227,7 @@ async def test_start_ride_completed_status(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -249,13 +236,9 @@ async def test_start_ride_completed_status(
     )
     ride_id = ride_resp.value
 
-    # Create driver account
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 11), sin=get_unique_sin(1)
     )
     context._is_passenger = False  # Switch to driver
 
@@ -275,10 +258,10 @@ async def test_start_ride_completed_status(
     )
 
     # Manually set ride status to COMPLETED to test edge case
-    ride_repo = context._mock_ride_repo
-    ride = await ride_repo.get_by_ride_id(ride_id)
-    ride.status = RideStatus.COMPLETED
-    await ride_repo.update_ride(ride)
+    async with get_ride_repo_test() as ride_repo:
+        ride = await ride_repo.get_by_ride_id(ride_id)
+        ride.status = RideStatus.COMPLETED
+        await ride_repo.update_ride(ride)
 
     # Try to start completed ride - should fail
     with pytest.raises(ValueError, match="Invalid status"):

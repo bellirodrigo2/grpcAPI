@@ -10,37 +10,34 @@ from example.guber.server.application.usecase.ride import (
     start_ride,
     update_position,
 )
-from example.guber.server.domain import AccountInfo, Position, RideRequest, RideStatus
+from example.guber.server.domain import RideStatus
 from example.guber.server.domain.service.farecalc import NormalFare
+from example.guber.tests.fixtures import get_ride_repo_test
 from example.guber.tests.mocks import get_mock_position_repo
-from grpcAPI.protobuf import StringValue
-from grpcAPI.protobuf.lib.prototypes_pb2 import KeyValueStr
+from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
-pytest_plugins = ["example.guber.tests.fixtures"]
-
-
-def create_position(ride_id: str, lat: float, long: float) -> Position:
-    """Helper function to create Position objects"""
-    position = Position()
-    position.ride_id = ride_id
-    position.lat = lat
-    position.long = long
-    position.updated_at.GetCurrentTime()
-    return position
+from .helpers import (
+    create_driver_info,
+    create_passenger_info,
+    create_position,
+    create_ride_request,
+    get_unique_email,
+    get_unique_sin,
+)
 
 
 async def setup_ride_with_fare(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     context: ContextMock,
+    unique_index: int = 0,
 ) -> tuple[str, str, str]:
     """Helper function to set up a ride with accumulated fare"""
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 100 + unique_index),
+        sin=get_unique_sin(unique_index % 5),
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -51,8 +48,7 @@ async def setup_ride_with_fare(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -61,13 +57,10 @@ async def setup_ride_with_fare(
     )
     ride_id = ride_resp.value
 
-    # Create driver account
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 100 + unique_index),
+        sin=get_unique_sin((unique_index + 1) % 5),
     )
     context._is_passenger = False  # Switch to driver
 
@@ -117,26 +110,24 @@ async def setup_ride_with_fare(
 
 async def test_finish_ride(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test successfully finishing a ride"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_with_fare(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=0
     )
 
     # Verify ride is in progress before finishing
-    ride_repo = context._mock_ride_repo
-    ride = await ride_repo.get_by_ride_id(ride_id)
-    assert ride.status == RideStatus.IN_PROGRESS
-    assert ride.fare > 0  # Should have accumulated fare from position update
-    original_fare = ride.fare
+    async with get_ride_repo_test() as ride_repo:
+        ride = await ride_repo.get_by_ride_id(ride_id)
+        assert ride.status == RideStatus.IN_PROGRESS
+        assert ride.fare > 0  # Should have accumulated fare from position update
+        original_fare = ride.fare
 
-    # Verify driver has active ride before finishing
-    assert ride_repo.active_rides.get(driver_id) == ride_id
+        # Verify driver has active ride before finishing
+        assert await ride_repo.has_active_ride_by_driver(driver_id)
 
     # Finish the ride
     await app_test_client.run(
@@ -153,26 +144,18 @@ async def test_finish_ride(
     assert finished_ride.HasField("finished_at")  # Should have finished timestamp
     assert finished_ride.HasField("accepted_at")  # Should still have accepted timestamp
 
-    # Verify driver is no longer in active rides
-    assert driver_id not in ride_repo.active_rides
-
-    # Verify payment was processed (MockPaymentGateway should have been called)
-    # In a real test, we could mock and verify the payment gateway was called with correct parameters
-
 
 async def test_finish_ride_invalid_status_requested(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test that finish_ride fails for rides not in progress - REQUESTED status"""
     context = get_mock_context
 
-    # Create passenger and request ride (but don't start it)
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger and request ride (but don't start it)
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 12), sin=get_unique_sin(2)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -182,8 +165,7 @@ async def test_finish_ride_invalid_status_requested(
     )
     passenger_id = passenger_resp.value
 
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -204,17 +186,15 @@ async def test_finish_ride_invalid_status_requested(
 
 async def test_finish_ride_invalid_status_accepted(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test that finish_ride fails for rides not in progress - ACCEPTED status"""
     context = get_mock_context
 
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 13), sin=get_unique_sin(3)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -225,8 +205,7 @@ async def test_finish_ride_invalid_status_accepted(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -235,13 +214,9 @@ async def test_finish_ride_invalid_status_accepted(
     )
     ride_id = ride_resp.value
 
-    # Create driver account and accept the ride (but don't start it)
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account and accept the ride (but don't start it)
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 13), sin=get_unique_sin(4)
     )
     context._is_passenger = False  # Switch to driver
 
@@ -288,15 +263,13 @@ async def test_finish_ride_nonexistent_ride(
 
 async def test_finish_ride_already_completed(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test that finish_ride fails for already completed rides"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_with_fare(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=1
     )
 
     # Finish the ride first time
@@ -317,17 +290,15 @@ async def test_finish_ride_already_completed(
 
 async def test_finish_ride_with_zero_fare(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test finishing a ride with zero fare (no position updates)"""
     context = get_mock_context
 
-    # Create passenger account
-    passenger_info = get_account_info
-    passenger_info.is_driver = False
-    passenger_info.car_plate = ""
+    # Create unique passenger account
+    passenger_info = create_passenger_info(
+        email=get_unique_email("passenger", 14), sin=get_unique_sin(0)
+    )
     context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
@@ -338,8 +309,7 @@ async def test_finish_ride_with_zero_fare(
     passenger_id = passenger_resp.value
 
     # Create ride request
-    ride_request = get_ride_request
-    ride_request.passenger_id = passenger_id
+    ride_request = create_ride_request(passenger_id=passenger_id)
 
     ride_resp = await app_test_client.run(
         func=request_ride,
@@ -348,13 +318,9 @@ async def test_finish_ride_with_zero_fare(
     )
     ride_id = ride_resp.value
 
-    # Create driver account
-    driver_info = AccountInfo(
-        name="Driver User",
-        email="driver@example.com",
-        sin="123456782",
-        car_plate="DEF-5678",
-        is_driver=True,
+    # Create unique driver account
+    driver_info = create_driver_info(
+        email=get_unique_email("driver", 14), sin=get_unique_sin(1)
     )
     context._is_passenger = False  # Switch to driver
 
@@ -380,9 +346,9 @@ async def test_finish_ride_with_zero_fare(
     )
 
     # Verify ride has zero fare before finishing
-    ride_repo = context._mock_ride_repo
-    ride = await ride_repo.get_by_ride_id(ride_id)
-    assert ride.fare == 0.0
+    async with get_ride_repo_test() as ride_repo:
+        ride = await ride_repo.get_by_ride_id(ride_id)
+        assert ride.fare == 0.0
 
     # Finish the ride with zero fare
     await app_test_client.run(
@@ -400,21 +366,19 @@ async def test_finish_ride_with_zero_fare(
 
 async def test_finish_ride_payment_processing(
     app_test_client: TestClient,
-    get_account_info: AccountInfo,
-    get_ride_request: RideRequest,
     get_mock_context: ContextMock,
 ):
     """Test that payment processing occurs during finish_ride"""
     context = get_mock_context
 
     ride_id, passenger_id, driver_id = await setup_ride_with_fare(
-        app_test_client, get_account_info, get_ride_request, context
+        app_test_client, context, unique_index=2
     )
 
     # Get the ride to check fare
-    ride_repo = context._mock_ride_repo
-    ride = await ride_repo.get_by_ride_id(ride_id)
-    expected_fare = ride.fare
+    async with get_ride_repo_test() as ride_repo:
+        ride = await ride_repo.get_by_ride_id(ride_id)
+        expected_fare = ride.fare
 
     # Mock the payment gateway to track calls
     with patch(

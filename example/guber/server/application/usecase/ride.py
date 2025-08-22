@@ -1,5 +1,5 @@
 import asyncio
-from typing import AsyncIterator
+from typing import AsyncIterator, Awaitable, Callable
 
 from typing_extensions import Annotated
 
@@ -8,26 +8,29 @@ from example.guber.server.application.gateway.payment import (
     PaymentGateway,
     get_payment_gateway,
 )
-from example.guber.server.application.internal_access import (
-    is_passenger,
-    passenger_name,
+from example.guber.server.application.internal_access import is_passenger
+from example.guber.server.application.repo import (
+    AccountRepository,
+    PositionRepository,
+    RideRepository,
 )
-from example.guber.server.application.repo import PositionRepository, RideRepository
-from example.guber.server.domain import Position, Ride, RideInfo, RideRequest
-from example.guber.server.domain.entity.ride_rules import (
-    accept_ride as accept_ride_rules,
+from example.guber.server.application.repo.account_repo import (
+    AccountRepo,
+    get_account_repo,
 )
-from example.guber.server.domain.entity.ride_rules import (
-    finish_ride as finish_ride_rules,
+from example.guber.server.application.repo.position_repo import (
+    PositionRepo,
+    get_position_repo,
 )
-from example.guber.server.domain.entity.ride_rules import start_ride as start_ride_rules
-from example.guber.server.domain.entity.ride_rules import (
-    update_position as update_position_rules,
-)
+from example.guber.server.domain import Position, Ride, RideRequest, RideSnapshot
+from example.guber.server.domain import accept_ride as accept_ride_rules
+from example.guber.server.domain import finish_ride as finish_ride_rules
+from example.guber.server.domain import start_ride as start_ride_rules
+from example.guber.server.domain import update_position as update_position_rules
+from example.guber.server.domain.entity.ride_rules import make_ride_id
 from grpcAPI.app import APIPackage
 from grpcAPI.data_types import Depends, FromRequest
-from grpcAPI.protobuf import Empty, ProtoKey, ProtoValue, StringValue
-from grpcAPI.protobuf.deriveds import ProtoStr
+from grpcAPI.protobuf import Empty, ProtoKey, ProtoStr, ProtoValue, StringValue
 
 ride_package = APIPackage("ride")
 
@@ -51,18 +54,19 @@ async def request_ride(
     request: RideRequest,
     passenger_id: PassengerId,
     _: Authenticate,
-    is_passenger: Annotated[bool, Depends(is_passenger)],
+    id: Annotated[str, Depends(make_ride_id)],
+    is_passenger: Annotated[Callable[[str], Awaitable[bool]], Depends(is_passenger)],
     ride_repo: RideRepository,
 ) -> StringValue:
 
-    if not is_passenger:
+    if not await is_passenger(passenger_id):
         raise ValueError("This account is not from a passenger")
 
-    has_active_ride = await ride_repo.has_active_ride(passenger_id)
+    has_active_ride = await ride_repo.has_active_ride_by_passenger(passenger_id)
     if has_active_ride:
         raise ValueError("This passenger has an active ride")
 
-    ride_id = await ride_repo.create_ride(request)
+    ride_id = await ride_repo.create_ride(id, request)
     return StringValue(value=ride_id)
 
 
@@ -76,14 +80,14 @@ async def accept_ride(
     ride_id: ProtoKey,
     driver_id: ProtoValue,
     _: Authenticate,
-    is_passenger: Annotated[bool, Depends(is_passenger)],
+    is_passenger: Annotated[Callable[[str], Awaitable[bool]], Depends(is_passenger)],
     ride_repo: RideRepository,
 ) -> Empty:
 
-    if is_passenger:
+    if await is_passenger(driver_id):
         raise ValueError("This account is not from a driver")
 
-    has_active_ride = await ride_repo.has_active_ride(driver_id)
+    has_active_ride = await ride_repo.has_active_ride_by_driver(driver_id)
     if has_active_ride:
         raise ValueError("This driver has an active ride")
 
@@ -105,18 +109,15 @@ ride_services = ride_module.make_service("ride_actions")
 async def get_ride(
     ride_id: ProtoStr,
     _: Authenticate,
-    passenger_name: Annotated[str, Depends(passenger_name)],
     ride_repo: RideRepository,
     position_repo: PositionRepository,
-) -> RideInfo:
+) -> RideSnapshot:
 
     ride = await ride_repo.get_by_ride_id(ride_id)
     if ride is None:
         raise ValueError(f"Ride with id {ride_id} not found")
-    lat, long = await position_repo.get_current_position(ride_id)
-    return RideInfo(
-        ride=ride, passenger_name=passenger_name, current_lat=lat, current_long=long
-    )
+    current_location = await position_repo.get_current_position(ride_id)
+    return RideSnapshot(ride=ride, current_location=current_location)
 
 
 @ride_services
@@ -124,12 +125,16 @@ async def start_ride(
     ride_id: ProtoStr,
     _: Authenticate,
     ride_repo: RideRepository,
+    position_repo: PositionRepository,
 ) -> Empty:
     ride = await ride_repo.get_by_ride_id(ride_id)
     if ride is None:
         raise ValueError(f"Ride with id {ride_id} not found")
 
     start_ride_rules(ride)
+    await position_repo.create_position(
+        ride_id, ride.start_point, ride.accepted_at.ToDatetime()
+    )
     await ride_repo.update_ride(ride)
 
     return Empty()
@@ -147,9 +152,11 @@ async def update_position(
     if ride is None:
         raise ValueError(f"Ride with id {ride_id} not found")
 
-    last_lat, last_long = await position_repo.get_current_position(ride_id)
+    last_position = await position_repo.get_current_position(ride_id)
+    if last_position is None:
+        raise ValueError(f"Last position not found for ride id {ride_id}")
 
-    update_position_rules(ride, (last_lat, last_long), (position.lat, position.long))
+    update_position_rules(ride, last_position.coord, position.coord)
     await ride_repo.update_ride(ride)
 
     await position_repo.update_position(position)
@@ -198,14 +205,13 @@ async def update_position_stream(
         if ride is None:
             ride = await _get_ride(ride_id)
 
-        last_lat, last_long = await position_repo.get_current_position(ride_id)
+        last_position = await position_repo.get_current_position(ride_id)
+        if last_position is None:
+            raise ValueError(f"Last position not found for ride id {ride_id}")
 
-        update_position_rules(
-            ride, (last_lat, last_long), (position.lat, position.long)
-        )
+        update_position_rules(ride, last_position.coord, position.coord)
         await ride_repo.update_ride(ride)
         await position_repo.update_position(position)
-
     return Empty()
 
 
@@ -231,11 +237,33 @@ async def get_position_stream(
     if counter < 1:
         counter = 1
     while not finished:
-        lat, long = await position_repo.get_current_position(ride_id.value)
-        yield Position(ride_id=ride_id.value, lat=lat, long=long)
+        current_position = await position_repo.get_current_position(ride_id.value)
+        if current_position is None:
+            raise ValueError(f"Current position not found for ride id {ride_id.value}")
+        yield current_position
         await asyncio.sleep(delay)
 
         finished = await ride_repo.is_ride_finished(ride_id.value)
         counter -= 1
         if counter == 0:
             finished = True
+
+
+@ride_services
+async def perfomance_test_parallel(
+    req: Empty,
+    account_repo: AccountRepository,
+    ride_repo: RideRepository,
+    position_repo: PositionRepository,
+) -> Empty:
+    return Empty()
+
+
+@ride_services
+async def perfomance_test_sequence(
+    req: Empty,
+    ride_repo: RideRepository,
+    position_repo: Annotated[PositionRepo, Depends(get_position_repo, order=2)],
+    account_repo: Annotated[AccountRepo, Depends(get_account_repo, order=3)],
+) -> Empty:
+    return Empty()

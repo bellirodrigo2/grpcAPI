@@ -40,34 +40,48 @@ CANCELED: RideStatus.ValueType  # 4
 global___RideStatus = RideStatus
 
 @typing.final
+class Coord(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    LAT_FIELD_NUMBER: builtins.int
+    LONG_FIELD_NUMBER: builtins.int
+    lat: builtins.float
+    long: builtins.float
+    def __init__(
+        self,
+        *,
+        lat: builtins.float = ...,
+        long: builtins.float = ...,
+    ) -> None: ...
+    def ClearField(self, field_name: typing.Literal["lat", b"lat", "long", b"long"]) -> None: ...
+
+global___Coord = Coord
+
+@typing.final
 class RideRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     PASSENGER_ID_FIELD_NUMBER: builtins.int
-    FROM_LAT_FIELD_NUMBER: builtins.int
-    FROM_LONG_FIELD_NUMBER: builtins.int
-    TO_LAT_FIELD_NUMBER: builtins.int
-    TO_LONG_FIELD_NUMBER: builtins.int
+    START_POINT_FIELD_NUMBER: builtins.int
+    END_POINT_FIELD_NUMBER: builtins.int
     REQUESTED_AT_FIELD_NUMBER: builtins.int
     passenger_id: builtins.str
-    from_lat: builtins.float
-    from_long: builtins.float
-    to_lat: builtins.float
-    to_long: builtins.float
+    @property
+    def start_point(self) -> global___Coord: ...
+    @property
+    def end_point(self) -> global___Coord: ...
     @property
     def requested_at(self) -> google.protobuf.timestamp_pb2.Timestamp: ...
     def __init__(
         self,
         *,
         passenger_id: builtins.str = ...,
-        from_lat: builtins.float = ...,
-        from_long: builtins.float = ...,
-        to_lat: builtins.float = ...,
-        to_long: builtins.float = ...,
+        start_point: global___Coord | None = ...,
+        end_point: global___Coord | None = ...,
         requested_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["requested_at", b"requested_at"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["from_lat", b"from_lat", "from_long", b"from_long", "passenger_id", b"passenger_id", "requested_at", b"requested_at", "to_lat", b"to_lat", "to_long", b"to_long"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["end_point", b"end_point", "requested_at", b"requested_at", "start_point", b"start_point"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["end_point", b"end_point", "passenger_id", b"passenger_id", "requested_at", b"requested_at", "start_point", b"start_point"]) -> None: ...
 
 global___RideRequest = RideRequest
 
@@ -76,18 +90,23 @@ class Ride(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     RIDE_ID_FIELD_NUMBER: builtins.int
-    RIDE_REQUEST_FIELD_NUMBER: builtins.int
+    PASSENGER_ID_FIELD_NUMBER: builtins.int
     DRIVER_ID_FIELD_NUMBER: builtins.int
+    START_POINT_FIELD_NUMBER: builtins.int
+    END_POINT_FIELD_NUMBER: builtins.int
     FARE_FIELD_NUMBER: builtins.int
     ACCEPTED_AT_FIELD_NUMBER: builtins.int
     FINISHED_AT_FIELD_NUMBER: builtins.int
     STATUS_FIELD_NUMBER: builtins.int
     ride_id: builtins.str
+    passenger_id: builtins.str
     driver_id: builtins.str
     fare: builtins.float
     status: global___RideStatus.ValueType
     @property
-    def ride_request(self) -> global___RideRequest: ...
+    def start_point(self) -> global___Coord: ...
+    @property
+    def end_point(self) -> global___Coord: ...
     @property
     def accepted_at(self) -> google.protobuf.timestamp_pb2.Timestamp: ...
     @property
@@ -96,70 +115,63 @@ class Ride(google.protobuf.message.Message):
         self,
         *,
         ride_id: builtins.str = ...,
-        ride_request: global___RideRequest | None = ...,
+        passenger_id: builtins.str = ...,
         driver_id: builtins.str = ...,
+        start_point: global___Coord | None = ...,
+        end_point: global___Coord | None = ...,
         fare: builtins.float = ...,
         accepted_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
         finished_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
         status: global___RideStatus.ValueType = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["_accepted_at", b"_accepted_at", "_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "finished_at", b"finished_at", "ride_request", b"ride_request"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["_accepted_at", b"_accepted_at", "_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "driver_id", b"driver_id", "fare", b"fare", "finished_at", b"finished_at", "ride_id", b"ride_id", "ride_request", b"ride_request", "status", b"status"]) -> None: ...
-    @typing.overload
-    def WhichOneof(self, oneof_group: typing.Literal["_accepted_at", b"_accepted_at"]) -> typing.Literal["accepted_at"] | None: ...
-    @typing.overload
+    def HasField(self, field_name: typing.Literal["_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "end_point", b"end_point", "finished_at", b"finished_at", "start_point", b"start_point"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_finished_at", b"_finished_at", "accepted_at", b"accepted_at", "driver_id", b"driver_id", "end_point", b"end_point", "fare", b"fare", "finished_at", b"finished_at", "passenger_id", b"passenger_id", "ride_id", b"ride_id", "start_point", b"start_point", "status", b"status"]) -> None: ...
     def WhichOneof(self, oneof_group: typing.Literal["_finished_at", b"_finished_at"]) -> typing.Literal["finished_at"] | None: ...
 
 global___Ride = Ride
 
 @typing.final
-class RideInfo(google.protobuf.message.Message):
+class RideSnapshot(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     RIDE_FIELD_NUMBER: builtins.int
-    PASSENGER_NAME_FIELD_NUMBER: builtins.int
-    CURRENT_LAT_FIELD_NUMBER: builtins.int
-    CURRENT_LONG_FIELD_NUMBER: builtins.int
-    passenger_name: builtins.str
-    current_lat: builtins.float
-    current_long: builtins.float
+    CURRENT_LOCATION_FIELD_NUMBER: builtins.int
     @property
     def ride(self) -> global___Ride: ...
+    @property
+    def current_location(self) -> global___Position: ...
     def __init__(
         self,
         *,
         ride: global___Ride | None = ...,
-        passenger_name: builtins.str = ...,
-        current_lat: builtins.float = ...,
-        current_long: builtins.float = ...,
+        current_location: global___Position | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["ride", b"ride"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["current_lat", b"current_lat", "current_long", b"current_long", "passenger_name", b"passenger_name", "ride", b"ride"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["_current_location", b"_current_location", "current_location", b"current_location", "ride", b"ride"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["_current_location", b"_current_location", "current_location", b"current_location", "ride", b"ride"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing.Literal["_current_location", b"_current_location"]) -> typing.Literal["current_location"] | None: ...
 
-global___RideInfo = RideInfo
+global___RideSnapshot = RideSnapshot
 
 @typing.final
 class Position(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     RIDE_ID_FIELD_NUMBER: builtins.int
-    LAT_FIELD_NUMBER: builtins.int
-    LONG_FIELD_NUMBER: builtins.int
+    COORD_FIELD_NUMBER: builtins.int
     UPDATED_AT_FIELD_NUMBER: builtins.int
     ride_id: builtins.str
-    lat: builtins.float
-    long: builtins.float
+    @property
+    def coord(self) -> global___Coord: ...
     @property
     def updated_at(self) -> google.protobuf.timestamp_pb2.Timestamp: ...
     def __init__(
         self,
         *,
         ride_id: builtins.str = ...,
-        lat: builtins.float = ...,
-        long: builtins.float = ...,
+        coord: global___Coord | None = ...,
         updated_at: google.protobuf.timestamp_pb2.Timestamp | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["updated_at", b"updated_at"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["lat", b"lat", "long", b"long", "ride_id", b"ride_id", "updated_at", b"updated_at"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["coord", b"coord", "updated_at", b"updated_at"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["coord", b"coord", "ride_id", b"ride_id", "updated_at", b"updated_at"]) -> None: ...
 
 global___Position = Position

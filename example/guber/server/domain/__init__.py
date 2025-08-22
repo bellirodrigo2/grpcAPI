@@ -1,18 +1,16 @@
 import sys
 from pathlib import Path
 
-lib_path = Path(__file__).parent / "entity" / "lib"
+lib_path = Path(".") / "example/guber/lib"
 print(lib_path)
 sys.path.insert(0, str(lib_path.resolve()))
-from example.guber.server.domain.entity.lib.account.account_proto_pb2 import (
-    Account,
-    AccountInfo,
-)
-from example.guber.server.domain.entity.lib.ride.ride_proto_pb2 import (
+from example.guber.lib.account.account_proto_pb2 import Account, AccountInfo
+from example.guber.lib.ride.ride_proto_pb2 import (
+    Coord,
     Position,
     Ride,
-    RideInfo,
     RideRequest,
+    RideSnapshot,
     RideStatus,
 )
 from example.guber.server.domain.entity.ride_rules import (
@@ -31,9 +29,10 @@ __all__ = [
     "Ride",
     "RideRequest",
     "RideStatus",
-    "RideInfo",
+    "RideSnapshot",
     "Position",
     "Account",
+    "Coord",
     "AccountInfo",
     "accept_ride",
     "start_ride",

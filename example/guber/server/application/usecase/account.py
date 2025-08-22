@@ -42,8 +42,12 @@ async def signup_account(
     acc_repo: AccountRepository,
 ) -> StringValue:
     # sin, email and car_plate are here for validation, and to define the input protobuf class
-    await acc_repo.exist_sin(sin=str(sin))
-    await acc_repo.exist_email(email=str(email))
+    duplicated_sin = await acc_repo.exist_sin(sin=str(sin))
+    if duplicated_sin:
+        raise ValueError(f"SIN {sin} is already taken")
+    duplicated_email = await acc_repo.exist_email(email=str(email))
+    if duplicated_email:
+        raise ValueError(f"Email {email} is already taken")
     user_id = await acc_repo.create_account(id, account_info)
     return StringValue(value=str(user_id))
 

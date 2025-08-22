@@ -1,14 +1,14 @@
+from contextlib import asynccontextmanager
 from datetime import datetime
 
 from sqlalchemy import select
-from typing_extensions import Any as Any
-from typing_extensions import AsyncGenerator, Iterable, Optional
+from typing_extensions import Iterable, Optional
 
-from example.guber.server.adapters.repo.sqlalchemy import (
-    AccountDB,
+from example.guber.server.adapters.repo.sqlalchemy.db import (
+    AsyncSessionLocal,
     SqlAlchemyDB,
-    get_db,
 )
+from example.guber.server.adapters.repo.sqlalchemy.orm.account import AccountDB
 from example.guber.server.application.repo.account_repo import AccountRepo
 from example.guber.server.domain import Account, AccountInfo
 
@@ -65,20 +65,6 @@ class SqlAlchemyAccountRepo(SqlAlchemyDB, AccountRepo):
         return True
 
 
-async def get_account_sqlalchemy_repo() -> AsyncGenerator[SqlAlchemyAccountRepo, None]:
-    async with get_db() as db:
-        yield SqlAlchemyAccountRepo(db)
-
-
-async def is_passenger_sqlalchemy_repo() -> bool:
-    async with get_db() as db:
-        result = await db.execute(select(AccountDB).where(AccountDB.account_id == id))
-        account = result.scalar_one_or_none()
-        if account is None:
-            raise ValueError(f"Account not found: Id: {id}")
-        return not account.is_driver
-
-
 def proto_to_orm_account(id: str, account: AccountInfo) -> AccountDB:
     return AccountDB(
         account_id=id,
@@ -102,3 +88,12 @@ def orm_to_proto_account(account: AccountDB) -> Account:
             is_driver=account.is_driver,
         ),
     )
+
+
+@asynccontextmanager
+async def get_account_sqlalchemy_repo():
+    db = AsyncSessionLocal()
+    try:
+        yield SqlAlchemyAccountRepo(db)
+    finally:
+        await db.close()

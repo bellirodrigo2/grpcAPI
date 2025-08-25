@@ -15,12 +15,16 @@ dependencies = [
     "grpcio-health-checking",
     "grpcio-reflection",
     "rich",
+    "click",
     "jinja2",
     "inflection",
     "pyyaml",
     "toml",
     "json5",
 ]
+
+[project.scripts]
+grpcapi = "grpcAPI.cli:main"
 
 [project.optional-dependencies]
 dev = [

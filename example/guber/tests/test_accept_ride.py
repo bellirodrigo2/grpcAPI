@@ -26,7 +26,6 @@ async def test_accept_ride(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 5), sin=get_unique_sin(0)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -49,7 +48,6 @@ async def test_accept_ride(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 5), sin=get_unique_sin(1)
     )
-    context._is_passenger = False  # Switch to driver for signup
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -85,7 +83,6 @@ async def test_accept_ride_driver_has_active_ride(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 6), sin=get_unique_sin(2)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -108,7 +105,6 @@ async def test_accept_ride_driver_has_active_ride(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 6), sin=get_unique_sin(3)
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -143,7 +139,6 @@ async def test_accept_ride_passenger_cannot_accept(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 7), sin=get_unique_sin(4)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -163,7 +158,6 @@ async def test_accept_ride_passenger_cannot_accept(
     ride_id = ride_resp.value
 
     # Try to accept ride as passenger - should fail
-    context._is_passenger = True  # Keep as passenger
     request = KeyValueStr(key=ride_id, value=passenger_id)
     with pytest.raises(ValueError, match="This account is not from a driver"):
         await app_test_client.run(
@@ -183,7 +177,6 @@ async def test_accept_ride_nonexistent_ride(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 7), sin=get_unique_sin(0)
     )
-    context._is_passenger = False
 
     driver_resp = await app_test_client.run(
         func=signup_account,

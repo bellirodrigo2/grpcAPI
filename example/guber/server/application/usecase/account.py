@@ -49,7 +49,7 @@ async def signup_account(
     if duplicated_email:
         raise ValueError(f"Email {email} is already taken")
     user_id = await acc_repo.create_account(id, account_info)
-    return StringValue(value=str(user_id))
+    return StringValue(value=user_id)
 
 
 @account_services(tags=["read:account"])
@@ -80,12 +80,11 @@ async def update_car_plate(
 
 @account_services
 async def update_email(
-    key: ProtoKey,
-    value: Annotated[EmailStr, FromValue()],
+    id: ProtoKey,
+    email: Annotated[EmailStr, FromValue()],
     _: Authenticate,
     acc_repo: AccountRepository,
 ) -> BoolValue:
-    id, email = key, value
     updated = await acc_repo.update_account_field(id, "email", str(email))
     if not updated:
         raise ValueError(f"Account with id {id} not found or email not updated")
@@ -94,7 +93,7 @@ async def update_email(
 
 @account_services(tags=["read:account", "read:gateway"])
 async def is_passenger(
-    id: ProtoKey,
+    id: ProtoStr,
     _: Authenticate,
     acc_repo: AccountRepository,
 ) -> BoolValue:

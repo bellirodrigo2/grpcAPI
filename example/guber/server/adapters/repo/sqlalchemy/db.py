@@ -1,4 +1,6 @@
 import os
+from contextlib import asynccontextmanager
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -36,3 +38,9 @@ class SqlAlchemyDB:
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+
+
+@asynccontextmanager
+async def init_db(_: Any):
+    async with engine.begin() as conn:
+        yield await conn.run_sync(Base.metadata.create_all)

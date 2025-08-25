@@ -9,19 +9,7 @@ from example.guber.server.application.gateway.payment import (
     get_payment_gateway,
 )
 from example.guber.server.application.internal_access import is_passenger
-from example.guber.server.application.repo import (
-    AccountRepository,
-    PositionRepository,
-    RideRepository,
-)
-from example.guber.server.application.repo.account_repo import (
-    AccountRepo,
-    get_account_repo,
-)
-from example.guber.server.application.repo.position_repo import (
-    PositionRepo,
-    get_position_repo,
-)
+from example.guber.server.application.repo import PositionRepository, RideRepository
 from example.guber.server.domain import Position, Ride, RideRequest, RideSnapshot
 from example.guber.server.domain import accept_ride as accept_ride_rules
 from example.guber.server.domain import finish_ride as finish_ride_rules
@@ -233,37 +221,14 @@ async def get_position_stream(
     delay: Annotated[float, Depends(get_delay)],
 ) -> AsyncIterator[Position]:
 
-    finished = False
     if counter < 1:
         counter = 1
-    while not finished:
+    for i in range(counter):
         current_position = await position_repo.get_current_position(ride_id.value)
         if current_position is None:
             raise ValueError(f"Current position not found for ride id {ride_id.value}")
         yield current_position
         await asyncio.sleep(delay)
 
-        finished = await ride_repo.is_ride_finished(ride_id.value)
-        counter -= 1
-        if counter == 0:
-            finished = True
-
-
-@ride_services
-async def perfomance_test_parallel(
-    req: Empty,
-    account_repo: AccountRepository,
-    ride_repo: RideRepository,
-    position_repo: PositionRepository,
-) -> Empty:
-    return Empty()
-
-
-@ride_services
-async def perfomance_test_sequence(
-    req: Empty,
-    ride_repo: RideRepository,
-    position_repo: Annotated[PositionRepo, Depends(get_position_repo, order=2)],
-    account_repo: Annotated[AccountRepo, Depends(get_account_repo, order=3)],
-) -> Empty:
-    return Empty()
+        if await ride_repo.is_ride_finished(ride_id.value):
+            break

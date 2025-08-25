@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -13,11 +14,12 @@ from example.guber.server.application.usecase.ride import (
 )
 from example.guber.server.domain import RideSnapshot, RideStatus
 from example.guber.server.domain.service.farecalc import NormalFare
-from example.guber.tests.mocks import get_mock_position_repo
+from example.guber.tests.fixtures import get_position_repo_test
 from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
+    create_coord,
     create_driver_info,
     create_passenger_info,
     create_position,
@@ -25,7 +27,6 @@ from .helpers import (
     get_unique_email,
     get_unique_sin,
 )
-
 
 
 async def setup_complete_ride_workflow(
@@ -66,7 +67,6 @@ async def setup_complete_ride_workflow(
         email=get_unique_email("driver", 400 + unique_index),
         sin=get_unique_sin((unique_index + 1) % 20),
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -99,10 +99,12 @@ async def setup_complete_ride_workflow(
             "example.guber.server.domain.entity.ride_rules.create_fare_calculator",
             return_value=NormalFare(),
         ):
-            position_repo = get_mock_position_repo(context)
-            position_repo.set_position(
-                ride_id, -27.584905257808835, -48.545022195325124
-            )
+            async with get_position_repo_test() as position_repo:
+                await position_repo.create_position(
+                    ride_id,
+                    create_coord(-27.584905257808835, -48.545022195325124),
+                    updated_at=datetime.now(),
+                )
 
             new_position = create_position(
                 ride_id, -27.496887588317275, -48.522234807851476
@@ -119,8 +121,12 @@ async def setup_complete_ride_workflow(
         "example.guber.server.domain.entity.ride_rules.create_fare_calculator",
         return_value=NormalFare(),
     ):
-        position_repo = get_mock_position_repo(context)
-        position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+        async with get_position_repo_test() as position_repo:
+            await position_repo.create_position(
+                ride_id,
+                create_coord(-27.584905257808835, -48.545022195325124),
+                updated_at=datetime.now(),
+            )
 
         new_position = create_position(
             ride_id, -27.496887588317275, -48.522234807851476

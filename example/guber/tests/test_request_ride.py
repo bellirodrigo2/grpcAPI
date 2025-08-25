@@ -61,7 +61,6 @@ async def test_request_ride_not_passenger(
     from example.guber.server.application.usecase.account import signup_account
 
     context = get_mock_context
-    context._is_passenger = False  # Set as driver context for signup
 
     # Create unique driver info
     driver_info = create_driver_info(
@@ -95,7 +94,6 @@ async def test_request_ride_has_active_ride(
     from example.guber.server.application.usecase.account import signup_account
 
     context = get_mock_context
-    context._is_passenger = True
 
     # Create unique passenger
     passenger_info = create_passenger_info(
@@ -133,7 +131,6 @@ async def test_request_ride_different_coordinates(
     from example.guber.server.application.usecase.account import signup_account
 
     context = get_mock_context
-    context._is_passenger = True
 
     # Create unique passenger
     passenger_info = create_passenger_info(

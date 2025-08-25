@@ -65,7 +65,6 @@ async def setup_ride_in_progress(
         email=get_unique_email("driver", 300 + unique_index),
         sin=get_unique_sin((unique_index + 1) % 20),
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -240,7 +239,6 @@ async def test_update_position_invalid_status(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 17), sin=get_unique_sin(7)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -260,8 +258,6 @@ async def test_update_position_invalid_status(
 
     # Try to update position on a ride that's only REQUESTED (not IN_PROGRESS)
     new_position = create_position(ride_id, -27.496887588317275, -48.522234807851476)
-
-    context._is_passenger = False  # Switch to driver context
 
     async with get_position_repo_test() as position_repo:
         await position_repo.create_position(
@@ -284,7 +280,6 @@ async def test_update_position_nonexistent_ride(
 ):
     """Test position update for non-existent ride"""
     context = get_mock_context
-    context._is_passenger = False  # Set as driver
 
     # Try to update position for non-existent ride
     new_position = create_position(

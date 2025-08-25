@@ -44,7 +44,6 @@ async def setup_ride_for_stream(
         email=get_unique_email("passenger", 500 + unique_index),
         sin=get_unique_sin(unique_index % 20),
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -68,7 +67,6 @@ async def setup_ride_for_stream(
         email=get_unique_email("driver", 500 + unique_index),
         sin=get_unique_sin((unique_index + 1) % 20),
     )
-    context._is_passenger = False
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -137,7 +135,9 @@ async def test_update_position_stream_single_position(
         async with get_position_repo_test() as position_repo:
             current_pos = await position_repo.get_current_position(ride_id)
             assert current_pos.coord.lat == pytest.approx(-27.496887588317275, abs=1e-4)
-            assert current_pos.coord.long == pytest.approx(-48.522234807851476, abs=1e-4)
+            assert current_pos.coord.long == pytest.approx(
+                -48.522234807851476, abs=1e-4
+            )
 
 
 async def test_update_position_stream_multiple_positions(
@@ -167,9 +167,24 @@ async def test_update_position_stream_multiple_positions(
 
         # Create multiple position updates with different timestamps
         positions = [
-            create_position(ride_id, -27.496887588317275, -48.522234807851476, timestamp_offset_seconds=1.0),
-            create_position(ride_id, -27.450000000000000, -48.500000000000000, timestamp_offset_seconds=2.0),
-            create_position(ride_id, -27.400000000000000, -48.480000000000000, timestamp_offset_seconds=3.0),
+            create_position(
+                ride_id,
+                -27.496887588317275,
+                -48.522234807851476,
+                timestamp_offset_seconds=1.0,
+            ),
+            create_position(
+                ride_id,
+                -27.450000000000000,
+                -48.500000000000000,
+                timestamp_offset_seconds=2.0,
+            ),
+            create_position(
+                ride_id,
+                -27.400000000000000,
+                -48.480000000000000,
+                timestamp_offset_seconds=3.0,
+            ),
         ]
         position_stream = create_position_stream(positions)
 
@@ -186,7 +201,9 @@ async def test_update_position_stream_multiple_positions(
         async with get_position_repo_test() as position_repo:
             current_pos = await position_repo.get_current_position(ride_id)
             assert current_pos.coord.lat == pytest.approx(-27.400000000000000, abs=1e-4)
-            assert current_pos.coord.long == pytest.approx(-48.480000000000000, abs=1e-4)
+            assert current_pos.coord.long == pytest.approx(
+                -48.480000000000000, abs=1e-4
+            )
 
 
 async def test_update_position_stream_fare_accumulation(
@@ -297,8 +314,12 @@ async def test_update_position_stream_empty_stream(
 
             current_pos = await position_repo.get_current_position(ride_id)
             # Should have the start point coordinates
-            assert current_pos.coord.lat == pytest.approx(ride.start_point.lat, abs=1e-4)
-            assert current_pos.coord.long == pytest.approx(ride.start_point.long, abs=1e-4)
+            assert current_pos.coord.lat == pytest.approx(
+                ride.start_point.lat, abs=1e-4
+            )
+            assert current_pos.coord.long == pytest.approx(
+                ride.start_point.long, abs=1e-4
+            )
 
 
 async def test_update_position_stream_mixed_ride_ids(
@@ -422,7 +443,7 @@ async def test_update_position_stream_position_persistence(
         ]
 
         positions = [
-            create_position(ride_id, lat, lng, timestamp_offset_seconds=i+1.0) 
+            create_position(ride_id, lat, lng, timestamp_offset_seconds=i + 1.0)
             for i, (lat, lng) in enumerate(test_positions)
         ]
         position_stream = create_position_stream(positions)
@@ -471,9 +492,24 @@ async def test_update_position_stream_concurrent_same_ride(
 
         # Create positions all with same ride_id (normal case)
         positions = [
-            create_position(ride_id, -27.496887588317275, -48.522234807851476, timestamp_offset_seconds=1.0),
-            create_position(ride_id, -27.450000000000000, -48.500000000000000, timestamp_offset_seconds=2.0),
-            create_position(ride_id, -27.400000000000000, -48.480000000000000, timestamp_offset_seconds=3.0),
+            create_position(
+                ride_id,
+                -27.496887588317275,
+                -48.522234807851476,
+                timestamp_offset_seconds=1.0,
+            ),
+            create_position(
+                ride_id,
+                -27.450000000000000,
+                -48.500000000000000,
+                timestamp_offset_seconds=2.0,
+            ),
+            create_position(
+                ride_id,
+                -27.400000000000000,
+                -48.480000000000000,
+                timestamp_offset_seconds=3.0,
+            ),
         ]
         position_stream = create_position_stream(positions)
 
@@ -497,5 +533,9 @@ async def test_update_position_stream_concurrent_same_ride(
 
                 # Verify final position
                 final_coord = await position_repo.get_current_position(ride_id)
-                assert final_coord.coord.lat == pytest.approx(-27.400000000000000, abs=1e-4)
-                assert final_coord.coord.long == pytest.approx(-48.480000000000000, abs=1e-4)
+                assert final_coord.coord.lat == pytest.approx(
+                    -27.400000000000000, abs=1e-4
+                )
+                assert final_coord.coord.long == pytest.approx(
+                    -48.480000000000000, abs=1e-4
+                )

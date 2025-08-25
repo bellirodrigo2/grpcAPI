@@ -37,7 +37,6 @@ async def setup_ride_for_streaming(
         email=get_unique_email("passenger", 200 + unique_index),
         sin=get_unique_sin(unique_index % 5),
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -61,7 +60,6 @@ async def setup_ride_for_streaming(
         email=get_unique_email("driver", 200 + unique_index),
         sin=get_unique_sin((unique_index + 1) % 5),
     )
-    context._is_passenger = False
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -314,17 +312,19 @@ async def test_get_position_stream_nonexistent_ride(
 ):
     """Test position stream with non-existent ride should raise ValueError"""
     import pytest
-    
+
     context = get_mock_context
 
     # Get position stream for non-existent ride should fail immediately
-    with pytest.raises(ValueError, match="Current position not found for ride id nonexistent_ride"):
+    with pytest.raises(
+        ValueError, match="Current position not found for ride id nonexistent_ride"
+    ):
         position_stream = await app_test_client.run(
             func=get_position_stream,
             request=StringValue(value="nonexistent_ride"),
             context=context,
         )
-        
+
         # Try to get first position - should raise ValueError before this
         async for position in position_stream:
             break

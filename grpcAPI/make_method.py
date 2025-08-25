@@ -8,12 +8,7 @@ from typing_extensions import Any, Dict
 from grpcAPI import ExceptionRegistry
 from grpcAPI.data_types import AsyncContext, get_function_metadata
 from grpcAPI.makeproto import ILabeledMethod
-from grpcAPI.proto_ctxinject import (
-    get_mapped_ctx,
-    get_mapped_ctx_ordered,
-    resolve_mapped_ctx,
-    resolve_mapped_ctx_ordered,
-)
+from grpcAPI.proto_ctxinject import get_mapped_ctx, resolve_mapped_ctx
 
 
 async def safe_run(
@@ -34,19 +29,21 @@ def make_method_async(
     try:
         req_t = labeledmethod.input_type
         func = labeledmethod.method
-        cls_factory = StreamRunner if labeledmethod.is_server_stream else UnaryRunner
+        factory = (
+            make_stream_runner if labeledmethod.is_server_stream else make_unary_runner
+        )
 
     except (AttributeError, IndexError) as e:
         raise type(e)(
             f"Not able to make method for: {labeledmethod.name}:\n Error:{str(e)}"
         )
-    runner = cls_factory(
+
+    return factory(
         func=func,
         overrides=overrides,
         exception_registry=exception_registry,
         req=req_t,
     )
-    return runner
 
 
 class CtxMngr:
@@ -83,7 +80,7 @@ class Runner:
         overrides: Dict[Callable[..., Any], Callable[..., Any]],
         exception_registry: ExceptionRegistry,
         req: Type[Any],
-        order: bool = False,
+        order: bool = True,
     ):
         self.func = func
         self.overrides = overrides
@@ -91,27 +88,21 @@ class Runner:
         self.req = req
         self.ctx_mngr = CtxMngr(req, func)
 
-        if order:
-            get_mapped = get_mapped_ctx_ordered
-            self.resolve_func = resolve_mapped_ctx_ordered
-        else:
-            get_mapped = get_mapped_ctx
-            self.resolve_func = resolve_mapped_ctx
-
         context = self.ctx_mngr.get_ctx_template()
-        self.mapped_ctx = get_mapped(
+        self.mapped_ctx = get_mapped_ctx(
             func=func,
             context=context,
             allow_incomplete=False,
             validate=True,
             overrides=overrides,
+            ordered=order,
         )
 
     async def _make_kwargs(
         self, request: Any, context: AsyncContext, stack: AsyncExitStack
     ) -> Any:
         ctx = self.ctx_mngr.get_ctx(request, context)
-        return await self.resolve_func(ctx, self.mapped_ctx, stack)
+        return await resolve_mapped_ctx(ctx, self.mapped_ctx, stack)
 
     async def _handle_exception(self, e: Exception, context: AsyncContext) -> None:
         exc_handler = self.exception_registry.get(type(e), None)
@@ -121,25 +112,45 @@ class Runner:
             raise e
 
 
-class UnaryRunner(Runner):
+def make_unary_runner(
+    func: Callable[..., Any],
+    overrides: Dict[Callable[..., Any], Callable[..., Any]],
+    exception_registry: ExceptionRegistry,
+    req: Type[Any],
+) -> Callable[[Any, AsyncContext], Any]:
+    """Factory function to create a unary RPC handler function"""
 
-    async def __call__(self, request: Any, context: AsyncContext) -> Any:
+    runner = Runner(func, overrides, exception_registry, req)
+
+    async def unary_handler(request: Any, context: AsyncContext) -> Any:
         try:
             async with AsyncExitStack() as stack:
-                kwargs = await self._make_kwargs(request, context, stack)
-                response = await self.func(**kwargs)
+                kwargs = await runner._make_kwargs(request, context, stack)
+                response = await runner.func(**kwargs)
                 return response
         except Exception as e:
-            await self._handle_exception(e, context)
+            await runner._handle_exception(e, context)
+
+    return unary_handler
 
 
-class StreamRunner(Runner):
+def make_stream_runner(
+    func: Callable[..., Any],
+    overrides: Dict[Callable[..., Any], Callable[..., Any]],
+    exception_registry: ExceptionRegistry,
+    req: Type[Any],
+) -> Callable[[Any, AsyncContext], Any]:
+    """Factory function to create a streaming RPC handler function"""
 
-    async def __call__(self, request: Any, context: AsyncContext) -> Any:
+    runner = Runner(func, overrides, exception_registry, req)
+
+    async def stream_handler(request: Any, context: AsyncContext) -> Any:
         try:
             async with AsyncExitStack() as stack:
-                kwargs = await self._make_kwargs(request, context, stack)
-                async for resp in self.func(**kwargs):
+                kwargs = await runner._make_kwargs(request, context, stack)
+                async for resp in runner.func(**kwargs):
                     yield resp
         except Exception as e:
-            await self._handle_exception(e, context)
+            await runner._handle_exception(e, context)
+
+    return stream_handler

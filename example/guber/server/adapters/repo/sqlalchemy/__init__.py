@@ -5,6 +5,7 @@ from example.guber.server.adapters.repo.sqlalchemy.account_repo import (
 from example.guber.server.adapters.repo.sqlalchemy.db import (
     AsyncSessionLocal,
     SqlAlchemyDB,
+    init_db,
 )
 from example.guber.server.adapters.repo.sqlalchemy.orm.account import AccountDB
 from example.guber.server.adapters.repo.sqlalchemy.orm.ride import (
@@ -34,4 +35,5 @@ __all__ = [
     "SqlAlchemyPositionRepo",
     "SqlAlchemyRideRepo",
     "AsyncSessionLocal",
+    "init_db",
 ]

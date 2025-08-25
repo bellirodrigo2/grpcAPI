@@ -1,5 +1,3 @@
-from collections.abc import AsyncIterator
-
 import grpc
 from typing_extensions import Any, Callable, Dict, Mapping, Tuple
 
@@ -22,6 +20,7 @@ def add_to_server(
         key = method.name
         handler = get_handler(method)
         tgt_method = make_method_async(method, overrides, exception_registry)
+
         methods[key] = tgt_method
         req_des, resp_ser = get_deserializer_serializer(method)
         rpc_method_handlers[key] = handler(
@@ -40,9 +39,8 @@ def add_to_server(
 
 
 def get_handler(method: ILabeledMethod) -> Callable[..., Any]:
-
-    client_stream = method.request_types[0].origin is AsyncIterator
-    server_stream = method.response_types.origin is AsyncIterator
+    client_stream = method.is_client_stream
+    server_stream = method.is_server_stream
 
     handlers: Dict[Tuple[bool, bool], Callable[..., Any]] = {
         (False, False): grpc.unary_unary_rpc_method_handler,
@@ -57,9 +55,8 @@ def get_handler(method: ILabeledMethod) -> Callable[..., Any]:
 def get_deserializer_serializer(
     method: ILabeledMethod,
 ) -> Tuple[Callable[..., Any], Callable[..., Any]]:
-
-    request_type = method.request_types[0].basetype
-    response_type = method.response_types.basetype
+    request_type = method.input_base_type
+    response_type = method.output_base_type
     return (
         request_type.FromString,
         response_type.SerializeToString,

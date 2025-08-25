@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Tuple
 from unittest.mock import patch
 
 import pytest
@@ -12,12 +14,12 @@ from example.guber.server.application.usecase.ride import (
 )
 from example.guber.server.domain import RideStatus
 from example.guber.server.domain.service.farecalc import NormalFare
-from example.guber.tests.fixtures import get_ride_repo_test
-from example.guber.tests.mocks import get_mock_position_repo
+from example.guber.tests.fixtures import get_position_repo_test, get_ride_repo_test
 from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
+    create_coord,
     create_driver_info,
     create_passenger_info,
     create_position,
@@ -31,14 +33,13 @@ async def setup_ride_with_fare(
     app_test_client: TestClient,
     context: ContextMock,
     unique_index: int = 0,
-) -> tuple[str, str, str]:
+) -> Tuple[str, str, str]:
     """Helper function to set up a ride with accumulated fare"""
     # Create unique passenger account
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 100 + unique_index),
         sin=get_unique_sin(unique_index % 5),
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -62,7 +63,6 @@ async def setup_ride_with_fare(
         email=get_unique_email("driver", 100 + unique_index),
         sin=get_unique_sin((unique_index + 1) % 5),
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -92,8 +92,12 @@ async def setup_ride_with_fare(
         return_value=NormalFare(),
     ):
         # Set initial position
-        position_repo = get_mock_position_repo(context)
-        position_repo.set_position(ride_id, -27.584905257808835, -48.545022195325124)
+        async with get_position_repo_test() as position_repo:
+            await position_repo.create_position(
+                ride_id,
+                create_coord(-27.584905257808835, -48.545022195325124),
+                updated_at=datetime.now(),
+            )
 
         # Update position to accumulate fare
         new_position = create_position(
@@ -156,7 +160,6 @@ async def test_finish_ride_invalid_status_requested(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 12), sin=get_unique_sin(2)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -175,7 +178,6 @@ async def test_finish_ride_invalid_status_requested(
     ride_id = ride_resp.value
 
     # Try to finish ride that's only REQUESTED (not IN_PROGRESS)
-    context._is_passenger = False  # Switch to driver context
     with pytest.raises(ValueError, match="Invalid status"):
         await app_test_client.run(
             func=finish_ride,
@@ -195,7 +197,6 @@ async def test_finish_ride_invalid_status_accepted(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 13), sin=get_unique_sin(3)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -218,7 +219,6 @@ async def test_finish_ride_invalid_status_accepted(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 13), sin=get_unique_sin(4)
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -250,7 +250,6 @@ async def test_finish_ride_nonexistent_ride(
 ):
     """Test finish_ride for non-existent ride"""
     context = get_mock_context
-    context._is_passenger = False  # Set as driver
 
     # Try to finish non-existent ride
     with pytest.raises(ValueError, match="Ride with id nonexistent_ride not found"):
@@ -299,7 +298,6 @@ async def test_finish_ride_with_zero_fare(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 14), sin=get_unique_sin(0)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -322,7 +320,6 @@ async def test_finish_ride_with_zero_fare(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 14), sin=get_unique_sin(1)
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,

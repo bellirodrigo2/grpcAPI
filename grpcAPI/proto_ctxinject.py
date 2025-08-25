@@ -5,9 +5,7 @@ __all__ = [
     "func_signature_check",
     "ignore_enum",
     "get_mapped_ctx",
-    "get_mapped_ctx_ordered",
     "resolve_mapped_ctx",
-    "resolve_mapped_ctx_ordered",
 ]
 from datetime import datetime
 from typing import Any, Callable, Dict, Hashable, List, Optional, Tuple, Type
@@ -19,7 +17,6 @@ from ctxinject import (
     get_mapped_ctx,
     resolve_mapped_ctx,
 )
-from ctxinject.inject import get_mapped_ctx_ordered, resolve_mapped_ctx_ordered
 from ctxinject.validation import arg_proc, constrained_list
 from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 from google.protobuf.struct_pb2 import ListValue, Struct

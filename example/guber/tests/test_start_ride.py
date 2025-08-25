@@ -31,7 +31,6 @@ async def test_start_ride(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 8), sin=get_unique_sin(0)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -54,7 +53,6 @@ async def test_start_ride(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 8), sin=get_unique_sin(1)
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -97,7 +95,6 @@ async def test_start_ride_invalid_status_requested(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 9), sin=get_unique_sin(2)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -117,7 +114,6 @@ async def test_start_ride_invalid_status_requested(
     ride_id = ride_resp.value
 
     # Try to start ride without accepting it first - should fail
-    context._is_passenger = False  # Switch to driver context
     with pytest.raises(ValueError, match="Invalid status"):
         await app_test_client.run(
             func=start_ride,
@@ -131,7 +127,6 @@ async def test_start_ride_nonexistent_ride(
     get_mock_context: ContextMock,
 ):
     context = get_mock_context
-    context._is_passenger = False  # Set as driver
 
     # Try to start non-existent ride
     with pytest.raises(ValueError, match="Ride with id nonexistent_ride not found"):
@@ -152,7 +147,6 @@ async def test_start_ride_already_in_progress(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 10), sin=get_unique_sin(3)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -175,7 +169,6 @@ async def test_start_ride_already_in_progress(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 10), sin=get_unique_sin(4)
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,
@@ -217,7 +210,6 @@ async def test_start_ride_completed_status(
     passenger_info = create_passenger_info(
         email=get_unique_email("passenger", 11), sin=get_unique_sin(0)
     )
-    context._is_passenger = True
 
     passenger_resp = await app_test_client.run(
         func=signup_account,
@@ -240,7 +232,6 @@ async def test_start_ride_completed_status(
     driver_info = create_driver_info(
         email=get_unique_email("driver", 11), sin=get_unique_sin(1)
     )
-    context._is_passenger = False  # Switch to driver
 
     driver_resp = await app_test_client.run(
         func=signup_account,

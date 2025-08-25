@@ -1,8 +1,8 @@
 {
   // Protocol buffer generation paths
-  "proto_path": "grpcAPI/proto",
-  "lib_path": "grpcAPI/lib",
-  
+  "proto_path": "example/guber/proto",
+  "lib_path": "example/guber/lib",
+
   // Development settings
   "lint": true, // Enable proto validation by default
   
@@ -12,9 +12,9 @@
   // Protocol buffer compilation settings
   "compile_proto": {
     "clean_services": true, // Remove unused service files
-    "overwrite": false,     // Preserve existing files
-    "zipcompress": false,   // Generate individual files
-    "outdir": "dist"
+    "overwrite": true,     // Preserve existing files
+    "zipcompress": true,   // Generate individual files
+    "outdir": "example/guber/dist"
   },
   
   /* Service filtering configuration
@@ -51,8 +51,8 @@
   
   // Server plugins configuration
   "plugins": {
-    "health_check": {}, // Health check endpoint
-    "reflection": {},   // gRPC reflection service
+    // "health_check": {}, // Health check endpoint
+    // "reflection": {},   // gRPC reflection service
     "server_logger": {  // Server logging plugin
       "level": "INFO",
       "handlers": ["console"],
@@ -60,7 +60,12 @@
       "propagate": false
     }
   },
-  
+  "tls": {
+    "enabled": false,
+    // "certificate": "credentials/server.crt",
+    // "key": "credentials/server.key",
+    // "ca": "credentials/ca.crt"
+  },  
   "app_log_level": "INFO", // Application-wide log level
   /* Python logging configuration
      Standard Python logging.config.dictConfig format */

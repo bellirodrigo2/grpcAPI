@@ -6,7 +6,7 @@ CLAUDE.md
 .claude 
 
 app.log
-
+test.db
 #config file
 /src/config.yml
 

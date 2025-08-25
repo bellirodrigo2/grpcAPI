@@ -46,7 +46,6 @@ def combine_settings(
     If 'field' is defined, merges only that section.
     """
     default_settings = load_file_by_extension(default_path)
-
     return {**default_settings, **user_settings}
 
 
@@ -54,15 +53,32 @@ def load_app(app_path: str) -> None:
     """
     Dynamically imports a Python module from the given file path.
     """
-    path = Path(app_path)
+    path = Path(app_path).resolve()
     if not path.exists():
-        raise FileNotFoundError("❌ App path not found: {}".format(app_path))
+        raise FileNotFoundError("App path not found: {}".format(app_path))
 
-    spec = importlib.util.spec_from_file_location("app_module", path)
-    if spec is None or spec.loader is None:
-        raise ImportError("❌ Could not load module from: {}".format(app_path))
+    # Add the project root to Python path so absolute imports work
+    project_root = Path.cwd()
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
 
-    app_module = importlib.util.module_from_spec(spec)
-    sys.modules["app_module"] = app_module
-    spec.loader.exec_module(app_module)
-    logger.info(f"App loaded: {app_path}")
+    # Convert file path to module name for proper package resolution
+    # e.g., ./example/guber/server/app.py -> example.guber.server.app
+    relative_path = path.relative_to(project_root)
+    module_parts = list(relative_path.parts[:-1]) + [relative_path.stem]
+    module_name = ".".join(module_parts)
+
+    try:
+        # Try importing as a proper module first
+        importlib.import_module(module_name)
+        logger.info(f"App loaded as module: {module_name}")
+    except ImportError:
+        # Fallback to direct file loading
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        if spec is None or spec.loader is None:
+            raise ImportError("❌ Could not load module from: {}".format(app_path))
+
+        app_module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = app_module
+        spec.loader.exec_module(app_module)
+        logger.info(f"App loaded from file: {app_path}")

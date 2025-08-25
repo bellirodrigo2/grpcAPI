@@ -10,7 +10,7 @@ from grpcAPI.proto_build import make_protos
 def run_lint(app: App, logger: Logger) -> Iterable[IProtoPackage]:
     files = make_protos(app.services)
     file_list = list(files)
-    logger.info("Protos have been successfully generated.")
+    logger.info(f"{len(file_list)} Protos have been successfully generated.")
     logger.debug("Generated files:", [(f.package, f.filename) for f in file_list])
     return file_list
 

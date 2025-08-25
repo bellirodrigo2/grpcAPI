@@ -7,6 +7,7 @@ from grpcAPI.app import App
 from grpcAPI.commands.command import GRPCAPICommand
 
 # from grpcAPI.commands.utils import get_host_port
+from grpcAPI.load_credential import get_server_certificate
 from grpcAPI.proto_build import make_protos
 from grpcAPI.register_descriptor import register_service_descriptors
 from grpcAPI.server import ServerWrapper, make_server
@@ -22,7 +23,6 @@ class RunCommand(GRPCAPICommand):
 
         settings = self.settings
         app = self.app
-
         lint = kwargs.get("lint") or settings.get("lint", True)
         plugins_settings = settings.get("plugins", {})
 
@@ -42,7 +42,6 @@ class RunCommand(GRPCAPICommand):
 
         if "reflection" in plugins_settings:
             register_service_descriptors(app.service_list)
-
         plugins = [
             make_plugin(plugin_name, **kwargs)
             for plugin_name, kwargs in plugins_settings.items()
@@ -58,7 +57,16 @@ class RunCommand(GRPCAPICommand):
         host = kwargs.get("host") or settings.get("host", "localhost")
         port = kwargs.get("port") or settings.get("port", 50051)
         port = int(port)
-        server.add_insecure_port(f"{host}:{port}")
+
+        tls = settings.get("tls", {"enabled": False})
+        if tls.get("enabled"):
+            credential = get_server_certificate(
+                tls.get("certificate"),
+                tls.get("key"),
+            )
+            server.add_secure_port(f"{host}:{port}", credential)
+        else:
+            server.add_insecure_port(f"{host}:{port}")
 
         async with AsyncExitStack() as stack:
             for lifespan in app.lifespan:

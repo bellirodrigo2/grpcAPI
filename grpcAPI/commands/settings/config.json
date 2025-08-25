@@ -60,7 +60,12 @@
       "propagate": false
     }
   },
-  
+  "tls": {
+    "enabled": false,
+    // "certificate": "credentials/server.crt",
+    // "key": "credentials/server.key",
+    // "ca": "credentials/ca.crt"
+  },  
   "app_log_level": "INFO", // Application-wide log level
   /* Python logging configuration
      Standard Python logging.config.dictConfig format */

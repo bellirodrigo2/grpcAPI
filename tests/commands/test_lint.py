@@ -7,15 +7,6 @@ import pytest
 from grpcAPI.app import APIService, App, GrpcAPI
 from grpcAPI.commands.lint import LintCommand, run_lint
 from grpcAPI.makeproto.interface import IProtoPackage
-from grpcAPI.singleton import SingletonMeta
-
-
-@pytest.fixture(autouse=True)
-def reset_singleton():
-    """Clear GrpcAPI singleton state before each test"""
-    SingletonMeta._instances.clear()
-    yield
-    SingletonMeta._instances.clear()
 
 
 @pytest.fixture
@@ -61,7 +52,7 @@ class TestRunLint:
             mock_make_protos.assert_called_once_with(app.services)
 
             # Verify logger was called
-            logger.info.assert_called_with("Protos have been successfully generated.")
+            logger.info.assert_called_with("1 Protos have been successfully generated.")
             logger.debug.assert_called_with(
                 "Generated files:", [("test_package", "test_service")]
             )
@@ -85,7 +76,7 @@ class TestRunLint:
             mock_make_protos.assert_called_once_with(app.services)
 
             # Verify logger was still called
-            logger.info.assert_called_with("Protos have been successfully generated.")
+            logger.info.assert_called_with("0 Protos have been successfully generated.")
             logger.debug.assert_called_with("Generated files:", [])
 
             # Verify empty result
@@ -154,9 +145,7 @@ class TestLintCommand:
                 # Verify run_lint was called with the app instance
                 mock_run_lint.assert_called_once_with(cmd.app, cmd.logger)
 
-    def test_multiple_commands_with_same_app(
-        self, app_fixture: App
-    ) -> None:
+    def test_multiple_commands_with_same_app(self, app_fixture: App) -> None:
         """Test that multiple LintCommand instances can use the same app instance"""
         with patch("grpcAPI.commands.command.run_process_service"):
             # Use app_fixture directly
@@ -176,7 +165,7 @@ class TestLintCommand:
             # Create regular App instances (not singleton)
             app1 = App()
             app2 = App()
-            
+
             # Regular App instances are different
             assert app1 is not app2
 
@@ -188,7 +177,7 @@ class TestLintCommand:
             assert cmd1.app is not cmd2.app
             assert cmd1.app is app1
             assert cmd2.app is app2
-            
+
             # Test with app_fixture
             cmd3 = LintCommand(app_fixture, None)
             assert cmd3.app is app_fixture

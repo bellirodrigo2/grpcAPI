@@ -12,12 +12,14 @@ def test_already_multiline_comment() -> None:
 
 
 def test_single_line_under_max_chars() -> None:
-    assert format_comment("short description") == "// short description"
+    assert (
+        format_comment("short description", singleline=True) == "// short description"
+    )
 
 
 def test_single_line_equals_max_chars() -> None:
     text = "a" * 50
-    assert format_comment(text) == f"// {text}"
+    assert format_comment(text, singleline=True) == f"// {text}"
 
 
 def test_multiline_comment() -> None:
@@ -25,7 +27,7 @@ def test_multiline_comment() -> None:
     expected = (
         "// This is a very long description that is \n//  split into multiple lines"
     )
-    assert format_comment(text) == expected
+    assert format_comment(text, singleline=True) == expected
 
 
 def test_multiline_comment2() -> None:
@@ -33,4 +35,4 @@ def test_multiline_comment2() -> None:
     expected = (
         "// This is a very long description that is \n//  split into multiple lines"
     )
-    assert format_comment(text) == expected
+    assert format_comment(text, singleline=True) == expected

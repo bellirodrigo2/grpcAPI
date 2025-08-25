@@ -7,7 +7,8 @@ def all_lines_start_with_double_slash(text: str) -> bool:
     )
 
 
-def format_comment(text: str, singleline: bool = True) -> str:
+def format_comment(text: str, singleline: bool = False) -> str:
+    text = text.strip()
     if not text:
         return ""  # pragma: no cover
 

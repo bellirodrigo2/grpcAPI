@@ -89,14 +89,6 @@ class ServerLoggerPlugin(ServerPlugin):
             },
         }
 
-    def on_register(self, server: "ServerWrapper") -> None:
-        # logger config details
-        # server version, etc
-        # migration_thread_pool: Optional[Executor] = None,
-        # maximum_concurrent_rpcs: Optional[int] = None,
-        # compression: Optional[grpc.Compression] = None,
-        pass
-
     def on_add_service(
         self, service_name: str, methods_name: Iterable[str], server: "ServerWrapper"
     ) -> None:

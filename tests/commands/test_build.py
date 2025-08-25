@@ -7,15 +7,6 @@ import pytest
 from grpcAPI.app import App
 from grpcAPI.commands.build import BuildCommand, build_protos
 from grpcAPI.makeproto.interface import IProtoPackage
-from grpcAPI.singleton import SingletonMeta
-
-
-@pytest.fixture(autouse=True)
-def reset_singleton():
-    """Clear GrpcAPI singleton state before each test"""
-    SingletonMeta._instances.clear()
-    yield
-    SingletonMeta._instances.clear()
 
 
 class TestBuildProtos:
@@ -54,7 +45,6 @@ class TestBuildProtos:
                     proto_path,
                     output_path,
                     overwrite=True,
-                    clean_services=True,
                     zipcompress=False,
                 )
 
@@ -63,7 +53,7 @@ class TestBuildProtos:
                     proto_stream=[mock_proto],
                     out_dir=output_path,
                     overwrite=True,
-                    clean_services=True,
+                    clean_services=False,
                 )
                 mock_copy.assert_called_once_with(proto_path, output_path, logger)
                 assert result == {"test_service.proto"}
@@ -103,7 +93,6 @@ class TestBuildProtos:
                     proto_path,
                     output_path,
                     overwrite=True,
-                    clean_services=True,
                     zipcompress=True,
                 )
 
@@ -160,7 +149,6 @@ class TestBuildCommand:
                         proto_path=Path("proto"),
                         output_path=Path("lib"),
                         overwrite=False,
-                        clean_services=True,
                         zipcompress=True,
                     )
 

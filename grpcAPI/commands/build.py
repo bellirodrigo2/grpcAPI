@@ -16,42 +16,32 @@ def build_protos(
     proto_path: Path,
     output_path: Path,
     overwrite: bool,
-    clean_services: bool,
     zipcompress: bool,
 ) -> Set[str]:
     proto_files = lint.run_lint(app, logger)
 
+    def _atomic_write(file_path: Path, overwrite: bool):
+        if proto_path.exists():
+            copy_proto_files(proto_path, file_path, logger)
+        generated_files = write_protos(
+            proto_stream=proto_files,
+            out_dir=file_path,
+            overwrite=overwrite,
+            clean_services=False,
+        )
+        return generated_files
+
     if zipcompress:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            generated_files = write_protos(
-                proto_stream=proto_files,
-                out_dir=temp_path,
-                overwrite=True,
-                clean_services=clean_services,
-            )
-
-            if proto_path.exists():
-                copy_proto_files(proto_path, temp_path, logger)
-
+            generated_files = _atomic_write(temp_path, True)
             zip_directory(temp_path, output_path / "protos.zip", logger)
             return generated_files
     else:
-        generated_files = write_protos(
-            proto_stream=proto_files,
-            out_dir=output_path,
-            overwrite=overwrite,
-            clean_services=clean_services,
-        )
-
-        if proto_path.exists():
-            copy_proto_files(proto_path, output_path, logger)
-
-        return generated_files
+        return _atomic_write(output_path, overwrite)
 
 
 def copy_proto_files(source_path: Path, dest_path: Path, logger: Logger) -> None:
-    """Copy existing .proto files from source to destination, preserving directory structure"""
     if not source_path.exists():
         logger.warning(f"Proto source path does not exist: {source_path}")
         return
@@ -69,7 +59,6 @@ def copy_proto_files(source_path: Path, dest_path: Path, logger: Logger) -> None
 
 
 def zip_directory(source_dir: Path, zip_path: Path, logger: Logger) -> None:
-    """Zip all files in source directory to zip_path"""
     zip_path.parent.mkdir(parents=True, exist_ok=True)
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
@@ -102,10 +91,9 @@ def get_lib_path(
     root_path = Path("./").resolve()
 
     compile_settings = settings.get("compile_proto", {})
-    lib_str: str = compile_settings.get("outdir", "dist")
+    lib_str: str = compile_settings.get("outdir", "./dist")
     lib_path = root_path / lib_str
-    if not lib_path.exists():
-        raise FileNotFoundError(str(lib_path))
+    lib_path.mkdir(parents=True, exist_ok=True)
     return lib_path
 
 
@@ -114,26 +102,28 @@ class BuildCommand(GRPCAPICommand):
     def __init__(self, app: App, settings_path: Optional[str] = None) -> None:
         super().__init__("build", app, settings_path)
 
-    async def run(self, **kwargs: Any) -> None:
+    async def run(self, **kwargs: Any) -> Set[str]:
 
-        proto_path = kwargs.get("proto_path") or get_proto_path(self.settings)
-        outdir = kwargs.get("outdir") or get_lib_path(self.settings)
+        proto_path_raw = kwargs.get("proto_path") or get_proto_path(self.settings)
+        outdir_raw = kwargs.get("outdir") or get_lib_path(self.settings)
+
+        # Ensure paths are Path objects
+        proto_path = (
+            Path(proto_path_raw) if isinstance(proto_path_raw, str) else proto_path_raw
+        )
+        outdir = Path(outdir_raw) if isinstance(outdir_raw, str) else outdir_raw
 
         compile_settings = self.settings.get("compile_proto", {})
-        clean_services = kwargs.get("clean_services") or compile_settings.get(
-            "clean_services", True
-        )
         overwrite = kwargs.get("overwrite") or compile_settings.get("overwrite", False)
         zipcompress = kwargs.get("zipcompress") or compile_settings.get(
             "zipcompress", False
         )
 
-        build_protos(
+        return build_protos(
             app=self.app,
             logger=self.logger,
             proto_path=proto_path,
             output_path=outdir,
             overwrite=overwrite,
-            clean_services=clean_services,
             zipcompress=zipcompress,
         )

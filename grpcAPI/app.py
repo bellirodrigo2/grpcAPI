@@ -194,8 +194,8 @@ class APIService(IService):
             service=self.name,
             comment=comment,
             description=description,
-            tags=options,
-            options=tags,
+            tags=tags,
+            options=options,
             request_type_input=request_type_input,
             response_type_input=response_type_input,
         )

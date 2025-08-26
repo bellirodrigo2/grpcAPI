@@ -2,7 +2,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
 
 from grpcAPI.app import App
 from grpcAPI.commands.build import BuildCommand, build_protos

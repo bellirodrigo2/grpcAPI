@@ -1,0 +1,73 @@
+{
+  "lint": true,
+  "host": "localhost",
+  "port": 50052,
+   "service_filter": {
+    "package": {
+      "include": ["ride"]
+    },
+    "rule_logic": "AND"
+  },
+  "server": {
+    "compression": "gzip",
+    "maximum_concurrent_rpcs": 100,
+    "options": []
+  },
+  "plugins": {
+    "reflection": {},
+    "health_check": {},
+    "server_logger": {
+      "level": "INFO",
+      "handlers": ["console"],
+      "filename": ".",
+      "propagate": false
+    }
+  },
+  "tls": {
+    "enabled": true,
+    "certificate": "example/guber/certs/localhost.crt",
+    "key": "example/guber/certs/localhost.key",
+    "ca": "example/guber/certs/root.crt"
+  },
+  "app_log_level": "INFO",
+  "logger": {
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+      "short": {
+        "format": "[%(asctime)s]: %(message)s"
+      },
+      "default": {
+        "format": "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s"
+      },
+      "detailed": {
+        "format": "[%(asctime)s] [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
+      }
+    },
+    "handlers": {
+      "console": {
+        "class": "logging.StreamHandler",
+        "level": "DEBUG",
+        "formatter": "short"
+      },
+      "file": {
+        "class": "logging.FileHandler",
+        "filename": "app.log",
+        "mode": "a",
+        "level": "INFO",
+        "formatter": "default"
+      }
+    },
+    "loggers": {
+      "grpcAPI": {
+        "handlers": ["console"],
+        "level": "ERROR",
+        "propagate": false
+      }
+    },
+    "root": {
+      "handlers": ["console"],
+      "level": "WARNING"
+    }
+  }
+}

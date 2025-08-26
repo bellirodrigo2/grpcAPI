@@ -2,7 +2,6 @@ from typing import Any, Callable, Optional
 
 from typing_extensions import Annotated
 
-from example.guber.server.application.gateway import Authenticate
 from example.guber.server.application.repo import AccountRepository
 from example.guber.server.domain import Account, AccountInfo
 from example.guber.server.domain.entity.account_rules import make_account_id
@@ -36,9 +35,8 @@ async def signup_account(
     account_info: AccountInfo,
     sin: Annotated[str, FromAccountInfo(validator=validate_sin)],
     email: Annotated[EmailStr, FromAccountInfo()],
-    car_plate: Annotated[str, FromAccountInfo(validator=validate_car_plate)],
+    _: Annotated[str, FromAccountInfo(field="car_plate", validator=validate_car_plate)],
     id: Annotated[str, Depends(make_account_id)],
-    _: Authenticate,
     acc_repo: AccountRepository,
 ) -> StringValue:
     # sin, email and car_plate are here for validation, and to define the input protobuf class
@@ -55,7 +53,6 @@ async def signup_account(
 @account_services(tags=["read:account"])
 async def get_account(
     id: ProtoStr,
-    _: Authenticate,
     acc_repo: AccountRepository,
 ) -> Account:
 
@@ -69,7 +66,6 @@ async def get_account(
 async def update_car_plate(
     id: ProtoKey,
     car_plate: Annotated[str, FromValue(validator=validate_car_plate)],
-    _: Authenticate,
     acc_repo: AccountRepository,
 ) -> BoolValue:
     updated = await acc_repo.update_account_field(id, "car_plate", str(car_plate))
@@ -82,7 +78,6 @@ async def update_car_plate(
 async def update_email(
     id: ProtoKey,
     email: Annotated[EmailStr, FromValue()],
-    _: Authenticate,
     acc_repo: AccountRepository,
 ) -> BoolValue:
     updated = await acc_repo.update_account_field(id, "email", str(email))
@@ -91,10 +86,9 @@ async def update_email(
     return BoolValue(value=True)
 
 
-@account_services(tags=["read:account", "read:gateway"])
+@account_services(tags=["read:account", "read:gateway", "internal"])
 async def is_passenger(
     id: ProtoStr,
-    _: Authenticate,
     acc_repo: AccountRepository,
 ) -> BoolValue:
     account = await acc_repo.get_by_id(id)

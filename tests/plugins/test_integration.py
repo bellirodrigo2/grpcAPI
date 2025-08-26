@@ -106,12 +106,11 @@ class TestIntegration:
         with patch(
             "grpc_reflection.v1alpha.reflection.enable_server_reflection"
         ) as mock_reflection:
-            services = ["ServiceA", "ServiceB", "ServiceC"]
+            services = {"ServiceA", "ServiceB", "ServiceC"}
 
             for service in services:
                 reflection_plugin.on_add_service(service, {}, mock_server_wrapper)
-
+            await reflection_plugin.on_start(mock_server_wrapper)
             # Check that reflection was called for each service
-            assert mock_reflection.call_count == len(services)
-            for service in services:
-                mock_reflection.assert_any_call((service,), mock_server_wrapper.server)
+            assert mock_reflection.call_count == 1
+            mock_reflection.assert_any_call(services, mock_server_wrapper.server)

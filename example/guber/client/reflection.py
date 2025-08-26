@@ -1,8 +1,10 @@
 import grpc
 from grpc_reflection.v1alpha import reflection_pb2, reflection_pb2_grpc
 
+from example.guber.client.channel import get_channel
 
-def list_services(channel):
+
+def list_services(channel: grpc.Channel) -> None:
     stub = reflection_pb2_grpc.ServerReflectionStub(channel)
     request = reflection_pb2.ServerReflectionRequest(list_services="")
 
@@ -14,11 +16,7 @@ def list_services(channel):
             print(f" - {svc.name}")
 
 
-def main():
-    target = "localhost:50051"
-    with grpc.insecure_channel(target) as channel:
-        list_services(channel)
-
-
 if __name__ == "__main__":
-    main()
+
+    with get_channel() as channel:
+        list_services(channel)

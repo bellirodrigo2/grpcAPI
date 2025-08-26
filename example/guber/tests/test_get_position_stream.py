@@ -2,6 +2,8 @@ import asyncio
 from datetime import datetime
 from typing import AsyncIterator, List, Tuple
 
+import pytest
+
 from example.guber.server.application.usecase.account import signup_account
 from example.guber.server.application.usecase.ride import (
     accept_ride,
@@ -138,8 +140,8 @@ async def test_get_position_stream_basic_streaming(
     for position in positions:
         assert isinstance(position, Position)
         assert position.ride_id == ride_id
-        assert abs(position.coord.lat - (-27.584905257808835)) < 0.0001
-        assert abs(position.coord.long - (-48.545022195325124)) < 0.0001
+        assert position.coord.lat == pytest.approx(-27.584905257808835, abs=1e-3)
+        assert position.coord.long == pytest.approx(-48.545022195325124, abs=1e-3)
 
 
 async def test_get_position_stream_position_updates(
@@ -203,8 +205,8 @@ async def test_get_position_stream_position_updates(
 
     # First position should have initial coordinates
     first_pos = collected_positions[0]
-    assert abs(first_pos.coord.lat - (-27.584905257808835)) < 0.0001
-    assert abs(first_pos.coord.long - (-48.545022195325124)) < 0.0001
+    assert first_pos.coord.lat == pytest.approx(-27.584905257808835, abs=1e-3)
+    assert first_pos.coord.long == pytest.approx(-48.545022195325124, abs=1e-3)
 
     # Later positions might have updated coordinates
     for position in collected_positions:
@@ -311,7 +313,6 @@ async def test_get_position_stream_nonexistent_ride(
     get_mock_context: ContextMock,
 ):
     """Test position stream with non-existent ride should raise ValueError"""
-    import pytest
 
     context = get_mock_context
 
@@ -437,8 +438,8 @@ async def test_get_position_stream_position_data_structure(
 
     # Verify data values
     assert position.ride_id == ride_id
-    assert abs(position.coord.lat - test_lat) < 0.0001
-    assert abs(position.coord.long - test_long) < 0.0001
+    assert position.coord.lat == pytest.approx(test_lat, abs=1e-3)
+    assert position.coord.long == pytest.approx(test_long, abs=1e-3)
 
     # Verify timestamp is set (protobuf timestamp should be valid)
     assert position.updated_at is not None

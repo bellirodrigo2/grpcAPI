@@ -8,7 +8,7 @@ import toml
 import yaml
 from typing_extensions import Any, Dict
 
-DEFAULT_CONFIG_PATH = Path("./grpcAPI/commands/settings/config.json")
+DEFAULT_CONFIG_PATH = Path(__file__).parent / "config.json"
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,16 @@ def combine_settings(
     If 'field' is defined, merges only that section.
     """
     default_settings = load_file_by_extension(default_path)
+    # try:
+    # if default_path.exists():
+    # default_settings = load_file_by_extension(default_path)
+    # else:
+    # logger.warning(f"Default config file not found: {default_path}")
+    # default_settings = {}
+    # except Exception as e:
+    # logger.error(f"Failed to create configuration file: {str(e)}")
+    # default_settings = {}
+
     return {**default_settings, **user_settings}
 
 

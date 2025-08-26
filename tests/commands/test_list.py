@@ -52,21 +52,13 @@ def mock_service(mock_method) -> APIService:
 class TestListCommandConsoleOutput:
     """Test the ListCommand console output"""
 
-    def test_display_empty_services(self):
+    def test_display_empty_services(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test display with no services"""
-        with patch("grpcAPI.commands.command.run_process_service"):
-            app = App()
-            cmd = ListCommand(app, None)
-
-            with patch("rich.console.Console") as mock_console:
-                console_instance = Mock()
-                mock_console.return_value = console_instance
-
-                cmd.run_sync()
-
-                console_instance.print.assert_called_once_with(
-                    "[yellow]No services registered[/yellow]"
-                )
+        app = App()
+        cmd = ListCommand(app, None)
+        cmd.run_sync()
+        captured = capsys.readouterr()
+        assert "No services registered" in captured.out
 
     def test_display_services_with_description(self, mock_service, capsys):
         """Test display shows service description properly"""
@@ -78,15 +70,12 @@ class TestListCommandConsoleOutput:
             app.add_service(mock_service)
             cmd = ListCommand(app, None)
 
-            with patch("rich.console.Console") as mock_console:
-                console_instance = Mock()
-                mock_console.return_value = console_instance
+            cmd.run_sync(show_descriptions=True)
+            captured = capsys.readouterr()
 
-                cmd.run_sync(show_descriptions=True)
-
-                # Should call console.print for tree and totals
-                print_calls = console_instance.print.call_args_list
-                assert len(print_calls) >= 2  # At least tree and totals
+            assert "TestService" in captured.out
+            assert "1 service(s)" in captured.out
+            assert "1 method(s)" in captured.out
 
     def test_display_services_shows_all_services(self, mock_service, capsys):
         """Test display shows all services"""
@@ -95,22 +84,14 @@ class TestListCommandConsoleOutput:
             app.add_service(mock_service)
             cmd = ListCommand(app, None)
 
-            with patch("rich.tree.Tree") as mock_tree_class, patch(
-                "rich.console.Console"
-            ) as mock_console:
-                console_instance = Mock()
-                mock_console.return_value = console_instance
-                mock_tree = Mock()
-                mock_tree_class.return_value = mock_tree
+            cmd.run_sync()
+            captured = capsys.readouterr()
 
-                cmd.run_sync()
+            assert "TestService" in captured.out
+            assert "test.package" in captured.out
+            assert "test_method" in captured.out
 
-                # Should create tree and add branches
-                mock_tree_class.assert_called_once_with("[bold cyan]gRPC Services")
-                mock_tree.add.assert_called()  # Should add package branch
-                captured = capsys.readouterr()
-
-    def test_service_description_priority(self, mock_method):
+    def test_service_description_priority(self, mock_method, capsys):
         """Test that service description takes priority over comments"""
         with patch("grpcAPI.commands.command.run_process_service"):
             service = APIService(
@@ -126,19 +107,14 @@ class TestListCommandConsoleOutput:
             app.add_service(service)
             cmd = ListCommand(app, None)
 
-            with patch("rich.tree.Tree") as mock_tree_class:
-                mock_tree = Mock()
-                mock_branch = Mock()
-                mock_tree_class.return_value = mock_tree
-                mock_tree.add.return_value = mock_branch
-                mock_branch.add.return_value = mock_branch
+            cmd.run_sync(show_descriptions=True)
+            captured = capsys.readouterr()
 
-                cmd.run_sync(show_descriptions=True)
+            # Should show service description, not comments
+            assert "Service description" in captured.out
+            assert "Service comments" not in captured.out
 
-                # Verify tree structure was called correctly
-                mock_tree_class.assert_called_once_with("[bold cyan]gRPC Services")
-
-    def test_service_fallback_to_comments(self, mock_method):
+    def test_service_fallback_to_comments(self, mock_method, capsys):
         """Test that service falls back to comments when no description"""
         with patch("grpcAPI.commands.command.run_process_service"):
             service = APIService(
@@ -154,11 +130,13 @@ class TestListCommandConsoleOutput:
             app.add_service(service)
             cmd = ListCommand(app, None)
 
-            # This test verifies the command runs without error
-            # The actual display logic is tested through integration
             cmd.run_sync(show_descriptions=True)
+            captured = capsys.readouterr()
 
-    def test_service_no_description_or_comments(self, mock_method):
+            # Should show service comments when no description
+            assert "Service comments" in captured.out
+
+    def test_service_no_description_or_comments(self, mock_method, capsys):
         """Test that service handles empty descriptions gracefully"""
         with patch("grpcAPI.commands.command.run_process_service"):
             service = APIService(
@@ -174,14 +152,18 @@ class TestListCommandConsoleOutput:
             app.add_service(service)
             cmd = ListCommand(app, None)
 
-            # This test verifies the command runs without error when no descriptions
             cmd.run_sync(show_descriptions=True)
+            captured = capsys.readouterr()
+
+            # Should still show service name and structure without descriptions
+            assert "TestService" in captured.out
+            assert "test.package" in captured.out
 
 
 class TestListCommand:
     """Test the ListCommand class"""
 
-    def test_list_command_init(self, mock_service, capsys):
+    def test_list_command_init(self, mock_service):
         """Test ListCommand initialization"""
         with patch("grpcAPI.commands.command.run_process_service") as mock_run_process:
             # Create app directly and pass to command
@@ -197,9 +179,8 @@ class TestListCommand:
 
             # Verify run_process_service was called
             mock_run_process.assert_called_once_with(app, cmd.settings)
-            captured = capsys.readouterr()
 
-    def test_list_command_with_settings(self, mock_service, capsys):
+    def test_list_command_with_settings(self, mock_service):
         """Test ListCommand with settings file"""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             f.write('{"test": "value"}')
@@ -222,7 +203,6 @@ class TestListCommand:
                 mock_load_file.assert_called_once()
         finally:
             Path(settings_path).unlink()
-        captured = capsys.readouterr()
 
     def test_list_command_run(self, mock_service, capsys):
         """Test ListCommand.run_sync() method"""
@@ -233,20 +213,18 @@ class TestListCommand:
 
             cmd = ListCommand(app, None)
 
-            with patch("rich.console.Console") as mock_console:
-                console_instance = Mock()
-                mock_console.return_value = console_instance
+            result = cmd.execute()
+            captured = capsys.readouterr()
 
-                result = cmd.execute()
+            # Verify actual output content
+            assert "TestService" in captured.out
+            assert "1 service(s)" in captured.out
+            assert "1 method(s)" in captured.out
 
-                # Verify console output was called
-                assert console_instance.print.call_count >= 2  # Tree and totals
+            # Result should be None since we display directly
+            assert result is None
 
-                # Result should be None since we display directly
-                assert result is None
-                captured = capsys.readouterr()
-
-    def test_multiple_commands_with_same_app(self, mock_service, capsys):
+    def test_multiple_commands_with_same_app(self, mock_service):
         """Test that multiple ListCommand instances can use the same app instance"""
         with patch("grpcAPI.commands.command.run_process_service"):
             # Create single app instance
@@ -260,7 +238,6 @@ class TestListCommand:
             # Both should reference the same app instance
             assert cmd1.app is cmd2.app
             assert cmd1.app is app
-            captured = capsys.readouterr()
 
 
 class TestListOutputDemo:
@@ -401,17 +378,17 @@ class TestListCommandWithFunctionalService:
             app.add_service(functional_service)
             cmd = ListCommand(app, None)
 
-            with patch("rich.console.Console") as mock_console:
-                console_instance = Mock()
-                mock_console.return_value = console_instance
+            cmd.run_sync()
+            captured = capsys.readouterr()
 
-                cmd.run_sync()
+            # Verify actual output content
+            assert "functional" in captured.out
+            assert "create_account" in captured.out
+            assert "1 service(s)" in captured.out
 
-                # Should call console.print for tree and totals
-                print_calls = console_instance.print.call_args_list
-                assert len(print_calls) >= 2
-
-    def test_multiple_services_mixed_types(self, functional_service, mock_service):
+    def test_multiple_services_mixed_types(
+        self, functional_service, mock_service, capsys
+    ):
         """Test display with both functional and mock services"""
 
         services = [functional_service, mock_service]
@@ -422,12 +399,10 @@ class TestListCommandWithFunctionalService:
                 app.add_service(service)
             cmd = ListCommand(app, None)
 
-            with patch("rich.console.Console") as mock_console:
-                console_instance = Mock()
-                mock_console.return_value = console_instance
+            cmd.run_sync()
+            captured = capsys.readouterr()
 
-                cmd.run_sync()
-
-                # Should handle both service types
-                print_calls = console_instance.print.call_args_list
-                assert len(print_calls) >= 2  # Tree and totals
+            # Should handle both service types
+            assert "functional" in captured.out
+            assert "TestService" in captured.out
+            assert "2 service(s)" in captured.out

@@ -8,8 +8,7 @@ from example.guber.server.application.usecase.ride import (
 )
 from example.guber.server.domain import RideStatus
 from example.guber.tests.fixtures import get_ride_repo_test
-from grpcAPI.protobuf import StringValue
-from grpcAPI.protobuf.lib.prototypes_pb2 import KeyValueStr
+from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (

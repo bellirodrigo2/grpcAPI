@@ -2,22 +2,14 @@
 Comprehensive test suite for grpcAPI CLI functionality.
 """
 
-import asyncio
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 
-from grpcAPI.app import GrpcAPI
 from grpcAPI.cli import cli, get_app_instance, handle_error, setup_cli_logging
-from grpcAPI.commands.build import BuildCommand
-from grpcAPI.commands.init import InitCommand
-from grpcAPI.commands.lint import LintCommand
-from grpcAPI.commands.list import ListCommand
-from grpcAPI.commands.run import RunCommand
 
 
 class TestCLIHelperFunctions:

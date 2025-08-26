@@ -3,25 +3,25 @@ import argparse
 import grpc
 
 from example.guber.client.channel import get_channel
-from example.guber.server.domain import Account
+from example.guber.server.domain import RideSnapshot
 from grpcAPI.protobuf import StringValue
 
 
-def main(channel: grpc.Channel, id: str) -> None:
-    method_name = "/account.account_services/get_account"
+def main(channel: grpc.Channel, ride_id: str) -> None:
+    method_name = "/ride.ride_actions/get_ride"
     stub = channel.unary_unary(
         method_name,
         request_serializer=StringValue.SerializeToString,
-        response_deserializer=Account.FromString,
+        response_deserializer=RideSnapshot.FromString,
         _registered_method=True,
     )
-    request = StringValue(value=id)
-    account = stub(request)
-    print(account)
+    request = StringValue(value=ride_id)
+    ride_snapshot = stub(request)
+    print(ride_snapshot)
 
 
 if __name__ == "__main__":
-    id = "28c9eb17-60e8-44f0-9619-f9dedf56463e"
+    id = "271aee50-2276-4494-99cb-0fa076ce580e"
     # id2 = "820b98e6-89d1-4aa1-8b19-cc16e68f48f8"
 
     parser = argparse.ArgumentParser(description="Get account information")
@@ -29,4 +29,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with get_channel() as channel:
-        main(channel=channel, id=args.id)
+        main(channel=channel, ride_id=args.id)

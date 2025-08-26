@@ -19,6 +19,8 @@ from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
+    EXPECTED_END_LAT,
+    EXPECTED_END_LONG,
     create_coord,
     create_driver_info,
     create_passenger_info,
@@ -243,8 +245,8 @@ async def test_get_ride_in_progress_status(
     assert ride_info.ride.HasField("accepted_at")  # Has accepted timestamp
     assert not ride_info.ride.HasField("finished_at")  # Not finished yet
     # Should have updated position from position update
-    assert abs(ride_info.current_location.coord.lat - (-27.496887588317275)) < 0.0001
-    assert abs(ride_info.current_location.coord.long - (-48.522234807851476)) < 0.0001
+    assert ride_info.current_location.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-3)
+    assert ride_info.current_location.coord.long == pytest.approx(EXPECTED_END_LONG, abs=1e-3)
 
 
 async def test_get_ride_completed_status(
@@ -276,8 +278,8 @@ async def test_get_ride_completed_status(
     assert ride_info.ride.HasField("accepted_at")  # Has accepted timestamp
     assert ride_info.ride.HasField("finished_at")  # Has finished timestamp
     # Should have final position
-    assert abs(ride_info.current_location.coord.lat - (-27.496887588317275)) < 0.0001
-    assert abs(ride_info.current_location.coord.long - (-48.522234807851476)) < 0.0001
+    assert ride_info.current_location.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-3)
+    assert ride_info.current_location.coord.long == pytest.approx(EXPECTED_END_LONG, abs=1e-3)
 
 
 async def test_get_ride_nonexistent_ride(
@@ -317,9 +319,9 @@ async def test_get_ride_with_multiple_position_updates(
         return_value=NormalFare(),
     ):
 
-        # Update to a new position
+        # Update to a new position (different enough to accumulate more fare)
         newer_position = create_position(
-            ride_id, -27.600000000000000, -48.600000000000000
+            ride_id, EXPECTED_END_LAT - 0.01, EXPECTED_END_LONG - 0.01
         )
         await app_test_client.run(
             func=update_position,
@@ -336,8 +338,8 @@ async def test_get_ride_with_multiple_position_updates(
 
     ride_info = ride_info_resp
     # Should reflect the latest position update
-    assert abs(ride_info.current_location.coord.lat - (-27.600000000000000)) < 0.0001
-    assert abs(ride_info.current_location.coord.long - (-48.600000000000000)) < 0.0001
+    assert ride_info.current_location.coord.lat == pytest.approx(EXPECTED_END_LAT - 0.01, abs=1e-3)
+    assert ride_info.current_location.coord.long == pytest.approx(EXPECTED_END_LONG - 0.01, abs=1e-3)
     # Should have accumulated more fare from multiple position updates
     assert ride_info.ride.fare > 21.0  # More than single position update fare
 

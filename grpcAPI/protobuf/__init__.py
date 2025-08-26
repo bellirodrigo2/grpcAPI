@@ -23,7 +23,7 @@ from grpcAPI.protobuf.deriveds import (
     ProtoStr,
     ProtoValue,
 )
-from grpcAPI.protobuf.lib.prototypes_pb2 import (
+from grpcAPI.protobuf.lib.grpcapi.protobuf.types_pb2 import (
     KeyValueStr,
     ListBool,
     ListBytes,

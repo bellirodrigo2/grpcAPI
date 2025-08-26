@@ -163,7 +163,7 @@ class APIService(IService):
 
     @property
     def methods(self) -> List[ILabeledMethod]:
-        return list(self.__methods)
+        return [m for m in self.__methods if m.active]
 
     @property
     def qual_name(self) -> str:
@@ -248,7 +248,7 @@ class App:
         server: Optional[Any] = None,
     ) -> None:
         self._service_classes = []
-        self._middleware = []
+        self._interceptor = []
         self.lifespan = lifespan or []
         self.server = server
 
@@ -272,6 +272,10 @@ class App:
     @property
     def service_list(self) -> Iterable[IService]:
         return list(itertools.chain.from_iterable(self.services.values()))
+
+    @property
+    def interceptors(self) -> List[Interceptor]:
+        return list(set(self._interceptor))
 
     def add_service(self, service: Union[APIService, APIModule, APIPackage]) -> None:
         if isinstance(service, APIService):
@@ -303,12 +307,12 @@ class App:
         for module in package.modules:
             self._add_module(module)
 
-    def add_middleware(self, middleware: Type[Interceptor]) -> None:
-        self._middleware.append(middleware)
+    def add_interceptor(self, interceptor: Interceptor) -> None:
+        self._interceptor.append(interceptor)
 
-    def middleware(self) -> Callable[[Type[Interceptor]], Type[Interceptor]]:
-        def decorator(cls: Type[Interceptor]) -> Type[Interceptor]:
-            self.add_middleware(cls)
+    def interceptor(self) -> Callable[[Interceptor], Interceptor]:
+        def decorator(cls: Interceptor) -> Interceptor:
+            self.add_interceptor(cls)
             return cls
 
         return decorator

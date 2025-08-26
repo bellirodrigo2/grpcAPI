@@ -3,7 +3,6 @@ from typing import AsyncIterator, Awaitable, Callable
 
 from typing_extensions import Annotated
 
-from example.guber.server.application.gateway import Authenticate
 from example.guber.server.application.gateway.payment import (
     PaymentGateway,
     get_payment_gateway,
@@ -41,7 +40,6 @@ user_services = user_module.make_service("user_ride_actions")
 async def request_ride(
     request: RideRequest,
     passenger_id: PassengerId,
-    _: Authenticate,
     id: Annotated[str, Depends(make_ride_id)],
     is_passenger: Annotated[Callable[[str], Awaitable[bool]], Depends(is_passenger)],
     ride_repo: RideRepository,
@@ -67,7 +65,6 @@ driver_services = driver_module.make_service("driver_ride_actions")
 async def accept_ride(
     ride_id: ProtoKey,
     driver_id: ProtoValue,
-    _: Authenticate,
     is_passenger: Annotated[Callable[[str], Awaitable[bool]], Depends(is_passenger)],
     ride_repo: RideRepository,
 ) -> Empty:
@@ -96,7 +93,6 @@ ride_services = ride_module.make_service("ride_actions")
 @ride_services
 async def get_ride(
     ride_id: ProtoStr,
-    _: Authenticate,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
 ) -> RideSnapshot:
@@ -111,7 +107,6 @@ async def get_ride(
 @ride_services
 async def start_ride(
     ride_id: ProtoStr,
-    _: Authenticate,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
 ) -> Empty:
@@ -131,7 +126,6 @@ async def start_ride(
 @ride_services
 async def update_position(
     position: Position,
-    _: Authenticate,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
 ) -> Empty:
@@ -155,7 +149,6 @@ async def update_position(
 @ride_services
 async def finish_ride(
     ride_id: ProtoStr,
-    _: Authenticate,
     ride_repo: RideRepository,
     payment_gateway: Annotated[PaymentGateway, Depends(get_payment_gateway)],
 ) -> Empty:
@@ -172,7 +165,6 @@ async def finish_ride(
 @ride_services
 async def update_position_stream(
     position_stream: AsyncIterator[Position],
-    _: Authenticate,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
 ) -> Empty:
@@ -214,7 +206,6 @@ def get_delay() -> float:
 @ride_services
 async def get_position_stream(
     ride_id: StringValue,
-    _: Authenticate,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
     counter: Annotated[int, Depends(get_counter)],
@@ -223,7 +214,7 @@ async def get_position_stream(
 
     if counter < 1:
         counter = 1
-    for i in range(counter):
+    for _ in range(counter):
         current_position = await position_repo.get_current_position(ride_id.value)
         if current_position is None:
             raise ValueError(f"Current position not found for ride id {ride_id.value}")

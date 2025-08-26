@@ -31,22 +31,22 @@ class TestReflectionPlugin:
         assert "TestService" in state["services"]
 
     @patch("grpc_reflection.v1alpha.reflection.enable_server_reflection")
-    def test_on_add_service(
+    async def test_on_add_service(
         self,
         mock_enable_reflection,
         plugin: ReflectionPlugin,
         mock_server_wrapper: Mock,
     ) -> None:
         plugin.on_add_service("TestService", [], mock_server_wrapper)
-
+        await plugin.on_start(mock_server_wrapper)
         # Verificar se foi chamado com tupla de service names e o servidor interno
         mock_enable_reflection.assert_called_once_with(
-            ("TestService",), mock_server_wrapper.server
+            {"TestService"}, mock_server_wrapper.server
         )
         assert "TestService" in plugin._services
 
     @patch("grpc_reflection.v1alpha.reflection.enable_server_reflection")
-    def test_on_add_service_multiple_services(
+    async def test_on_add_service_multiple_services(
         self,
         mock_enable_reflection,
         plugin: ReflectionPlugin,
@@ -57,12 +57,10 @@ class TestReflectionPlugin:
         plugin.on_add_service("ServiceB", [], mock_server_wrapper)
 
         # Verificar se ambos foram chamados
-        assert mock_enable_reflection.call_count == 2
+        await plugin.on_start(mock_server_wrapper)
+        assert mock_enable_reflection.call_count == 1
         mock_enable_reflection.assert_any_call(
-            ("ServiceA",), mock_server_wrapper.server
-        )
-        mock_enable_reflection.assert_any_call(
-            ("ServiceB",), mock_server_wrapper.server
+            {"ServiceA", "ServiceB"}, mock_server_wrapper.server
         )
 
         # Verificar se ambos estão no state
@@ -91,7 +89,7 @@ class TestReflectionPlugin:
         assert instance.plugin_name == "reflection"
 
     @patch("grpc_reflection.v1alpha.reflection.enable_server_reflection")
-    def test_on_add_service_no_duplicates(
+    async def test_on_add_service_no_duplicates(
         self,
         mock_enable_reflection,
         plugin: ReflectionPlugin,
@@ -101,10 +99,9 @@ class TestReflectionPlugin:
         # Add the same service twice
         plugin.on_add_service("TestService", [], mock_server_wrapper)
         plugin.on_add_service("TestService", [], mock_server_wrapper)
+        await plugin.on_start(mock_server_wrapper)
 
-        # Deve ter chamado reflection duas vezes (comportamento normal)
-        assert mock_enable_reflection.call_count == 2
-        # But only have one service in set (no duplicates)
+        assert mock_enable_reflection.call_count == 1
         assert len(plugin._services) == 1
         assert "TestService" in plugin._services
 

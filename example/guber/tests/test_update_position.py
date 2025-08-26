@@ -21,6 +21,8 @@ from grpcAPI.protobuf import KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
+    EXPECTED_END_LAT,
+    EXPECTED_END_LONG,
     create_coord,
     create_driver_info,
     create_passenger_info,
@@ -134,15 +136,13 @@ async def test_update_position_normal_fare(
     # Verify position was updated in position repo
     async with get_position_repo_test() as position_repo:
         current_pos = await position_repo.get_current_position(ride_id)
-        assert abs(current_pos.coord.lat - (-27.496887588317275)) < 0.0001
-        assert abs(current_pos.coord.long - (-48.522234807851476)) < 0.0001
+        assert current_pos.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-3)
+        assert current_pos.coord.long == pytest.approx(EXPECTED_END_LONG, abs=1e-3)
 
     # Distance between the coordinates is approximately 10 km, normal rate is 2.1
     # So fare should be approximately 10 * 2.1 = 21
     expected_fare = 10 * 2.1
-    assert (
-        abs(updated_ride.fare - expected_fare) < 1.0
-    )  # Allow small rounding differences
+    assert updated_ride.fare == pytest.approx(expected_fare, abs=1.0)  # Allow small rounding differences
 
 
 async def test_update_position_overnight_fare(
@@ -183,7 +183,7 @@ async def test_update_position_overnight_fare(
     async with get_ride_repo_test() as ride_repo:
         updated_ride = await ride_repo.get_by_ride_id(ride_id)
         expected_fare = 10 * 3.9  # 39.0
-        assert abs(updated_ride.fare - expected_fare) < 1.0
+        assert updated_ride.fare == pytest.approx(expected_fare, abs=1.0)
 
 
 async def test_update_position_sunday_fare(
@@ -225,7 +225,7 @@ async def test_update_position_sunday_fare(
     async with get_ride_repo_test() as ride_repo:
         updated_ride = await ride_repo.get_by_ride_id(ride_id)
         expected_fare = 10 * 5.0  # 50.0
-        assert abs(updated_ride.fare - expected_fare) < 1.0
+        assert updated_ride.fare == pytest.approx(expected_fare, abs=1.0)
 
 
 async def test_update_position_invalid_status(
@@ -337,8 +337,8 @@ async def test_update_position_multiple_updates(
         )
         # Verify final position
         current = await position_repo.get_current_position(ride_id)
-        assert abs(current.coord.lat - (-27.496887588317275)) < 0.0001
-        assert abs(current.coord.long - (-48.522234807851476)) < 0.0001
+        assert current.coord.lat == pytest.approx(-27.496887588317275, abs=1e-3)
+        assert current.coord.long == pytest.approx(-48.522234807851476, abs=1e-3)
 
     async with get_ride_repo_test() as ride_repo:
         updated_ride = await ride_repo.get_by_ride_id(ride_id)

@@ -64,8 +64,6 @@ class ListCommand(GRPCAPICommand):
                     # Add methods
                     for method in service.methods:
                         total_methods += 1
-
-                        # Determine method type icon
                         method_type = (method.is_server_stream, method.is_client_stream)
                         if method_type == (True, False):
                             method_icon = "[ServerStream]"  # streaming

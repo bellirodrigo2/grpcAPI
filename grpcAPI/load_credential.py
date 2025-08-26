@@ -17,5 +17,6 @@ def get_server_certificate(
     return grpc.ssl_server_credentials(((server_certificate_key, server_certificate),))
 
 
-def get_client_certificate(certificate_path: str) -> bytes:
-    return _load_credential_from_file(certificate_path)
+def get_client_certificate(certificate_path: str) -> grpc.ChannelCredentials:
+    certificate = _load_credential_from_file(certificate_path)
+    return grpc.ssl_channel_credentials(certificate)

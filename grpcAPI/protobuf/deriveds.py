@@ -5,7 +5,7 @@ from google.protobuf.wrappers_pb2 import StringValue
 from typing_extensions import Annotated
 
 from grpcAPI.data_types import FromContext, FromRequest
-from grpcAPI.protobuf.lib.prototypes_pb2 import KeyValueStr, ListStr
+from grpcAPI.protobuf.lib.grpcapi.protobuf.types_pb2 import KeyValueStr, ListStr
 
 
 class FromValueField(FromRequest):

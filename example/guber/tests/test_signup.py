@@ -28,7 +28,6 @@ async def test_signup_passenger(
         context=context,
     )
     assert resp.value.startswith("test_account_id_")
-    context.tracker.invocation_metadata.assert_called_once()
 
     async with get_account_repo_test() as account_repo:
         account_id = resp.value

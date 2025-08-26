@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
-import logging
+import logging  # noqa: F401
 import sys
 from pathlib import Path
 from typing import Optional
@@ -11,7 +11,6 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
-from rich.tree import Tree
 
 from grpcAPI.commands.settings.utils import load_app
 from grpcAPI.logger import LOGGING_CONFIG
@@ -113,15 +112,15 @@ def cli(ctx, version):
 
 @cli.command()
 @click.argument("app_path", type=str)
-@click.option("--host", "-h", default="localhost", help="Server host address")
-@click.option("--port", "-p", default=50051, help="Server port")
+@click.option("--host", "-h", help="Server host address")
+@click.option("--port", "-p", help="Server port")
 @click.option("--settings", "-s", help="Path to settings file")
 @click.option("--no-lint", is_flag=True, help="Skip protocol buffer validation")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
 def run(
     app_path: str,
-    host: str,
-    port: int,
+    host: Optional[str],
+    port: Optional[int],
     settings: Optional[str],
     no_lint: bool,
     verbose: bool,
@@ -268,10 +267,10 @@ def lint(app_path: str, settings: Optional[str], verbose: bool):
 @cli.command("list")
 @click.argument("app_path", type=str)
 @click.option("--settings", "-s", help="Path to settings file")
-@click.option("--show-descriptions", is_flag=True, help="Show service and method descriptions")
-def list_services(
-    app_path: str, settings: Optional[str], show_descriptions: bool
-):
+@click.option(
+    "--show-descriptions", is_flag=True, help="Show service and method descriptions"
+)
+def list_services(app_path: str, settings: Optional[str], show_descriptions: bool):
     """
     List registered services
 
@@ -285,6 +284,7 @@ def list_services(
 
     except Exception as e:
         handle_error(e, "list")
+
 
 @cli.command()
 @click.option("--force", is_flag=True, help="Overwrite existing config file")

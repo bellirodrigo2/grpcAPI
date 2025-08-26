@@ -54,7 +54,6 @@ from example.guber.server.adapters.repo.sqlalchemy import (
 from example.guber.server.adapters.repo.sqlalchemy.db import Base, engine
 from example.guber.server.app import app
 from example.guber.server.application.gateway import get_payment_gateway
-from example.guber.server.application.gateway.auth import async_authentication
 from example.guber.server.application.repo.account_repo import get_account_repo
 from example.guber.server.application.repo.position_repo import get_position_repo
 from example.guber.server.application.repo.ride_repo import get_ride_repo
@@ -64,7 +63,7 @@ from grpcAPI.app import App
 from grpcAPI.testclient.contextmock import ContextMock
 from grpcAPI.testclient.testclient import TestClient
 
-from .mocks import get_mock_authentication, get_mock_payment_gateway
+from .mocks import get_mock_payment_gateway
 
 
 def make_unique_account_id_factory(prefix: str):
@@ -98,7 +97,6 @@ async def guber_test_app():
 
     app.dependency_overrides[make_account_id] = make_unique_account_id
     app.dependency_overrides[make_ride_id] = make_unique_ride_id
-    app.dependency_overrides[async_authentication] = get_mock_authentication
     app.dependency_overrides[get_counter] = lambda: 2
     app.dependency_overrides[get_delay] = lambda: 0.1
     app.dependency_overrides[get_payment_gateway] = get_mock_payment_gateway

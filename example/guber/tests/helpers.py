@@ -148,6 +148,10 @@ def _generate_valid_sin(base: str) -> str:
     raise ValueError(f"Could not generate valid SIN for base {base}")
 
 
+# Test coordinate constants for consistent assertions
+EXPECTED_END_LAT = -27.496887588317275
+EXPECTED_END_LONG = -48.522234807851476
+
 # Global counter with thread safety for uniqueness across all tests
 import threading
 _sin_lock = threading.Lock()

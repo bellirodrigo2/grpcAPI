@@ -10,6 +10,7 @@ from grpcAPI.server_plugins import loader
 class ReflectionPlugin(ServerPlugin):
     def __init__(self) -> None:
         self._services: Set[str] = set()
+        # self._services.add(reflection.SERVICE_NAME)
 
     @property
     def plugin_name(self) -> str:
@@ -25,9 +26,10 @@ class ReflectionPlugin(ServerPlugin):
     def on_add_service(
         self, service_name: str, methods_name: Iterable[str], server: "ServerWrapper"
     ) -> None:
-        service_names = (service_name,)
-        reflection.enable_server_reflection(service_names, server.server)
         self._services.add(service_name)
+
+    async def on_start(self, server: "ServerWrapper") -> None:
+        reflection.enable_server_reflection(self._services, server.server)
 
 
 def register() -> None:

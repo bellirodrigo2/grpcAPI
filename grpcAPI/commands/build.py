@@ -3,11 +3,37 @@ import tempfile
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Iterable, Optional, Set, Type
 
 from grpcAPI.app import App
 from grpcAPI.commands import GRPCAPICommand, lint
+from grpcAPI.makeproto.interface import IService
 from grpcAPI.makeproto.write_proto import write_protos
+
+
+def is_grpcapi_protobuf(cls: Type[Any]) -> bool:
+    print(cls.__name__, cls.__module__)
+    return "grpcapi.protobuf.types_pb2" in cls.__module__
+
+
+def use_grpcapi_protobuf(services: Iterable[IService]) -> bool:
+    for service in services:
+        for method in service.methods:
+            req = method.input_base_type
+            if is_grpcapi_protobuf(req):
+                return True
+            resp = method.output_base_type
+            if is_grpcapi_protobuf(resp):
+                return True
+    return False
+
+
+def copy_grpcapi_proto(dest_path: Path) -> None:
+    file_name = "grpcapi/protobuf/types.proto"
+    file_path = Path(__file__).parent.parent / f"protobuf/proto/{file_name}"
+    dest_file_path = dest_path / file_name
+    dest_file_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(file_path, dest_file_path)
 
 
 def build_protos(
@@ -19,10 +45,15 @@ def build_protos(
     zipcompress: bool,
 ) -> Set[str]:
     proto_files = lint.run_lint(app, logger)
+    use_grpcapi = use_grpcapi_protobuf(app.service_list)
+
+    if use_grpcapi:
+        copy_grpcapi_proto(output_path)
 
     def _atomic_write(file_path: Path, overwrite: bool):
         if proto_path.exists():
             copy_proto_files(proto_path, file_path, logger)
+
         generated_files = write_protos(
             proto_stream=proto_files,
             out_dir=file_path,

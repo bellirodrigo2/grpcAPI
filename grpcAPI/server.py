@@ -11,8 +11,6 @@ from typing_extensions import (
     Tuple,
 )
 
-from grpcAPI.app import Interceptor
-
 
 class ServerPlugin(Protocol):
 
@@ -133,13 +131,13 @@ _compression_map = {
 
 
 def make_server(
-    middlewares: Optional[List[Interceptor]], **server_settings: Any
+    interceptors: Optional[List[grpc.aio.ServerInterceptor]], **server_settings: Any
 ) -> ServerWrapper:
     options: Sequence[Tuple[str, Any]] = server_settings.get("options", [])
     maximum_concurrent_rpcs = server_settings.get("maximum_concurrent_rpcs", None)
     compression = server_settings.get("compression", "none")
     server = grpc.aio.server(
-        interceptors=middlewares,
+        interceptors=interceptors,
         maximum_concurrent_rpcs=maximum_concurrent_rpcs,
         compression=_compression_map.get(compression, grpc.Compression.NoCompression),
         options=options,

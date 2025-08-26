@@ -17,6 +17,7 @@ from grpcAPI.protobuf import Empty, KeyValueStr, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
+    EXPECTED_END_LAT,
     create_coord,
     create_driver_info,
     create_passenger_info,
@@ -134,7 +135,7 @@ async def test_update_position_stream_single_position(
         # Verify position was updated
         async with get_position_repo_test() as position_repo:
             current_pos = await position_repo.get_current_position(ride_id)
-            assert current_pos.coord.lat == pytest.approx(-27.496887588317275, abs=1e-4)
+            assert current_pos.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-4)
             assert current_pos.coord.long == pytest.approx(
                 -48.522234807851476, abs=1e-4
             )

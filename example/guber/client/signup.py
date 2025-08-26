@@ -3,28 +3,30 @@ import random
 
 import grpc
 
+from example.guber.client.channel import get_channel
 from example.guber.server.domain import AccountInfo
 from grpcAPI.protobuf import StringValue
 
 
-def main(name: str, email: str, sin: str, car_plate: str) -> None:
-    with grpc.insecure_channel("localhost:50051") as channel:
-        method_name = "/account.account_services/signup_account"
-        stub = channel.unary_unary(
-            method_name,
-            request_serializer=AccountInfo.SerializeToString,
-            response_deserializer=StringValue.FromString,
-            _registered_method=True,
-        )
-        request = AccountInfo(
-            name=name,
-            email=email,
-            sin=sin,
-            car_plate=car_plate,
-            is_driver=bool(car_plate),
-        )
-        account_id = stub(request)
-        print(f"Account created with ID: {account_id.value}")
+def main(
+    channel: grpc.Channel, name: str, email: str, sin: str, car_plate: str
+) -> None:
+    method_name = "/account.account_services/signup_account"
+    stub = channel.unary_unary(
+        method_name,
+        request_serializer=AccountInfo.SerializeToString,
+        response_deserializer=StringValue.FromString,
+        _registered_method=True,
+    )
+    request = AccountInfo(
+        name=name,
+        email=email,
+        sin=sin,
+        car_plate=car_plate,
+        is_driver=bool(car_plate),
+    )
+    account_id = stub(request)
+    print(f"Account created with ID: {account_id.value}")
 
 
 min_val = 0
@@ -81,4 +83,12 @@ if __name__ == "__main__":
         args.email = args.name.replace(" ", ".").lower() + "@example.com"
     if not args.sin:
         args.sin = get_unique_sin()
-    main(name=args.name, email=args.email, sin=args.sin, car_plate=args.car_plate)
+
+    with get_channel() as channel:
+        main(
+            channel,
+            name=args.name,
+            email=args.email,
+            sin=args.sin,
+            car_plate=args.car_plate,
+        )

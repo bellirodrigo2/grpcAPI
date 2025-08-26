@@ -46,6 +46,10 @@ class LabeledMethod(ILabeledMethod):
     def active(self) -> bool:
         return self._active
 
+    @active.setter
+    def active(self, value: bool) -> None:
+        self._active = value
+
     @property
     def input_type(self) -> Type[Any]:
         if not self.request_types:

@@ -32,13 +32,11 @@ class RunCommand(GRPCAPICommand):
                 "Generated files:", [(f.package, f.filename) for f in proto_files]
             )
 
-        middlewares = [middleware() for middleware in set(app._middleware)]
-
         if app.server:
             server = ServerWrapper(app.server)
         else:
             server_settings = settings.get("server", {})
-            server = make_server(middlewares, **server_settings)
+            server = make_server(app.interceptors, **server_settings)
 
         if "reflection" in plugins_settings:
             register_service_descriptors(app.service_list)
@@ -57,7 +55,6 @@ class RunCommand(GRPCAPICommand):
         host = kwargs.get("host") or settings.get("host", "localhost")
         port = kwargs.get("port") or settings.get("port", 50051)
         port = int(port)
-
         tls = settings.get("tls", {"enabled": False})
         if tls.get("enabled"):
             credential = get_server_certificate(

@@ -12,7 +12,6 @@ from grpcAPI.makeproto.write_proto import write_protos
 
 
 def is_grpcapi_protobuf(cls: Type[Any]) -> bool:
-    print(cls.__name__, cls.__module__)
     return "grpcapi.protobuf.types_pb2" in cls.__module__
 
 

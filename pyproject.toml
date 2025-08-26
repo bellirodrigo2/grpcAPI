@@ -1,6 +1,6 @@
 [project]
 name = "grpcAPI"
-version = "0.1.0"
+dynamic = ["version"]
 description = ""
 authors = [
     { name = "rodbell" }
@@ -51,5 +51,8 @@ example = [
 ignore = ["E402"]
 
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "grpcAPI.__version__"}

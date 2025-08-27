@@ -8,6 +8,7 @@ from grpcAPI.data_types import AsyncContext, Message, get_function_metadata
 from grpcAPI.makeproto import IProtoPackage, compile_service
 from grpcAPI.proto_ctxinject import (
     func_signature_check,
+    ignore_context_metadata,
     ignore_enum,
     protobuf_types_predicate,
 )
@@ -22,7 +23,7 @@ def validate_signature_pass(
         [Message, AsyncIterator[Message], AsyncContext],
         bynames or {},
         True,
-        [protobuf_types_predicate, ignore_enum],
+        [protobuf_types_predicate, ignore_enum, ignore_context_metadata],
     )
 
 

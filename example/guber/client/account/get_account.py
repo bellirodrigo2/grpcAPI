@@ -7,7 +7,7 @@ from example.guber.server.domain import Account
 from grpcAPI.protobuf import StringValue
 
 
-def main(channel: grpc.Channel, id: str) -> None:
+def get_account(channel: grpc.Channel, id: str) -> Account:
     method_name = "/account.account_services/get_account"
     stub = channel.unary_unary(
         method_name,
@@ -18,6 +18,7 @@ def main(channel: grpc.Channel, id: str) -> None:
     request = StringValue(value=id)
     account = stub(request)
     print(account)
+    return account
 
 
 if __name__ == "__main__":
@@ -29,4 +30,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with get_channel() as channel:
-        main(channel=channel, id=args.id)
+        get_account(channel=channel, id=args.id)

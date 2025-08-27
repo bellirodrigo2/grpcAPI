@@ -17,7 +17,14 @@ from example.guber.server.domain import update_position as update_position_rules
 from example.guber.server.domain.entity.ride_rules import make_ride_id
 from grpcAPI.app import APIPackage
 from grpcAPI.data_types import Depends, FromRequest
-from grpcAPI.protobuf import Empty, ProtoKey, ProtoStr, ProtoValue, StringValue
+from grpcAPI.protobuf import (
+    Empty,
+    Metadata,
+    ProtoKey,
+    ProtoStr,
+    ProtoValue,
+    StringValue,
+)
 
 ride_package = APIPackage("ride")
 
@@ -195,31 +202,25 @@ async def update_position_stream(
     return Empty()
 
 
-def get_counter() -> int:
-    return 10
-
-
-def get_delay() -> float:
-    return 30.0
-
-
 @ride_services
 async def get_position_stream(
-    ride_id: StringValue,
+    ride_id: ProtoStr,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
-    counter: Annotated[int, Depends(get_counter)],
-    delay: Annotated[float, Depends(get_delay)],
+    metadata: Metadata,
 ) -> AsyncIterator[Position]:
+
+    counter = int(metadata.get("counter", "3"))
+    delay = float(metadata.get("delay", "30.0"))
 
     if counter < 1:
         counter = 1
     for _ in range(counter):
-        current_position = await position_repo.get_current_position(ride_id.value)
+        current_position = await position_repo.get_current_position(ride_id)
         if current_position is None:
-            raise ValueError(f"Current position not found for ride id {ride_id.value}")
+            raise ValueError(f"Current position not found for ride id {ride_id}")
         yield current_position
         await asyncio.sleep(delay)
 
-        if await ride_repo.is_ride_finished(ride_id.value):
+        if await ride_repo.is_ride_finished(ride_id):
             break

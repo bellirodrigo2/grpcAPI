@@ -18,7 +18,6 @@ from example.guber.server.application.gateway import get_payment_gateway
 from example.guber.server.application.repo.account_repo import get_account_repo
 from example.guber.server.application.repo.position_repo import get_position_repo
 from example.guber.server.application.repo.ride_repo import get_ride_repo
-from example.guber.server.application.usecase.ride import get_counter, get_delay
 from example.guber.server.domain.entity.account_rules import make_account_id
 from example.guber.server.domain.entity.ride_rules import make_ride_id
 from grpcAPI.app import App
@@ -73,8 +72,6 @@ async def test_db_engine():
 async def guber_test_app(test_db_engine: AsyncEngine):
     app.dependency_overrides[make_account_id] = make_unique_account_id
     app.dependency_overrides[make_ride_id] = make_unique_ride_id
-    app.dependency_overrides[get_counter] = lambda: 2
-    app.dependency_overrides[get_delay] = lambda: 0.1
     app.dependency_overrides[get_payment_gateway] = get_mock_payment_gateway
 
     app.dependency_overrides[get_account_repo] = get_account_repo_test
@@ -100,5 +97,12 @@ def app_test_client(guber_test_app: App, app_settings: Dict[str, Any]):
 @pytest.fixture
 def get_mock_context():
     context = ContextMock()
-    context.set_trailing_metadata([("user", "John"), ("password", "test_password")])
+    context.set_trailing_metadata(
+        [
+            ("user", "John"),
+            ("password", "test_password"),
+            ("delay", "0.1"),
+            ("counter", "2"),
+        ]
+    )
     return context

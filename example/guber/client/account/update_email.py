@@ -6,7 +6,7 @@ from example.guber.client.channel import get_channel
 from grpcAPI.protobuf import BoolValue, KeyValueStr
 
 
-def main(channel: grpc.Channel, id: str, email: str) -> None:
+def update_email(channel: grpc.Channel, id: str, email: str) -> bool:
     method_name = "/account.account_services/update_email"
     stub = channel.unary_unary(
         method_name,
@@ -18,8 +18,10 @@ def main(channel: grpc.Channel, id: str, email: str) -> None:
     resp = stub(request)
     if resp.value:
         print("Email Updated Successfully")
+        return True
     else:
         print("Email Update Failed")
+        return False
 
 
 if __name__ == "__main__":
@@ -31,4 +33,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with get_channel() as channel:
-        main(channel=channel, id=args.id, email=args.email)
+        update_email(channel=channel, id=args.id, email=args.email)

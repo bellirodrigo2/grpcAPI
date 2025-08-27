@@ -1,5 +1,6 @@
 import argparse
 import random
+from typing import Optional
 
 import grpc
 
@@ -8,9 +9,13 @@ from example.guber.server.domain import AccountInfo
 from grpcAPI.protobuf import StringValue
 
 
-def main(
-    channel: grpc.Channel, name: str, email: str, sin: str, car_plate: str
-) -> None:
+def signup(
+    channel: grpc.Channel,
+    name: str,
+    email: Optional[str] = None,
+    sin: Optional[str] = None,
+    car_plate: Optional[str] = None,
+) -> str:
     method_name = "/account.account_services/signup_account"
     stub = channel.unary_unary(
         method_name,
@@ -18,6 +23,9 @@ def main(
         response_deserializer=StringValue.FromString,
         _registered_method=True,
     )
+    email = email or name.replace(" ", ".").lower() + "@example.com"
+    sin = sin or get_unique_sin()
+    car_plate = car_plate or ""
     request = AccountInfo(
         name=name,
         email=email,
@@ -27,6 +35,7 @@ def main(
     )
     account_id = stub(request)
     print(f"Account created with ID: {account_id.value}")
+    return account_id.value
 
 
 min_val = 0
@@ -75,17 +84,11 @@ if __name__ == "__main__":
     parser.add_argument("--name", required=True, help="Name of the user")
     parser.add_argument("--email", required=False, help="Email of the user")
     parser.add_argument("--sin", required=False, help="SIN of the user")
-    parser.add_argument(
-        "--car_plate", required=False, default="", help="Car plate of the user"
-    )
+    parser.add_argument("--car_plate", required=False, help="Car plate of the user")
     args = parser.parse_args()
-    if not args.email:
-        args.email = args.name.replace(" ", ".").lower() + "@example.com"
-    if not args.sin:
-        args.sin = get_unique_sin()
 
     with get_channel() as channel:
-        main(
+        signup(
             channel,
             name=args.name,
             email=args.email,

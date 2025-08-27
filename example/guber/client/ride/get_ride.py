@@ -1,13 +1,14 @@
 import argparse
+import asyncio
 
 import grpc
 
-from example.guber.client.channel import get_channel
+from example.guber.client.channel import get_async_channel
 from example.guber.server.domain import RideSnapshot
 from grpcAPI.protobuf import StringValue
 
 
-def main(channel: grpc.Channel, ride_id: str) -> None:
+async def get_ride(channel: grpc.Channel, ride_id: str) -> RideSnapshot:
     method_name = "/ride.ride_actions/get_ride"
     stub = channel.unary_unary(
         method_name,
@@ -16,8 +17,9 @@ def main(channel: grpc.Channel, ride_id: str) -> None:
         _registered_method=True,
     )
     request = StringValue(value=ride_id)
-    ride_snapshot = stub(request)
+    ride_snapshot = await stub(request)
     print(ride_snapshot)
+    return ride_snapshot
 
 
 if __name__ == "__main__":
@@ -28,5 +30,8 @@ if __name__ == "__main__":
     parser.add_argument("--id", type=str, default=id, help="Account ID")
     args = parser.parse_args()
 
-    with get_channel() as channel:
-        main(channel=channel, ride_id=args.id)
+    async def run():
+        async with get_async_channel() as channel:
+            get_ride(channel=channel, ride_id=args.id)
+
+    asyncio.run(run())

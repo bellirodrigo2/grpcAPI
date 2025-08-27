@@ -7,6 +7,7 @@ __all__ = [
     "get_mapped_ctx",
     "resolve_mapped_ctx",
 ]
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Callable, Dict, Hashable, List, Optional, Tuple, Type
 
@@ -21,7 +22,12 @@ from ctxinject.validation import arg_proc, constrained_list
 from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
-from typemapping import get_args, get_equivalent_origin, is_equivalent_origin
+from typemapping import (
+    get_args,
+    get_equivalent_origin,
+    get_origin,
+    is_equivalent_origin,
+)
 
 
 def protobuf_types_predicate(
@@ -29,6 +35,26 @@ def protobuf_types_predicate(
     basetype: Type[Any],
 ) -> bool:
     return is_equivalent_origin(modeltype, basetype)
+
+
+def ignore_context_metadata(
+    modeltype: Type[Any],
+    basetype: Type[Any],
+) -> bool:
+    base_origin = get_origin(basetype)
+    base_args = get_args(basetype)
+
+    model_origin = get_origin(modeltype)
+    model_args = get_args(modeltype)
+
+    if (
+        base_origin is Mapping
+        and base_args == (str, str)
+        and model_origin is Sequence
+        and model_args == (Tuple[str, str],)
+    ):
+        return True
+    return False
 
 
 def ignore_enum(

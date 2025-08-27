@@ -1,8 +1,6 @@
 # pragma: no cover
-from typing import Any, Callable, Dict, List, Optional, Type
-
 from google.protobuf.wrappers_pb2 import StringValue
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Any, Callable, List, Mapping, Optional, Type
 
 from grpcAPI.data_types import FromContext, FromRequest
 from grpcAPI.protobuf.lib.grpcapi.protobuf.types_pb2 import KeyValueStr, ListStr
@@ -49,4 +47,4 @@ class ContextMetadata(FromContext):
         super().__init__(field="invocation_metadata", validator=dict, **meta)
 
 
-Metadata = Annotated[Dict[str, str], ContextMetadata()]
+Metadata = Annotated[Mapping[str, str], ContextMetadata()]

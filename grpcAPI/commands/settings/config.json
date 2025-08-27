@@ -116,5 +116,8 @@
       "handlers": ["console"],
       "level": "WARNING"
     }
+  },
+  "app_environ": {
+    "DATABASE_URL": "sqlite+aiosqlite:///./test.db"
   }
 }

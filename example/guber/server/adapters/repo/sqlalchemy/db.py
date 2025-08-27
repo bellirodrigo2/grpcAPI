@@ -7,31 +7,12 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
-db_addr = os.getenv("DATABASE_URL")
-# DATABASE_URL = f"sqlite+aiosqlite:///{db_addr}"
 
-if db_addr is None:
-    raise ValueError("DATABASE_URL environment variable is not set")
-
-DATABASE_URL = db_addr
-
-engine = create_async_engine(DATABASE_URL, echo=False)
-
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    autocommit=False,
-    autoflush=False,
-    expire_on_commit=False,
-)
+AsyncSessionLocal_ = None
 
 
-async def get_db():
-    db = AsyncSessionLocal()
-    try:
-        yield db
-    finally:
-        await db.close()
+def AsyncSessionLocal():
+    return AsyncSessionLocal_()
 
 
 class SqlAlchemyDB:
@@ -42,5 +23,20 @@ class SqlAlchemyDB:
 
 @asynccontextmanager
 async def init_db(_: Any):
+    db_addr = os.getenv("DATABASE_URL")
+    if not db_addr:
+        raise ValueError("DATABASE_URL not set")
+
+    engine = create_async_engine(db_addr, echo=False)
+    global AsyncSessionLocal_
+    AsyncSessionLocal_ = sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        autocommit=False,
+        autoflush=False,
+        expire_on_commit=False,
+    )
     async with engine.begin() as conn:
-        yield await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)
+        yield
+    await engine.dispose()

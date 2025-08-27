@@ -12,5 +12,8 @@
     "certificate": "example/guber/certs/localhost.crt",
     "key": "example/guber/certs/localhost.key",
     "ca": "example/guber/certs/root.crt"
+  },
+  "app_environ": {
+    "DATABASE_URL": "sqlite+aiosqlite:///./testride.db"
   }
 }

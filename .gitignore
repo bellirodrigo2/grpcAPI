@@ -1,6 +1,6 @@
 todo
 post
-post2
+post2.md
 cmd
 
 CLAUDE.md
@@ -8,6 +8,8 @@ CLAUDE.md
 
 app.log
 test.db
+testaccount.db
+testride.db
 #config file
 /src/config.yml
 

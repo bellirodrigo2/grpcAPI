@@ -1,8 +1,3 @@
-import os
-
-db_file = "./test.db"
-os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_file}"
-
 from example.guber.server.adapters.repo.sqlalchemy import (
     get_account_sqlalchemy_repo,
     init_db,

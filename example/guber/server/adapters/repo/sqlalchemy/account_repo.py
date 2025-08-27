@@ -47,7 +47,7 @@ class SqlAlchemyAccountRepo(SqlAlchemyDB, AccountRepo):
         return [orm_to_proto_account(account) for account in accounts]
 
     async def update_account_field(self, id: str, field: str, value: str) -> bool:
-        keys = {"name", "email", "cpf"}
+        keys = {"name", "email", "car_plate"}
         if field not in keys:
             raise ValueError(f"Invalid field. Use {keys}.")
 

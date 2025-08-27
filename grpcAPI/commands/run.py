@@ -1,3 +1,4 @@
+import os
 from contextlib import AsyncExitStack
 
 from typing_extensions import Any, Optional
@@ -64,6 +65,10 @@ class RunCommand(GRPCAPICommand):
             server.add_secure_port(f"{host}:{port}", credential)
         else:
             server.add_insecure_port(f"{host}:{port}")
+
+        app_environ = settings.get("app_environ", {})
+        for key, value in app_environ.items():
+            os.environ[key] = value
 
         async with AsyncExitStack() as stack:
             for lifespan in app.lifespan:

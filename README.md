@@ -4,198 +4,341 @@
     <em>grpcAPI framework, high performance, easy to learn, fast to code, ready for production</em>
 </p>
 
----
+grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and the official gRPC library.
 
-**Documentation**: <a href="https://grpcapi.readthedocs.io" target="_blank">https://grpcapi.readthedocs.io</a>
-
-**Source Code**: <a href="https://github.com/yourusername/grpcapi" target="_blank">https://github.com/yourusername/grpcapi</a>
-
----
-
-grpcAPI is a modern, fast (high-performance), gRPC framework for building APIs with Python 3.7+ based on standard Python type hints.
+**Note**: grpcAPI requires protobuf classes (from `protoc` compilation) for request/response types. Use the built-in `grpcapi protoc` command to compile `.proto` files with mypy stub generation.
 
 The key features are:
 
-* **Fast**: Very high performance, on par with **NodeJS** and **Go** (thanks to Starlette and Pydantic). One of the **fastest Python frameworks available**.
-* **Fast to code**: Increase the speed to develop features by about 200% to 300%. *
-* **Fewer bugs**: Reduce about 40% of human (developer) induced errors. *
-* **Intuitive**: Great editor support. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere. Less time debugging.
-* **Easy**: Designed to be easy to use and learn. Less time reading docs.
-* **Short**: Minimize code duplication. Multiple features from each parameter declaration. Fewer bugs.
-* **Robust**: Get production-ready code. With automatic interactive documentation.
-* **Standards-based**: Based on (and fully compatible with) the open standards for gRPC: **Protocol Buffers**, **gRPC**, and **OpenAPI** (previously known as Swagger).
-
-<small>* estimation based on tests on internal development team, building production applications.</small>
+* **Automatic Protocol Buffer Generation**: Generate `.proto` files automatically from Python service definitions
+* **Type-Safe Service Definitions**: Use Python type hints to define gRPC services with automatic validation
+* **Dependency Injection**: Built-in dependency injection system with `Depends`, `FromRequest`, and `FromContext`
+* **Streaming Support**: Full support for client streaming, server streaming, and bidirectional streaming
+* **Extensible Plugin System**: `grpc.aio.Server` wrapper with decoupled plugin architecture - includes built-in health check and reflection plugins, with support for custom user plugins
+* **CLI Tools**: Command-line interface for running servers, building protos, function signature lint and validation
+* **Test Client**: Built-in test client for testing services without network calls
 
 ## Requirements
 
-Python 3.7+
+Python 3.8+
 
-grpcAPI stands on the shoulders of giants:
+Main dependencies:
 
-* <a href="https://grpc.io/" class="external-link" target="_blank">gRPC</a> for the high performance, distributed computing foundations.
-* <a href="https://pydantic-docs.helpmanual.io/" class="external-link" target="_blank">Pydantic</a> for the data parts.
+* **grpcio** - The official gRPC Python library
+* **grpcio-tools** - Protocol Buffer compilation tools
+* **ctxinject** - Dependency injection and type mapping
+
+Optional dependency:
+* **pydantic** - For automatic validation and casting from protobuf string/bytes fields to Python types
 
 ## Installation
 
-<div class="termy">
-
-```console
-$ pip install grpcapi
----> 100%
-Successfully installed grpcapi
+```bash
+pip install grpcapi
 ```
 
-</div>
+## Basic Example
 
-## Example
+Create a file `main.py`:
 
-### Create it
-
-* Create a file `main.py` with:
-
-```Python
+```python
 from grpcAPI import GrpcAPI, APIPackage
 from grpcAPI.protobuf import StringValue
 
 app = GrpcAPI()
-package = APIPackage("greeter")
-service = package.make_service("greeter_service")
+service = APIService("greeter_service")
 
 @service
 async def say_hello(name: str) -> StringValue:
     return StringValue(value=f"Hello {name}")
 
-app.add_service(package)
+app.add_service(service)
 ```
 
-### Run it
+Run the server:
 
-Run the server with:
-
-<div class="termy">
-
-```console
-$ grpcapi run main.py --host 0.0.0.0 --port 8000
-
-INFO:     Starting gRPC server...
-INFO:     Server running on http://0.0.0.0:8000
+```bash
+grpcapi run main.py
 ```
 
-</div>
+This starts a gRPC server using your service definitions. Additional features like protocol buffer file generation, reflection, and health checking are available through configuration.
 
-<details markdown="1">
-<summary>About the command <code>grpcapi run main.py --host 0.0.0.0 --port 8000</code>...</summary>
+## Dependency Injection Example
 
-The command `grpcapi run` refers to:
-
-* `main.py`: the file with the Python object `app`.
-* `--host 0.0.0.0`: make the server available externally
-* `--port 8000`: the port to serve on
-
-</details>
-
-### Check it
-
-Your gRPC server is now running with:
-
-✅ Automatic Protocol Buffer generation  
-✅ gRPC reflection for service discovery  
-✅ Health checking endpoint  
-✅ Structured logging  
-✅ Type validation
-
-## Example upgrade
-
-Now modify the file `main.py` to receive a body from a gRPC request.
-
-Declare the body using standard Python types, thanks to Pydantic.
-
-```Python hl_lines="4  9-12  25-27"
+```python
 from grpcAPI import GrpcAPI, APIPackage, Depends
 from grpcAPI.protobuf import StringValue
-from pydantic import BaseModel
 from typing_extensions import Annotated
 
 app = GrpcAPI()
+service = APIService("user_service")
 
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: bool = False
-
-package = APIPackage("shop")
-service = package.make_service("items")
-
-def get_current_user():
-    return "alice"
+def get_database():
+    return {"users": []}
 
 @service
-async def create_item(
-    item: Item,
-    user: Annotated[str, Depends(get_current_user)]
+async def create_user(
+    name: str,
+    db: Annotated[dict, Depends(get_database)]
 ) -> StringValue:
-    return StringValue(value=f"Item {item.name} created by {user}")
+    db["users"].append({"name": name})
+    return StringValue(value=f"User {name} created")
 
-app.add_service(package)
+app.add_service(service)
 ```
 
-The server will automatically:
+## Streaming Example
 
-* **Validate** the data in the `item` body parameter.
-* **Convert** it to the appropriate gRPC message type.
-* **Generate** Protocol Buffer schemas automatically.
-* **Provide** automatic documentation with gRPC reflection.
-
-### Streaming
-
-You can declare gRPC streaming endpoints with Python's `AsyncIterator`:
-
-```Python
+```python
 from typing import AsyncIterator
 
 @service
-async def get_live_updates(user_id: str) -> AsyncIterator[Update]:
-    while True:
-        update = await get_latest_update(user_id)
-        yield update
-        await asyncio.sleep(1)
+async def stream_messages(user_id: str) -> AsyncIterator[StringValue]:
+    for i in range(5):
+        yield StringValue(value=f"Message {i} for {user_id}")
 ```
 
-The streaming will work automatically with:
+## CLI Commands
 
-* **Client streaming**: Receive data streams from clients
-* **Server streaming**: Send data streams to clients  
-* **Bidirectional streaming**: Both directions simultaneously
+```bash
+# Initialize new project
+grpcapi init
 
-## Performance
+# Run development server
+grpcapi run app.py
 
-Independent TechEmpower benchmarks show **grpcAPI** applications running under Uvicorn as one of <a href="https://www.techempower.com/benchmarks/#section=data-r17&hw=ph&test=query&l=zijmkf-1" class="external-link" target="_blank">the fastest Python frameworks available</a>, only below Starlette and Uvicorn themselves (used internally by grpcAPI). (*)
+# Build .proto files  
+grpcapi build app.py --output ./proto
 
-But when checking performance, you should especially compare:
+# Validate service definitions
+grpcapi lint app.py
 
-- **grpcio**: The gRPC Python library (used by grpcAPI).
-- **Protocol Buffers**: For data serialization (much faster than JSON).
-- **Type validation**: Pydantic for fast data validation.
+# List all services
+grpcapi list app.py
+```
 
-And the fact that your application will have **high performance** gRPC communication with automatic **type safety** and **validation**.
+## Testing
 
-All that combined give you a performance advantage over traditional REST APIs while maintaining developer productivity.
+Built-in test client for unit testing services without network overhead:
 
-## Optional Dependencies
+```python
+import pytest
+from grpcAPI.testclient import TestClient, ContextMock
 
-Used by Pydantic:
+async def test_service_with_context_tracking():
+    client = TestClient(app, settings={})
+    context = ContextMock(peer="127.0.0.1:12345", deadline=30.0)
+    
+    response = await client.run(
+        func=create_user, #imported from source code
+        request=user_data, #input protobuf variable
+        context=context
+    )
+    
+    # Verify response
+    assert response.value.startswith("user_")
+    
+    # Verify context interactions (MagicMock-like tracking)
+    context.tracker.peer.assert_called_once()
+    context.tracker.time_remaining.assert_called()
+    assert context.tracker.set_code.call_count == 0
+    
+    # Reset for next test
+    context.tracker.reset_mock()
+```
 
-* <a href="https://github.com/JoshData/python-email-validator" target="_blank"><code>email_validator</code></a> - for email validation.
+**TestClient Features:**
+- **Direct method calls**: `client.run(func, request, context)` or `client.run_by_label(package, service, method, request)`
+- **Dependency override**: Use `app.dependency_overrides` for mocking dependencies
+- **Context simulation**: Full `AsyncContext` mock with peer info, timeouts, metadata
+- **Call tracking**: `ContextMock.tracker` works like `MagicMock` with `assert_called_once()`, `call_count`, etc.
+- **Streaming support**: Test server/client/bidirectional streaming patterns
+- **pytest integration**: Works seamlessly with async fixtures
 
-Used by grpcAPI:
+## Configuration
 
-* <a href="https://grpc.io" target="_blank"><code>grpcio</code></a> - for gRPC server and client functionality.
-* <a href="https://grpc.io" target="_blank"><code>grpcio-tools</code></a> - for Protocol Buffer compilation.
-* <a href="https://grpc.io" target="_blank"><code>grpcio-reflection</code></a> - for gRPC reflection support.
-* <a href="https://grpc.io" target="_blank"><code>grpcio-health-checking</code></a> - for gRPC health checking.
+Configure grpcAPI using `grpcapi.config.json`:
 
-You can install all of these with `pip install "grpcapi[all]"`.
+```json
+{
+  "host": "localhost",
+  "port": 50051,
+  "lint": true, // Enable proto validation
+  "service_filter": {
+    "tags": {"exclude": ["internal"]},
+    "package": {"include": ["api", "public"]},
+    "rule_logic": "AND"
+  },
+  "plugins": {
+    "health_check": {},
+    "reflection": {},
+    "server_logger": {}
+  },
+  "tls": {
+    "enabled": true,
+    "certificate": "path/to/cert.crt",
+    "key": "path/to/cert.key"
+  }
+}
+```
+
+**Available Settings:**
+- **Server**: Host, port, TLS configuration, compression, worker limits
+- **Service Filtering**: Include/exclude by package, module, or tags
+- **Plugins**: Health check, reflection, custom logging configuration
+- **Protocol Buffers**: Output paths, compilation options, file overwrite settings
+- **Environment**: Set environment variables for the application
+
+## Service Organization
+
+grpcAPI offers flexible service organization from simple to complex projects:
+
+### Quick Start (Simple)
+```python
+# Direct service creation - no package, module defaults to "service"
+service = APIService("my_service")
+app.add_service(service)
+```
+
+### Package Level (Intermediate)  
+```python
+# Custom package, module defaults to "service"
+package = APIPackage("account")
+service = package.make_service("user_service")
+app.add_service(package)
+```
+
+### Full Control (Complex)
+```python
+# Complete control over package/module structure
+package = APIPackage("account")
+module = package.make_module("user")  # Creates user.proto
+service = module.make_service("user_actions")
+app.add_service(package)
+```
+
+This creates the hierarchy:
+```
+GrpcAPI
+├── APIPackage ("account")
+│   ├── APIModule ("user") → generates user.proto
+│   │   └── APIService ("user_actions")
+│   │       └── @service decorated methods
+```
+
+## Service Filtering with Tags
+
+Services and methods can be tagged for filtering during builds or deployments:
+
+```python
+# Tag services and methods
+@account_services(tags=["write:account"])
+async def create_user(user_data: UserInfo) -> StringValue:
+    # Implementation
+    pass
+
+@account_services(tags=["read:account", "internal"])
+async def get_internal_data(user_id: str) -> UserData:
+    # Implementation  
+    pass
+```
+
+Filter services using configuration:
+
+```json
+{
+  "service_filter": {
+    "tags": {
+      "exclude": ["internal"]
+    },
+    "package": {
+      "include": ["account", "ride"]
+    },
+    "rule_logic": "AND"
+  }
+}
+```
+
+This enables:
+- **Microservice deployment**: Include only specific packages per service
+- **Environment-specific builds**: Exclude internal/debug methods from production
+- **API versioning**: Filter by version tags
+- **Permission-based filtering**: Include only authorized service methods
+
+## Protocol Buffer Options
+
+Add language-specific options to generated `.proto` files using the module header system:
+
+```python
+from grpcAPI.process_service.add_module_header import AddLanguageOptions
+
+# Add language-specific options with template variables
+language_options = AddLanguageOptions({
+    "java_package": "com.mycompany.{package}",
+    "java_outer_classname": "{module}Proto", 
+    "java_multiple_files": "true",
+    "go_package": "github.com/mycompany/{package}/{module}pb",
+    "csharp_namespace": "MyCompany.{package}.{module}",
+    "option cc_enable_arenas": "true"
+})
+
+# Apply to all services, or filter by package/module/tags
+app.add_process_service(language_options)
+```
+
+Generated `.proto` file will include:
+```protobuf
+syntax = "proto3";
+
+option java_package = "com.mycompany.com.example.users";
+option java_outer_classname = "user_serviceProto";
+option java_multiple_files = true;
+option go_package = "github.com/mycompany/com.example.users/user_servicepb";
+option csharp_namespace = "MyCompany.com.example.users.user_service";
+option cc_enable_arenas = true;
+
+package com.example.users;
+// ... rest of proto file
+```
+
+**Template Variables:**
+- `{package}` - Replaced with the service package name
+- `{module}` - Replaced with the module name (proto filename)
+
+**Filtering Support:**
+```python
+# Apply options only to specific packages/modules
+AddLanguageOptions(
+    {"java_package": "com.api.{package}"},
+    package=IncludeExclude(include=["com.example.*"]),
+    module=IncludeExclude(exclude=["internal*"]),
+    tags=IncludeExclude(include=["public"]),
+    rule_logic="AND"
+)
+```
+
+## Plugin System
+
+grpcAPI wraps `grpc.aio.Server` with a decoupled plugin system. Built-in plugins include:
+
+- **Health Check Plugin**: Automatic health checking endpoints with graceful shutdown
+- **Reflection Plugin**: gRPC reflection for service discovery  
+- **Server Logger Plugin**: Structured logging for requests
+
+Create custom plugins by implementing the `ServerPlugin` protocol with lifecycle hooks:
+- `on_register()` - Called when plugin is registered
+- `on_add_service()` - Called when services are added  
+- `on_start()` - Called when server starts
+- `on_stop()` - Called when server stops
+
+## Example Application
+
+See the complete [Guber ride-sharing example](./example/guber/) for:
+- Domain-driven design patterns
+- SQLAlchemy integration
+- Streaming operations  
+- Comprehensive tests
+- Production configuration
 
 ## License
 

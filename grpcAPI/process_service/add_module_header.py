@@ -55,12 +55,9 @@ class CustomAddOptions(ProcessFilteredService):
         mod_level_options = service.module_level_options
 
         for makeoption in self.options:
-            try:
-                option = makeoption(service.package, service.module).strip()
-                if option and option not in mod_level_options:
-                    mod_level_options.append(option)
-            except Exception as _:
-                pass
+            option = makeoption(service.package, service.module).strip()
+            if option and option not in mod_level_options:
+                mod_level_options.append(option)
 
 
 def make_option(kv_map: Dict[str, str]) -> Iterable[MakeOptions]:

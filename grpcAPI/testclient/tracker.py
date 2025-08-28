@@ -8,9 +8,7 @@ class Tracker:
     def __init__(self, interface_type: Type[Any]) -> None:
         self._methods: Dict[str, MagicMock] = {}
 
-        for name, member in inspect.getmembers(
-            interface_type, predicate=inspect.isfunction
-        ):
+        for name, _ in inspect.getmembers(interface_type, predicate=inspect.isfunction):
             self._methods[name] = MagicMock(name=name)
 
     def reset_mock(self) -> None:

@@ -112,6 +112,8 @@ class SqlAlchemyRideRepo(SqlAlchemyDB, RideRepo):
 async def get_ride_sqlalchemy_repo() -> AsyncGenerator[RideRepo, None]:  # type: ignore
     db = AsyncSessionLocal()
     try:
+        # Establish connection right before use
+        await db.connection()
         yield SqlAlchemyRideRepo(db)
     finally:
         await db.close()

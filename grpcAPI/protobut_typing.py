@@ -1,14 +1,14 @@
 import importlib
+from contextlib import suppress
 from functools import lru_cache
 from types import ModuleType
-from typing import Set
 
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.descriptor_pb2 import FieldDescriptorProto
 from typemapping import get_args, get_origin
-from typing_extensions import Any, Dict, List, Optional, Type
+from typing_extensions import Any, Dict, List, Optional, Set, Type
 
-from grpcAPI.data_types import Message
+from grpcAPI.data_types import Message, ProtobufEnum
 
 FD = FieldDescriptor
 FDP = FieldDescriptorProto
@@ -32,7 +32,7 @@ def extract_message(ftype: Type[Any]) -> Optional[Type[Message]]:
 def inject_proto_typing(cls: Type[Any]) -> None:
     if not issubclass(cls, Message):
         raise RuntimeError  # pragma: no cover
-    if cls.__annotations__:
+    if getattr(cls, "__annotations__", None):
         return
     annotations = {}
     nested_msg: Set[Type[Message]] = set()
@@ -66,7 +66,7 @@ def get_type_single(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
     if field.type == FD.TYPE_MESSAGE:
         return get_message_type(field.message_type, cls)
     if field.type == FD.TYPE_ENUM:
-        return get_message_type(field.enum_type, cls)
+        return ProtobufEnum
     return get_primary_type(field)
 
 
@@ -116,10 +116,9 @@ def resolve_nested_type(
     type_name = parts[-1]  # Always the last part is the actual type name
 
     # Try simple approach first (works for most cases)
-    try:
+
+    with suppress(AttributeError):
         return getattr(module, type_name)
-    except AttributeError:
-        pass
 
     # If simple doesn't work, check if it's in the root class (same-file nested)
     if hasattr(root_cls, type_name):

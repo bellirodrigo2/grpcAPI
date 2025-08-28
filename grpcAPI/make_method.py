@@ -1,9 +1,7 @@
 import inspect
-from collections.abc import Callable
 from contextlib import AsyncExitStack
-from typing import Type
 
-from typing_extensions import Any, Dict
+from typing_extensions import Any, Callable, Dict, Type
 
 from grpcAPI import ExceptionRegistry
 from grpcAPI.data_types import AsyncContext, get_function_metadata
@@ -105,7 +103,7 @@ class Runner:
         return await resolve_mapped_ctx(ctx, self.mapped_ctx, stack)
 
     async def _handle_exception(self, e: Exception, context: AsyncContext) -> None:
-        exc_handler = self.exception_registry.get(type(e), None)
+        exc_handler = self.exception_registry.get(type(e))
         if exc_handler is not None:
             await safe_run(exc_handler, e, context)
         else:

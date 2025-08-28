@@ -1,7 +1,5 @@
-from typing import AsyncIterator, List, Set
-
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, AsyncIterator, List, Set
 
 from grpcAPI.app import APIService
 from grpcAPI.data_types import Depends, FromContext, FromRequest

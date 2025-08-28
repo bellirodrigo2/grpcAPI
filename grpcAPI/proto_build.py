@@ -1,7 +1,6 @@
 import sys
-from collections.abc import AsyncIterator
 
-from typing_extensions import Any, Callable, Iterable, List, Mapping
+from typing_extensions import Any, AsyncIterator, Callable, Iterable, List, Mapping
 
 from grpcAPI.app import APIService
 from grpcAPI.data_types import AsyncContext, Message, get_function_metadata

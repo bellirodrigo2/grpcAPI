@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from logging import Logger, getLogger
 from pathlib import Path
 from typing import Iterable, Optional
@@ -16,7 +17,7 @@ def compile_protoc(
     mypy_stubs: bool,
     files: Optional[Iterable[str]] = None,
     logger: Logger = default_logger,
-) -> None:
+) -> Iterable[str]:
 
     if not root.exists():
         raise FileNotFoundError(f"Proto path '{root}' does not exist.")
@@ -24,43 +25,14 @@ def compile_protoc(
     if not dst.exists():
         dst.mkdir(parents=True, exist_ok=True)
 
-    if files:
-        proto_files = files
-    else:
-        proto_files = list_proto_files(root)
-    if not proto_files:
-        raise Exception
+    proto_files = resolve_files(files, root)
 
-    args = [
-        "python",
-        "-m",
-        "grpc_tools.protoc",
-        f"-I{str(root)}",
-    ]
-    if clss:
-        args.append(f"--python_out={dst}")
-    if services:
-        args.append(f"--grpc_python_out={dst}")
-    if mypy_stubs:
-        args.append(f"--mypy_out={dst}")
+    args = resolve_args(root, dst, clss, services, mypy_stubs, proto_files)
 
-    args.extend(proto_files)
+    result = subprocess.run(args, capture_output=True, text=True, shell=False)
 
-    result = subprocess.run(
-        args,
-        capture_output=True,
-        text=True,
-    )
-
-    if result.stdout:
-        logger.info("protoc stdout:\n%s", result.stdout)
-
-    if result.stderr:
-        logger.warning("protoc stderr:\n%s", result.stderr)
-
-    if result.returncode != 0:
-        logger.error("protoc failed with exit code %d", result.returncode)
-        raise subprocess.CalledProcessError(result.returncode, args)
+    proc_result(result, logger, args)
+    return proto_files
 
 
 def list_proto_files(base_dir: Path, rel_path: Optional[Path] = None) -> List[str]:
@@ -73,14 +45,53 @@ def list_proto_files(base_dir: Path, rel_path: Optional[Path] = None) -> List[st
     ]
 
 
-if __name__ == "__main__":
-    compile_protoc(
-        # Path("./example/guber/server/domain/entity/proto"),
-        # Path("./example/guber/server/domain/entity/lib"),
-        Path("./tests/proto"),
-        Path("./tests/lib"),
-        True,
-        False,
-        False,
-        files=["service.proto"],
-    )
+def resolve_files(files: Optional[Iterable[str]], root: Path) -> Iterable[str]:
+
+    if files:
+        proto_files = [str(Path(f).name) for f in files]  # avoid malicious code inject
+    else:
+        proto_files = list_proto_files(root)
+    if not proto_files:
+        raise Exception
+    return proto_files
+
+
+def resolve_args(
+    root: Path,
+    dst: Path,
+    clss: bool,
+    services: bool,
+    mypy_stubs: bool,
+    proto_files: Iterable[str],
+) -> List[str]:
+
+    args = [
+        sys.executable,
+        "-m",
+        "grpc_tools.protoc",
+        f"-I{str(root)}",
+    ]
+    if clss:
+        args.append(f"--python_out={dst}")
+    if services:
+        args.append(f"--grpc_python_out={dst}")
+    if mypy_stubs:
+        args.append(f"--mypy_out={dst}")
+
+    args.extend(proto_files)
+    return args
+
+
+def proc_result(
+    result: subprocess.CompletedProcess, logger: Logger, args: List[str]
+) -> None:
+
+    if result.stdout:
+        logger.info("protoc stdout:\n%s", result.stdout)
+
+    if result.stderr:
+        logger.warning("protoc stderr:\n%s", result.stderr)
+
+    if result.returncode != 0:
+        logger.error("protoc failed with exit code %d", result.returncode)
+        raise subprocess.CalledProcessError(result.returncode, args)

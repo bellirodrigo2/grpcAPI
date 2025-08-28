@@ -20,7 +20,7 @@ from example.guber.server.application.repo.ride_repo import get_ride_repo
 from example.guber.server.application.usecase.account import account_package
 from example.guber.server.application.usecase.ride import ride_package
 from example.guber.server.loginterceptor import LoggingInterceptor
-from grpcAPI.app import GrpcAPI
+from grpcAPI import GrpcAPI
 
 app = GrpcAPI()
 
@@ -35,7 +35,7 @@ app.dependency_overrides[get_position_repo] = get_position_sqlalchemy_repo
 
 class MockPaymentGateway(PaymentGateway):
     async def process_payment(self, *args: Any, **kwargs: Any) -> None:
-        print(f"Paying: {kwargs}")
+        print(f"Paying: {args[0]}")
 
 
 def mock_payment_gateway() -> PaymentGateway:

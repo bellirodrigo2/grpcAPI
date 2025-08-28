@@ -1,4 +1,4 @@
-.PHONY: install install_dev test test_coverage lint lint_fix format build clean update_dependency
+.PHONY: install install_dev test test_coverage lint lint_fix flake8 format build clean update_dependency
 
 install:
 	@echo "Instaling dependencies..."
@@ -10,7 +10,7 @@ install_dev:
 
 test:
 	@echo "Running tests..."
-	pytest -p no:warnings -s
+	pytest -p no:warnings
 
 test_coverage:
 	@echo "Running tests with coverage..."
@@ -23,6 +23,10 @@ lint:
 lint_fix:
 	@echo "Running linter --fix (ruff)..."
 	ruff check --fix . --exclude tests/lib --exclude example/guber/lib
+
+flake8:
+	@echo "Running flake8..."
+	flake8 grpcAPI
 
 format:
 	@echo "Formatting code (black e isort)..."

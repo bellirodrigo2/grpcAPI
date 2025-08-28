@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from typing import AsyncIterator
 
 import pytest
 

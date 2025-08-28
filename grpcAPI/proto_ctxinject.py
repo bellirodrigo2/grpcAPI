@@ -30,6 +30,10 @@ from typemapping import (
 )
 
 
+class ProtobufEnum(int):
+    pass
+
+
 def protobuf_types_predicate(
     modeltype: Type[Any],
     basetype: Type[Any],
@@ -65,7 +69,7 @@ def ignore_enum(
     def destruct_enum(btype: Type[Any]) -> Tuple[Optional[Type[Any]], bool]:
         eq_origin = get_equivalent_origin(btype)
         args = get_args(btype)
-        if isinstance(eq_origin, EnumTypeWrapper):
+        if isinstance(eq_origin, EnumTypeWrapper) or btype is ProtobufEnum:
             eq_origin = None
         if eq_origin is dict:
             tgttype = args[1]
@@ -74,9 +78,12 @@ def ignore_enum(
         else:
             tgttype = btype
 
-        return eq_origin, isinstance(tgttype, EnumTypeWrapper)
+        return (
+            eq_origin,
+            isinstance(tgttype, EnumTypeWrapper) or tgttype is ProtobufEnum,
+        )
 
-    return bool(destruct_enum(modeltype) == destruct_enum(basetype))
+    return destruct_enum(modeltype) == destruct_enum(basetype)
 
 
 def convert_timestamp(
@@ -85,8 +92,8 @@ def convert_timestamp(
 ) -> datetime:
 
     ts = value.ToDatetime()
-    start = kwargs.get("start", None)
-    end = kwargs.get("end", None)
+    start = kwargs.get("start")
+    end = kwargs.get("end")
 
     if start is not None and ts < start:
         raise ValueError(f"Datetime value must be on or after {start}")
@@ -100,8 +107,8 @@ def base_constrained_list(
     value: List[Any],
     **kwargs: Any,
 ) -> List[Any]:
-    min_length = kwargs.get("min_length", None)
-    max_length = kwargs.get("max_length", None)
+    min_length = kwargs.get("min_length")
+    max_length = kwargs.get("max_length")
     length = len(value)
     if min_length is not None and length < min_length:
         raise ValueError(

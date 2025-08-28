@@ -1,7 +1,5 @@
-from collections.abc import Iterable
-
 from grpc_reflection.v1alpha import reflection
-from typing_extensions import Any, Mapping, Set
+from typing_extensions import Any, Iterable, Mapping, Set
 
 from grpcAPI.server import ServerPlugin, ServerWrapper
 from grpcAPI.server_plugins import loader

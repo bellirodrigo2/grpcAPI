@@ -1,8 +1,7 @@
 import importlib.util
 from pathlib import Path
-from typing import Any, Dict
 
-from typing_extensions import Callable
+from typing_extensions import Any, Callable, Dict, List
 
 from grpcAPI.server import ServerPlugin
 
@@ -40,7 +39,7 @@ class ModuleInterface:
         """Register the necessary plugin."""
 
 
-def load_plugins(plugins: list[str]) -> None:
+def load_plugins(plugins: List[str]) -> None:
     """Loads the plugins defined in the plugins list."""
     base_path = (Path(__file__).parent / "plugins").resolve()
     for plugin_file in plugins:

@@ -27,7 +27,7 @@ class TypeValidator(CompilerPass):
         if len(requests) == 0:
             msg = "Method must define a request message."
         elif len(requests) > 1:
-            sets = set(map(lambda x: x.basetype, requests))
+            sets = {x.basetype for x in requests}
             if len(sets) == 1:
                 msg = "Stream and Single request mixed in the args"
             else:

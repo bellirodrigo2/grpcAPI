@@ -283,28 +283,6 @@ class TestCustomAddOptions:
         # Only the valid option should be added
         assert service.module_level_options == ["valid_option = true"]
 
-    def test_handles_option_generation_exceptions(self):
-        """Test that exceptions in option generation are handled gracefully"""
-
-        def failing_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
-            raise ValueError("Option generation failed")
-
-        def working_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
-            return "working_option = true"
-
-        add_options = CustomAddOptions([failing_option, working_option])
-        service = MockService()
-
-        # Should not raise exception
-        add_options._add_options(service)
-
-        # Only the working option should be added
-        assert service.module_level_options == ["working_option = true"]
-
     def test_process_with_filters(self):
         """Test processing with filtering enabled"""
 

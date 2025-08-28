@@ -2,6 +2,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from typing_extensions import Tuple
 
 from example.guber.server.application.usecase.account import signup_account
 from example.guber.server.application.usecase.ride import (
@@ -12,10 +13,10 @@ from example.guber.server.application.usecase.ride import (
     start_ride,
     update_position,
 )
-from example.guber.server.domain import RideSnapshot, RideStatus
+from example.guber.server.domain import KeyValueStr, RideSnapshot, RideStatus
 from example.guber.server.domain.service.farecalc import NormalFare
 from example.guber.tests.fixtures import get_position_repo_test
-from grpcAPI.protobuf import KeyValueStr, StringValue
+from grpcAPI.protobuf import StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
@@ -36,7 +37,7 @@ async def setup_complete_ride_workflow(
     context: ContextMock,
     unique_index: int = 0,
     status: RideStatus = RideStatus.COMPLETED,
-) -> tuple[str, str, str]:
+) -> Tuple[str, str, str]:
     """Helper function to set up rides at different stages of completion"""
     # Create unique passenger account
     passenger_info = create_passenger_info(
@@ -245,8 +246,12 @@ async def test_get_ride_in_progress_status(
     assert ride_info.ride.HasField("accepted_at")  # Has accepted timestamp
     assert not ride_info.ride.HasField("finished_at")  # Not finished yet
     # Should have updated position from position update
-    assert ride_info.current_location.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-3)
-    assert ride_info.current_location.coord.long == pytest.approx(EXPECTED_END_LONG, abs=1e-3)
+    assert ride_info.current_location.coord.lat == pytest.approx(
+        EXPECTED_END_LAT, abs=1e-3
+    )
+    assert ride_info.current_location.coord.long == pytest.approx(
+        EXPECTED_END_LONG, abs=1e-3
+    )
 
 
 async def test_get_ride_completed_status(
@@ -278,8 +283,12 @@ async def test_get_ride_completed_status(
     assert ride_info.ride.HasField("accepted_at")  # Has accepted timestamp
     assert ride_info.ride.HasField("finished_at")  # Has finished timestamp
     # Should have final position
-    assert ride_info.current_location.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-3)
-    assert ride_info.current_location.coord.long == pytest.approx(EXPECTED_END_LONG, abs=1e-3)
+    assert ride_info.current_location.coord.lat == pytest.approx(
+        EXPECTED_END_LAT, abs=1e-3
+    )
+    assert ride_info.current_location.coord.long == pytest.approx(
+        EXPECTED_END_LONG, abs=1e-3
+    )
 
 
 async def test_get_ride_nonexistent_ride(
@@ -338,8 +347,12 @@ async def test_get_ride_with_multiple_position_updates(
 
     ride_info = ride_info_resp
     # Should reflect the latest position update
-    assert ride_info.current_location.coord.lat == pytest.approx(EXPECTED_END_LAT - 0.01, abs=1e-3)
-    assert ride_info.current_location.coord.long == pytest.approx(EXPECTED_END_LONG - 0.01, abs=1e-3)
+    assert ride_info.current_location.coord.lat == pytest.approx(
+        EXPECTED_END_LAT - 0.01, abs=1e-3
+    )
+    assert ride_info.current_location.coord.long == pytest.approx(
+        EXPECTED_END_LONG - 0.01, abs=1e-3
+    )
     # Should have accumulated more fare from multiple position updates
     assert ride_info.ride.fare > 21.0  # More than single position update fare
 

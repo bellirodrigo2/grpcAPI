@@ -4,7 +4,8 @@ import asyncio
 import grpc
 
 from example.guber.client.channel import get_async_channel
-from grpcAPI.protobuf import Empty, KeyValueStr
+from example.guber.server.domain import KeyValueStr
+from grpcAPI.protobuf import Empty
 
 
 async def accept_ride(channel: grpc.Channel, ride_id: str, driver_id: str) -> None:

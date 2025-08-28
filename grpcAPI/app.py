@@ -1,6 +1,5 @@
 import itertools
 from collections import defaultdict
-from typing import Iterable, Never
 
 from grpc import aio
 from typing_extensions import (
@@ -9,15 +8,16 @@ from typing_extensions import (
     Callable,
     DefaultDict,
     Dict,
+    Iterable,
     List,
     Mapping,
+    Never,
     Optional,
     Type,
     Union,
 )
 
-from grpcAPI import ExceptionRegistry
-from grpcAPI.data_types import AsyncContext
+from grpcAPI.data_types import AsyncContext, ExceptionRegistry
 from grpcAPI.label_method import make_labeled_method
 from grpcAPI.makeproto import ILabeledMethod, IService
 from grpcAPI.process_service import ProcessService

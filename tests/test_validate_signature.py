@@ -10,14 +10,7 @@ from grpcAPI.label_method import extract_request, extract_response
 from grpcAPI.proto_build import validate_signature_pass
 from grpcAPI.proto_ctxinject import convert_timestamp
 from grpcAPI.protobut_typing import inject_proto_typing
-from tests.conftest import (
-    ClassMsg,
-    InnerMessage,
-    Other,
-    Timestamp,
-    User,
-    UserCode,
-)
+from tests.conftest import ClassMsg, InnerMessage, Other, Timestamp, User, UserCode
 
 
 def getdb() -> str:

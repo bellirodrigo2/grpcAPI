@@ -1,7 +1,7 @@
-from typing import AsyncIterator
 from unittest.mock import patch
 
 import pytest
+from typing_extensions import AsyncIterator, List, Tuple
 
 from example.guber.server.application.usecase.account import signup_account
 from example.guber.server.application.usecase.ride import (
@@ -10,10 +10,10 @@ from example.guber.server.application.usecase.ride import (
     start_ride,
     update_position_stream,
 )
-from example.guber.server.domain import Position, RideStatus
+from example.guber.server.domain import KeyValueStr, Position, RideStatus
 from example.guber.server.domain.service.farecalc import NormalFare
 from example.guber.tests.fixtures import get_position_repo_test, get_ride_repo_test
-from grpcAPI.protobuf import Empty, KeyValueStr, StringValue
+from grpcAPI.protobuf import Empty, StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
@@ -28,7 +28,7 @@ from .helpers import (
 )
 
 
-async def create_position_stream(positions: list[Position]) -> AsyncIterator[Position]:
+async def create_position_stream(positions: List[Position]) -> AsyncIterator[Position]:
     """Helper function to create async iterator for position stream"""
     for position in positions:
         yield position
@@ -38,7 +38,7 @@ async def setup_ride_for_stream(
     app_test_client: TestClient,
     context: ContextMock,
     unique_index: int = 0,
-) -> tuple[str, str, str]:
+) -> Tuple[str, str, str]:
     """Helper function to set up ride ready for position streaming"""
     # Create unique passenger account
     passenger_info = create_passenger_info(

@@ -1,9 +1,8 @@
 import asyncio
-from collections.abc import Iterable
 from typing import Optional
 
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
-from typing_extensions import Any, Mapping, Set
+from typing_extensions import Any, Iterable, Mapping, Set
 
 from grpcAPI.server import ServerPlugin, ServerWrapper
 from grpcAPI.server_plugins import loader

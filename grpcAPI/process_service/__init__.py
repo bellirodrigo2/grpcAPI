@@ -62,10 +62,7 @@ class ChainedFilter(ProcessService):
         elif self.rule_logic == "or":
             return any(results)
         else:
-            for result in results:
-                if not result:
-                    return False
-            return results[-1]
+            return all(result for result in results)
 
 
 class ProcessFilteredService(ProcessService):

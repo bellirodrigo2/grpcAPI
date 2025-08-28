@@ -27,7 +27,7 @@ class RegisterDescriptors:
 
     def _get_fd(self, label: Tuple[str, str]) -> descriptor_pb2.FileDescriptorProto:
 
-        fd = self.fds.get(label, None)
+        fd = self.fds.get(label)
         if fd is None:
             fd = descriptor_pb2.FileDescriptorProto()
             fd.name, fd.package = label

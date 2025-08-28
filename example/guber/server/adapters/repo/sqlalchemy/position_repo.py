@@ -70,6 +70,8 @@ def orm_to_proto(position_db: PositionDB) -> Position:
 async def get_position_sqlalchemy_repo() -> AsyncGenerator[PositionRepo, None]:
     db = AsyncSessionLocal()
     try:
+        # Establish connection right before use
+        await db.connection()
         yield SqlAlchemyPositionRepo(db)
     finally:
         await db.close()

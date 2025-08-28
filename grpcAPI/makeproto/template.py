@@ -1,4 +1,4 @@
-import warnings
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +15,8 @@ from typing_extensions import (
 )
 
 from grpcAPI.makeproto.interface import IMetaType
+
+logger = logging.getLogger(__name__)
 
 
 class Visitor(Protocol):
@@ -95,9 +97,8 @@ class ServiceTemplate(Node, ToDict):
     def to_dict(self) -> Dict[str, Any]:
         self_dict: Dict[str, Any] = {}
         if not self.methods:
-            warnings.warn(
-                f"Service: '{self.package}.{self.name}' is empty and it was ignored",
-                UserWarning,
+            logger.warning(
+                f"Service: '{self.package}.{self.name}' is empty and it was ignored"
             )
             return self_dict
 
@@ -127,9 +128,8 @@ class ProtoTemplate(ToDict):
     def to_dict(self) -> Dict[str, Any]:
         self_dict: Dict[str, Any] = {}
         if not self.services:
-            warnings.warn(
-                f"Protofile: '{self.package or 'NO_PACKAGE'}.{self.module}.proto' is empty and it was ignored",
-                UserWarning,
+            logger.warning(
+                f"Protofile: '{self.package or 'NO_PACKAGE'}.{self.module}.proto' is empty and it was ignored"
             )
             return self_dict
 

@@ -3,7 +3,8 @@ import argparse
 import grpc
 
 from example.guber.client.channel import get_channel
-from grpcAPI.protobuf import BoolValue, KeyValueStr
+from example.guber.server.domain import KeyValueStr
+from grpcAPI.protobuf import BoolValue
 
 
 def update_email(channel: grpc.Channel, id: str, email: str) -> bool:

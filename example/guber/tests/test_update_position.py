@@ -2,6 +2,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from typing_extensions import Tuple
 
 from example.guber.server.application.usecase.account import signup_account
 from example.guber.server.application.usecase.ride import (
@@ -10,14 +11,14 @@ from example.guber.server.application.usecase.ride import (
     start_ride,
     update_position,
 )
-from example.guber.server.domain import RideStatus
+from example.guber.server.domain import KeyValueStr, RideStatus
 from example.guber.server.domain.service.farecalc import (
     NormalFare,
     OvernightFare,
     SundayFare,
 )
 from example.guber.tests.fixtures import get_position_repo_test, get_ride_repo_test
-from grpcAPI.protobuf import KeyValueStr, StringValue
+from grpcAPI.protobuf import StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
@@ -37,7 +38,7 @@ async def setup_ride_in_progress(
     app_test_client: TestClient,
     context: ContextMock,
     unique_index: int = 0,
-) -> tuple[str, str, str]:
+) -> Tuple[str, str, str]:
     """Helper function to set up a ride in progress status"""
     # Create unique passenger account
     passenger_info = create_passenger_info(
@@ -142,7 +143,9 @@ async def test_update_position_normal_fare(
     # Distance between the coordinates is approximately 10 km, normal rate is 2.1
     # So fare should be approximately 10 * 2.1 = 21
     expected_fare = 10 * 2.1
-    assert updated_ride.fare == pytest.approx(expected_fare, abs=1.0)  # Allow small rounding differences
+    assert updated_ride.fare == pytest.approx(
+        expected_fare, abs=1.0
+    )  # Allow small rounding differences
 
 
 async def test_update_position_overnight_fare(

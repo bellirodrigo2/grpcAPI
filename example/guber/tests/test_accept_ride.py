@@ -2,8 +2,7 @@ import pytest
 
 from example.guber.server.application.usecase.account import signup_account
 from example.guber.server.application.usecase.ride import accept_ride, request_ride
-from example.guber.server.domain import RideStatus
-from grpcAPI.protobuf import KeyValueStr
+from example.guber.server.domain import KeyValueStr, RideStatus
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .fixtures import get_ride_repo_test

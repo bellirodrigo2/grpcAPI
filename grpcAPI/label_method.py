@@ -220,13 +220,13 @@ def is_message(bt: Optional[Type[Any]]) -> bool:
     return isinstance(bt, type) and issubclass(bt, Message)  # type: ignore
 
 
-def if_stream_get_type(bt: Type[Any]) -> Optional[type[Any]]:
+def if_stream_get_type(bt: Type[Any]) -> Optional[Type[Any]]:
     if get_origin(bt) is AsyncIterator:
         return get_args(bt)[0]
     return bt
 
 
-def get_message(tgt: Optional[Type[Any]]) -> Optional[type[Any]]:
+def get_message(tgt: Optional[Type[Any]]) -> Optional[Type[Any]]:
 
     if tgt is None:
         return None

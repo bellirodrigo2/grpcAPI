@@ -22,7 +22,7 @@ class CompilerContext:
         return any(not report.is_valid() for report in self.reports.values())
 
     def get_state(self, key: str) -> Optional[Any]:
-        return self._state.get(key, None)
+        return self._state.get(key)
 
     def get_report(self, block_name: Any) -> CompileReport:
         if block_name not in self.reports:
@@ -63,7 +63,7 @@ class CompilerPass(Visitor):
     def finish(self) -> None:
         pass
 
-    def execute(self, blocks: list[ServiceTemplate], ctx: CompilerContext) -> None:
+    def execute(self, blocks: List[ServiceTemplate], ctx: CompilerContext) -> None:
         self._ctx = ctx
         self.set_default()
         for block in blocks:

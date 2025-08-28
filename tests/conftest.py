@@ -7,18 +7,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-    Generator,
-    Iterable,
-    Optional,
-    Sequence,
-    Type,
-    get_args,
-    get_origin,
-)
 
 import pytest
 from google.protobuf.descriptor_pb2 import DescriptorProto  # noqa: F401
@@ -26,10 +14,25 @@ from google.protobuf.empty_pb2 import Empty
 from google.protobuf.struct_pb2 import ListValue, Struct
 from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.wrappers_pb2 import BytesValue, StringValue  # noqa: F401
-from typing_extensions import Annotated, Dict, List
+from grpc import StatusCode
+from typing_extensions import (
+    Annotated,
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    get_args,
+    get_origin,
+)
 
-from grpcAPI import ErrorCode
 from grpcAPI.app import APIService, App
+from grpcAPI.commands.protoc import ProtocCommand
 from grpcAPI.commands.settings.utils import combine_settings
 from grpcAPI.data_types import AsyncContext, Depends, FromRequest
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType, IService
@@ -37,19 +40,27 @@ from grpcAPI.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.protoc.compile import compile_protoc
 from grpcAPI.testclient import TestClient
 
+protoc = ProtocCommand()
+protoc.execute(proto_path="tests/proto", lib_path="tests/lib")
+
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path.resolve()))
-
-import warnings
 
 from tests.lib.account_pb2 import AccountContent as Account
 from tests.lib.account_pb2 import AccountCreated, AccountInput, Inner
 from tests.lib.inner.inner_pb2 import InnerMessage  # noqa: F401
 from tests.lib.multi.inner.class_pb2 import ClassMsg  # noqa: F401
 from tests.lib.other_pb2 import Other  # noqa: F401
-from tests.lib.user_pb2 import User, UserCode  # noqa: F401
+from tests.lib.user_pb2 import User  # noqa: F401
+from tests.lib.user_pb2 import UserCode as UserCode_  # noqa: F401
 
-warnings.filterwarnings("ignore", category=UserWarning)
+if sys.version_info < (3, 9):
+    from grpcAPI.data_types import ProtobufEnum
+
+    UserCode = ProtobufEnum
+else:
+    UserCode = UserCode_
+
 
 root = Path("./tests/proto")
 
@@ -246,7 +257,7 @@ def app_fixture(functional_service: APIService) -> App:
         exc: NotImplementedError, context: AsyncContext
     ) -> None:
         context.set_code(500)
-        await context.abort(ErrorCode.ABORTED, str(exc))
+        await context.abort(StatusCode.ABORTED, str(exc))
 
     return app
 
@@ -390,12 +401,12 @@ class Service(IService):
     name: str = field(default="service1")
     module: str = field(default="module1")
     package: str = ""
-    options: Sequence[str] = field(default_factory=list[str])
+    options: Sequence[str] = field(default_factory=list)
     comments: str = ""
-    _methods: Sequence["LabeledMethod"] = field(default_factory=list["LabeledMethod"])
+    _methods: Sequence["LabeledMethod"] = field(default_factory=list)
     active = True
-    module_level_options: Iterable[str] = field(default_factory=list[str])
-    module_level_comments: Iterable[str] = field(default_factory=list[str])
+    module_level_options: Iterable[str] = field(default_factory=list)
+    module_level_comments: Iterable[str] = field(default_factory=list)
 
     @property
     def methods(self) -> Sequence["LabeledMethod"]:
@@ -415,9 +426,9 @@ class LabeledMethod(ILabeledMethod):
     module: str = field(default="module1")
     service: str = field(default="service1")
     package: str = field(default="")
-    options: Sequence[str] = field(default_factory=list[str])
+    options: Sequence[str] = field(default_factory=List[str])
     comments: str = field(default="")
-    request_types: Sequence[Any] = field(default_factory=list[Any])
+    request_types: Sequence[Any] = field(default_factory=List[Any])
     response_types: Optional[Any] = None
 
     @property

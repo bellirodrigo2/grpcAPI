@@ -134,7 +134,7 @@ def make_server(
     interceptors: Optional[List[grpc.aio.ServerInterceptor]], **server_settings: Any
 ) -> ServerWrapper:
     options: Sequence[Tuple[str, Any]] = server_settings.get("options", [])
-    maximum_concurrent_rpcs = server_settings.get("maximum_concurrent_rpcs", None)
+    maximum_concurrent_rpcs = server_settings.get("maximum_concurrent_rpcs")
     compression = server_settings.get("compression", "none")
     server = grpc.aio.server(
         interceptors=interceptors,

@@ -1,5 +1,5 @@
 import pytest
-from typing_extensions import Any
+from typing_extensions import Any, Tuple
 
 from grpcAPI.makeproto.compiler import CompilerContext
 from grpcAPI.makeproto.setters.imports import ImportsSetter
@@ -12,7 +12,7 @@ class Mock1:
 
 
 @pytest.fixture
-def context_and_template() -> tuple[CompilerContext, ProtoTemplate, ServiceTemplate]:
+def context_and_template() -> Tuple[CompilerContext, ProtoTemplate, ServiceTemplate]:
     mod = "module1"
     block = make_service(name="TestBlock", module=mod)
     template = ProtoTemplate(
@@ -29,7 +29,7 @@ def context_and_template() -> tuple[CompilerContext, ProtoTemplate, ServiceTempl
 
 
 def test_imports_setter_ok(
-    context_and_template: tuple[CompilerContext, ProtoTemplate, Any],
+    context_and_template: Tuple[CompilerContext, ProtoTemplate, Any],
 ) -> None:
     context, template, block = context_and_template
 
@@ -47,7 +47,7 @@ def test_imports_setter_ok(
 
 
 def test_imports_setter_no_prototemplate(
-    context_and_template: tuple[CompilerContext, ProtoTemplate, Any],
+    context_and_template: Tuple[CompilerContext, ProtoTemplate, Any],
 ) -> None:
     _, template, block = context_and_template
     context = CompilerContext()

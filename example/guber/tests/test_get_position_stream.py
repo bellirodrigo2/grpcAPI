@@ -12,9 +12,9 @@ from example.guber.server.application.usecase.ride import (
     start_ride,
     update_position,
 )
-from example.guber.server.domain import Position, RideStatus
+from example.guber.server.domain import KeyValueStr, Position, RideStatus
 from example.guber.tests.fixtures import get_position_repo_test, get_ride_repo_test
-from grpcAPI.protobuf import KeyValueStr, StringValue
+from grpcAPI.protobuf import StringValue
 from grpcAPI.testclient import ContextMock, TestClient
 
 from .helpers import (
@@ -94,11 +94,16 @@ async def collect_stream_positions(
     """Helper function to collect positions from stream with timeout"""
     positions = []
     count = 0
-    async for position in position_stream:
-        positions.append(position)
-        count += 1
-        if count >= max_positions:
-            break
+    try:
+        async for position in position_stream:
+            positions.append(position)
+            count += 1
+            if count >= max_positions:
+                break
+    finally:
+        # Properly close async generator to prevent pending task warnings in Python 3.8
+        if hasattr(position_stream, 'aclose'):
+            await position_stream.aclose()
     return positions
 
 
@@ -193,10 +198,15 @@ async def test_get_position_stream_position_updates(
     )
 
     # Collect positions
-    async for position in position_stream:
-        collected_positions.append(position)
-        if len(collected_positions) >= 2:
-            break
+    try:
+        async for position in position_stream:
+            collected_positions.append(position)
+            if len(collected_positions) >= 2:
+                break
+    finally:
+        # Properly close async generator to prevent pending task warnings in Python 3.8
+        if hasattr(position_stream, 'aclose'):
+            await position_stream.aclose()
 
     await updater_task
 
@@ -255,10 +265,15 @@ async def test_get_position_stream_ride_completion(
     )
 
     # Collect positions until stream ends
-    async for position in position_stream:
-        collected_positions.append(position)
-        if len(collected_positions) >= 5:  # Safety break
-            break
+    try:
+        async for position in position_stream:
+            collected_positions.append(position)
+            if len(collected_positions) >= 5:  # Safety break
+                break
+    finally:
+        # Properly close async generator to prevent pending task warnings in Python 3.8
+        if hasattr(position_stream, 'aclose'):
+            await position_stream.aclose()
 
     await completion_task
 
@@ -299,10 +314,15 @@ async def test_get_position_stream_counter_limit(
 
     # Collect all positions from stream
     positions = []
-    async for position in position_stream:
-        positions.append(position)
-        if len(positions) > 5:  # Safety break
-            break
+    try:
+        async for position in position_stream:
+            positions.append(position)
+            if len(positions) > 5:  # Safety break
+                break
+    finally:
+        # Properly close async generator to prevent pending task warnings in Python 3.8
+        if hasattr(position_stream, 'aclose'):
+            await position_stream.aclose()
 
     # Should get exactly the number of positions specified by counter
     assert len(positions) == 2
@@ -327,8 +347,13 @@ async def test_get_position_stream_nonexistent_ride(
         )
 
         # Try to get first position - should raise ValueError before this
-        async for position in position_stream:
-            break
+        try:
+            async for position in position_stream:
+                break
+        finally:
+            # Properly close async generator to prevent pending task warnings in Python 3.8
+            if hasattr(position_stream, 'aclose'):
+                await position_stream.aclose()
 
 
 async def test_get_position_stream_zero_counter_test():
@@ -385,10 +410,15 @@ async def test_get_position_stream_canceled_ride(
     )
 
     # Collect positions until stream ends
-    async for position in position_stream:
-        collected_positions.append(position)
-        if len(collected_positions) >= 5:  # Safety break
-            break
+    try:
+        async for position in position_stream:
+            collected_positions.append(position)
+            if len(collected_positions) >= 5:  # Safety break
+                break
+    finally:
+        # Properly close async generator to prevent pending task warnings in Python 3.8
+        if hasattr(position_stream, 'aclose'):
+            await position_stream.aclose()
 
     await cancellation_task
 

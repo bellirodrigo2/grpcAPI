@@ -46,10 +46,7 @@ def add_logger(name: str, **kwargs: Any) -> Tuple[str, List[str], bool]:
     newlogger["handlers"] = list(handlers)
 
     # propagate
-    if "propagate" in kwargs:
-        newlogger["propagate"] = kwargs["propagate"]
-    else:
-        newlogger["propagate"] = True
+    newlogger["propagate"] = kwargs.get("propagate", True)
 
     if "loggers" not in LOGGING_CONFIG:
         LOGGING_CONFIG["loggers"] = {}

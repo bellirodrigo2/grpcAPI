@@ -9,22 +9,21 @@ from example.guber.server.application.gateway.payment import (
 )
 from example.guber.server.application.internal_access import is_passenger
 from example.guber.server.application.repo import PositionRepository, RideRepository
-from example.guber.server.domain import Position, Ride, RideRequest, RideSnapshot
+from example.guber.server.domain import (
+    Position,
+    ProtoKey,
+    ProtoValue,
+    Ride,
+    RideRequest,
+    RideSnapshot,
+)
 from example.guber.server.domain import accept_ride as accept_ride_rules
 from example.guber.server.domain import finish_ride as finish_ride_rules
 from example.guber.server.domain import start_ride as start_ride_rules
 from example.guber.server.domain import update_position as update_position_rules
 from example.guber.server.domain.entity.ride_rules import make_ride_id
-from grpcAPI.app import APIPackage
-from grpcAPI.data_types import Depends, FromRequest
-from grpcAPI.protobuf import (
-    Empty,
-    Metadata,
-    ProtoKey,
-    ProtoStr,
-    ProtoValue,
-    StringValue,
-)
+from grpcAPI import APIPackage, Depends, FromRequest
+from grpcAPI.protobuf import Empty, Metadata, String, StringValue
 
 ride_package = APIPackage("ride")
 
@@ -99,7 +98,7 @@ ride_services = ride_module.make_service("ride_actions")
 
 @ride_services
 async def get_ride(
-    ride_id: ProtoStr,
+    ride_id: String,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
 ) -> RideSnapshot:
@@ -113,7 +112,7 @@ async def get_ride(
 
 @ride_services
 async def start_ride(
-    ride_id: ProtoStr,
+    ride_id: String,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
 ) -> Empty:
@@ -155,7 +154,7 @@ async def update_position(
 
 @ride_services
 async def finish_ride(
-    ride_id: ProtoStr,
+    ride_id: String,
     ride_repo: RideRepository,
     payment_gateway: Annotated[PaymentGateway, Depends(get_payment_gateway)],
 ) -> Empty:
@@ -204,7 +203,7 @@ async def update_position_stream(
 
 @ride_services
 async def get_position_stream(
-    ride_id: ProtoStr,
+    ride_id: String,
     ride_repo: RideRepository,
     position_repo: PositionRepository,
     metadata: Metadata,

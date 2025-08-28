@@ -1,18 +1,15 @@
-from typing import Any, Callable, Optional
-
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Any, Callable, Optional
 
 from example.guber.server.application.repo import AccountRepository
-from example.guber.server.domain import Account, AccountInfo
+from example.guber.server.domain import Account, AccountInfo, FromValue, ProtoKey
 from example.guber.server.domain.entity.account_rules import make_account_id
 from example.guber.server.domain.vo.account import (
     EmailStr,
     validate_car_plate,
     validate_sin,
 )
-from grpcAPI.app import APIPackage
-from grpcAPI.data_types import Depends, FromRequest
-from grpcAPI.protobuf import BoolValue, FromValue, ProtoKey, ProtoStr, StringValue
+from grpcAPI import APIPackage, Depends, FromRequest
+from grpcAPI.protobuf import BoolValue, String, StringValue
 
 account_package = APIPackage("account")
 
@@ -21,7 +18,7 @@ class FromAccountInfo(FromRequest):
     def __init__(
         self,
         field: Optional[str] = None,
-        validator: Callable[..., Any] | None = None,
+        validator: Optional[Callable[..., Any]] = None,
         **meta: Any,
     ):
         super().__init__(AccountInfo, field, validator, **meta)
@@ -52,7 +49,7 @@ async def signup_account(
 
 @account_services(tags=["read:account"])
 async def get_account(
-    id: ProtoStr,
+    id: String,
     acc_repo: AccountRepository,
 ) -> Account:
 
@@ -88,7 +85,7 @@ async def update_email(
 
 @account_services(tags=["read:account", "read:gateway", "internal"])
 async def is_passenger(
-    id: ProtoStr,
+    id: String,
     acc_repo: AccountRepository,
 ) -> BoolValue:
     account = await acc_repo.get_by_id(id)

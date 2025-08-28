@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing_extensions import Sequence
 
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType
 from grpcAPI.process_service import ProcessService

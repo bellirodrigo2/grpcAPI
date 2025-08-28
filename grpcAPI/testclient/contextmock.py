@@ -49,7 +49,7 @@ class ContextMock:
         self,
         code: grpc.StatusCode,
         details: str = "",
-        trailing_metadata: Sequence[Tuple[str, str]] = tuple(),
+        trailing_metadata: Sequence[Tuple[str, str]] = (),
     ) -> NoReturn:
         self.tracker.abort(code, details, trailing_metadata)
         raise RuntimeError(f"gRPC aborted: {code} - {details}")

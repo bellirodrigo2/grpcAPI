@@ -27,7 +27,14 @@ async def init_db(_: Any):
     if not db_addr:
         raise ValueError("DATABASE_URL not set")
 
-    engine = create_async_engine(db_addr, echo=False)
+    engine = create_async_engine(
+        db_addr, 
+        echo=False,
+        # Prevent connection timeouts during long-running operations (Python 3.8)
+        pool_pre_ping=True,
+        # Ensure immediate data visibility across connections (Python 3.8 compatibility)
+        connect_args={"check_same_thread": False} if db_addr.startswith("sqlite") else {}
+    )
     global AsyncSessionLocal_
     AsyncSessionLocal_ = sessionmaker(
         bind=engine,
@@ -37,6 +44,8 @@ async def init_db(_: Any):
         expire_on_commit=False,
     )
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        yield
-    await engine.dispose()
+        try:
+            await conn.run_sync(Base.metadata.create_all)
+            yield
+        finally:
+            await engine.dispose()

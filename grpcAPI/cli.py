@@ -3,7 +3,6 @@ import asyncio
 import logging  # noqa: F401
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich.console import Console
@@ -11,6 +10,7 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
+from typing_extensions import Optional
 
 from grpcAPI.commands.settings.utils import load_app
 from grpcAPI.logger import LOGGING_CONFIG
@@ -25,6 +25,7 @@ from grpcAPI.commands.build import BuildCommand
 from grpcAPI.commands.init import InitCommand
 from grpcAPI.commands.lint import LintCommand
 from grpcAPI.commands.list import ListCommand
+from grpcAPI.commands.protoc import ProtocCommand
 from grpcAPI.commands.run import RunCommand
 
 # Initialize Rich console
@@ -329,6 +330,63 @@ def init(force: bool, output: Optional[str]):
 
     except Exception as e:
         handle_error(e, "init")
+
+
+@cli.command()
+@click.option(
+    "--proto-path", "-p", help="Path to proto files directory (default: proto)"
+)
+@click.option(
+    "--lib-path", "-l", help="Output directory for compiled files (default: lib)"
+)
+@click.option("--settings", "-s", help="Path to settings file")
+@click.option("--no-mypy-stubs", is_flag=True, help="Disable mypy stub generation")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+def protoc(
+    proto_path: Optional[str],
+    lib_path: Optional[str],
+    settings: Optional[str],
+    no_mypy_stubs: bool,
+    verbose: bool,
+):
+    """
+    ⚙️ Compile existing .proto files to Python
+
+    Compiles existing protocol buffer files to Python classes and stubs.
+    Use this when you have pre-existing .proto files that need compilation.
+    """
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            progress.add_task("⚙️ Compiling protocol buffers...", total=None)
+
+            command = ProtocCommand(settings)
+            proto_files = command.execute(
+                proto_path=proto_path, lib_path=lib_path, mypy_stubs=not no_mypy_stubs
+            )
+
+        # Display results
+        console.print("\n[bold green]✅ Compilation successful![/bold green]")
+
+        if verbose and proto_files:
+            table = Table(title="📄 Compiled Files")
+            table.add_column("File", style="cyan", no_wrap=True)
+            table.add_column("Status", style="green")
+
+            for proto_file in proto_files:
+                table.add_row(str(proto_file), "✓ Compiled")
+
+            console.print("\n")
+            console.print(table)
+
+        count = len(proto_files) if proto_files else 0
+        console.print(f"[dim]Compiled {count} protocol buffer file(s)[/dim]")
+
+    except Exception as e:
+        handle_error(e, "protoc")
 
 
 @cli.command()

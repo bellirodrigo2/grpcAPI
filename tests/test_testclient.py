@@ -2,11 +2,18 @@ from typing import Any as Any
 from typing import Dict
 
 import pytest
+from grpc import StatusCode
 
-from grpcAPI import ErrorCode
 from grpcAPI.app import APIService
 from grpcAPI.testclient import ContextMock, TestClient
-from tests.conftest import AccountInput, AsyncIt, ListValue, StringValue, Timestamp, Empty
+from tests.conftest import (
+    AccountInput,
+    AsyncIt,
+    Empty,
+    ListValue,
+    StringValue,
+    Timestamp,
+)
 
 
 @pytest.mark.asyncio
@@ -65,7 +72,7 @@ async def test_unary_handled_error(testclient_fixture: TestClient) -> None:
 
     context.tracker.set_code.assert_called_once_with(500)
     context.tracker.abort.assert_called_once_with(
-        ErrorCode.ABORTED, "Not Implemented Test", ()
+        StatusCode.ABORTED, "Not Implemented Test", ()
     )
 
 
@@ -132,7 +139,7 @@ async def test_server_stream_with_error(testclient_fixture: TestClient) -> None:
 
     context.tracker.set_code.assert_called_once_with(500)
     context.tracker.abort.assert_called_once_with(
-        ErrorCode.ABORTED, "Not Implemented Test", ()
+        StatusCode.ABORTED, "Not Implemented Test", ()
     )
 
 

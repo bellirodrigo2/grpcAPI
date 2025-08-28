@@ -5,7 +5,7 @@ description = ""
 authors = [
     { name = "rodbell" }
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 
 dependencies = [
     "ctxinject",
@@ -23,21 +23,23 @@ dependencies = [
     "json5",
 ]
 
-[project.scripts]
-grpcapi = "grpcAPI.cli:main"
-
 [project.optional-dependencies]
 dev = [
     "mypy-protobuf",
-    "black>=25.1.0",
-    "isort>=6.0.1",
-    "mypy>=1.15.0",
+    "black>=22.1.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
     "ruff>=0.11.10",
-    "flake8>=7.2.0",
-    "flake8-bugbear>=24.12.12",
+    "flake8>=5.0.0",
+    "flake8-bugbear",
+    "flake8-comprehensions",
+    "flake8-simplify",
+    "flake8-bandit",
     "pytest>=7.0.0",
     "pytest-asyncio",
     "pytest-cov",
+    "twine",
+    "build",
 ]
 pydantic = [
     "ctxinject[pydantic]"
@@ -45,7 +47,11 @@ pydantic = [
 
 example = [
     "sqlalchemy>=2.0.0",
+    "aiosqlite"
 ]
+
+[project.scripts]
+grpcapi = "grpcAPI.cli:main"
 
 [tool.ruff.lint]
 ignore = ["E402"]
@@ -55,4 +61,4 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = {attr = "grpcAPI.__version__"}
+version = {attr = "grpcAPI._version.__version__"}

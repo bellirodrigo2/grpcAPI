@@ -94,6 +94,8 @@ def orm_to_proto_account(account: AccountDB) -> Account:
 async def get_account_sqlalchemy_repo():
     db = AsyncSessionLocal()
     try:
+        # Establish connection right before use
+        await db.connection()
         yield SqlAlchemyAccountRepo(db)
     finally:
         await db.close()

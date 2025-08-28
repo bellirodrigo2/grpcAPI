@@ -67,7 +67,7 @@ class TestClient:
     ) -> Any:
 
         context = context or ContextMock()
-        method = self._services.get((package, service_name, method_name), None)
+        method = self._services.get((package, service_name, method_name))
         if method is None:
             raise KeyError(f'No Method Found: "{package}/{service_name}/{method_name}"')
 

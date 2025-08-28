@@ -1,5 +1,6 @@
 import atexit
 import logging
+import threading
 from pathlib import Path
 from typing import List, Set
 
@@ -8,7 +9,6 @@ logger = logging.getLogger(__name__)
 _created_files: Set[Path] = set()
 _created_dirs: Set[Path] = set()
 
-import threading
 
 _lock = threading.Lock()
 
@@ -31,51 +31,59 @@ def register_path(path: Path, is_dir: bool) -> None:
             _created_files.add(resolved_path)
 
 
+def _cleanup_files() -> bool:
+    """Clean up registered files. Returns True if interrupted."""
+    interrupted = False
+    for file in _created_files:
+        logger.debug(f'File clean up: "{file}". File Exist ?: {file.exists()}')
+        try:
+            file.unlink()
+        except FileNotFoundError:
+            pass  # deleted already
+        except OSError as e:
+            logger.warning(f"Failed to delete file {file}: {e}")
+        except KeyboardInterrupt:
+            interrupted = True  # set True and keep cleaning
+        except Exception as e:
+            logger.error(f"Unexpected error deleting file {file}: {e}")
+    return interrupted
+
+
+def _cleanup_directories() -> bool:
+    """Clean up registered directories. Returns True if interrupted."""
+    interrupted = False
+    # Sort by actual path depth (number of parts), then by string
+    for dir_path in sorted(
+        _created_dirs, key=lambda p: (len(p.parts), str(p)), reverse=True
+    ):
+        logger.debug(f'Dir clean up: "{dir_path}". Dir Exist ?: {dir_path.exists()}')
+        try:
+            if dir_path.is_symlink():
+                dir_path.unlink()  # For symlinks
+            else:
+                dir_path.rmdir()  # For real directories
+        except FileNotFoundError:
+            pass  # deleted already
+        except OSError as e:  # Includes PermissionError and "directory not empty"
+            logger.warning(f"Failed to delete directory {dir_path}: {e}")
+        except KeyboardInterrupt:
+            interrupted = True
+        except Exception as e:
+            logger.error(f"Unexpected error deleting directory {dir_path}: {e}")
+    return interrupted
+
+
 def cleanup_registered() -> None:
     """
     Delete all registered files and directories at program exit.
     Directories are removed in reverse depth order to ensure they are empty.
     """
     with _lock:
-        interrupted = False
-
-        for file in _created_files:
-            logger.debug(f'File clean up: "{file}". File Exist ?: {file.exists()}')
-            try:
-                file.unlink()
-            except FileNotFoundError:
-                pass  # deleted already
-            except (OSError, PermissionError) as e:
-                logger.warning(f"Failed to delete file {file}: {e}")
-            except KeyboardInterrupt:
-                interrupted = True  # set True and keep cleaning
-            except Exception as e:
-                logger.error(f"Unexpected error deleting file {file}: {e}")
-
-        # Sort by actual path depth (number of parts), then by string
-        for dir_path in sorted(
-            _created_dirs, key=lambda p: (len(p.parts), str(p)), reverse=True
-        ):
-            logger.debug(
-                f'Dir clean up: "{dir_path}". Dir Exist ?: {dir_path.exists()}'
-            )
-            try:
-                if dir_path.is_symlink():
-                    dir_path.unlink()  # For symlinks
-                else:
-                    dir_path.rmdir()  # For real directories
-
-            except FileNotFoundError:
-                pass  # deleted already
-            except OSError as e:  # Includes PermissionError and "directory not empty"
-                logger.warning(f"Failed to delete directory {dir_path}: {e}")
-            except KeyboardInterrupt:
-                interrupted = True
-            except Exception as e:
-                logger.error(f"Unexpected error deleting directory {dir_path}: {e}")
+        file_interrupted = _cleanup_files()
+        dir_interrupted = _cleanup_directories()
 
         # Re-raise KeyboardInterrupt at the end if keyboard interrupt
-        if interrupted:
+        if file_interrupted or dir_interrupted:
             raise KeyboardInterrupt()
 
 

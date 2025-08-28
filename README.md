@@ -1,11 +1,7 @@
-<h1 align="center">
-  <br>
-  <span style="background: linear-gradient(135deg, #4FC08D 0%, #42B883 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 3.5em;">grpc</span><span style="color: #9C8FDE; font-weight: 800; font-size: 3.5em;">API</span>
-  <br>
-</h1>
+# 🚀 **grpc**_API_
 
 <p align="center">
-    <em style="color: #666; font-size: 1.1em;">grpcAPI framework, high performance, easy to learn, fast to code, ready for production</em>
+    <b>🔥 grpcAPI framework, high performance, easy to learn, fast to code, ready for production 🔥</b>
 </p>
 
 grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and the official gRPC library.

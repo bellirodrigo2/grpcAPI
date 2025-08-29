@@ -2,8 +2,6 @@
   <img src="logo.png" alt="grpcAPI Logo" width="300" height="auto">
 </p>
 
-<h1 align="center">grpcAPI</h1>
-
 <p align="center">
     <b>🔥 grpcAPI framework, high performance, easy to learn, fast to code, ready for production 🔥</b>
 </p>

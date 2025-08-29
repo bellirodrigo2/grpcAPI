@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="logo.png" alt="grpcAPI Logo" width="300" height="auto">
+  <img src="assets/logo.png" alt="grpcAPI Logo" width="300" height="auto">
 </p>
 
 <p align="center">
-    <b>🔥 grpcAPI framework, high performance, easy to learn, fast to code, ready for production 🔥</b>
+    <b>grpcAPI framework, easy to learn, fast to code</b>
 </p>
 
 grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and the official gRPC library.

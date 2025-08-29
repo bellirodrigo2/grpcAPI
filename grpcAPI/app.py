@@ -147,6 +147,7 @@ class APIService(IService):
         tags: Optional[List[str]] = None,
         module_level_options: Optional[List[str]] = None,
         module_level_comments: Optional[List[str]] = None,
+        module_level_imports: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         self.title = title or name
@@ -159,6 +160,7 @@ class APIService(IService):
         self.package = package
         self.module_level_options = module_level_options or []
         self.module_level_comments = module_level_comments or []
+        self.module_level_imports = module_level_imports or []
         self.__methods: List[ILabeledMethod] = []
         self.active = True
         self.meta = kwargs

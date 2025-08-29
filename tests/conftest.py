@@ -407,6 +407,7 @@ class Service(IService):
     active = True
     module_level_options: Iterable[str] = field(default_factory=list)
     module_level_comments: Iterable[str] = field(default_factory=list)
+    module_level_imports: Iterable[str] = field(default_factory=list)
 
     @property
     def methods(self) -> Sequence["LabeledMethod"]:

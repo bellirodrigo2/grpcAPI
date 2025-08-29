@@ -70,6 +70,7 @@ def resolve_args(
         "-m",
         "grpc_tools.protoc",
         f"-I{str(root)}",
+        "-IgrpcAPI/third_party",
     ]
     if clss:
         args.append(f"--python_out={dst}")

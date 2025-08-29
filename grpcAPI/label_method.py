@@ -110,6 +110,7 @@ def make_labeled_method(
     response_type_input: Optional[Type[Any]] = None,
 ) -> ILabeledMethod:
     if request_type_input is not None and is_message(request_type_input):
+
         requests = [type_to_metatype(request_type_input)]
         set_function_metadata(func, request_type_input)
     else:

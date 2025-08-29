@@ -56,6 +56,7 @@ class IService(IFilter):
 
     module_level_options: List[str]
     module_level_comments: List[str]
+    module_level_imports: List[str]
 
     @property
     def methods(self) -> Iterable[ILabeledMethod]: ...  # pragma: no cover

@@ -111,25 +111,25 @@ def prepare_modules(
 
 def extract_modules(
     packlist: List[IService],
-) -> Mapping[str, Tuple[Iterable[str], Iterable[str]]]:
+) -> Mapping[str, Tuple[Iterable[str], Iterable[str], Iterable[str]]]:
 
-    modules: Dict[str, Tuple[List[str], List[str]]] = {}
+    modules: Dict[str, Tuple[List[str], List[str], List[str]]] = {}
     for service in packlist:
         mod_name = service.module
         mod_opt = [opt.strip() for opt in service.module_level_options]
         mod_com = [serv.strip() for serv in service.module_level_comments]
+        mod_imp = [imp.strip() for imp in service.module_level_imports]
         if mod_name not in modules:
-            modules[mod_name] = (
-                mod_opt,
-                mod_com,
-            )
+            modules[mod_name] = (mod_opt, mod_com, mod_imp)
         else:
-            option, comment = modules[mod_name]
+            option, comment, imports = modules[mod_name]
             option.extend(mod_opt)
             comment.extend(mod_com)
+            imports.extend(mod_imp)
             modules[mod_name] = (
                 list(dict.fromkeys(option)),  # Remove duplicates
                 list(dict.fromkeys(comment)),
+                list(dict.fromkeys(imports)),
             )
 
     return modules
@@ -148,7 +148,7 @@ def make_compiler_context(
     module_list = extract_modules(packlist)
     package_name = packlist[0].package
 
-    for modulename, (options, comments) in module_list.items():
+    for modulename, (options, comments, imports) in module_list.items():
 
         formated_comment = format_comment("\n".join(comments))
         module_template = ProtoTemplate(
@@ -156,7 +156,7 @@ def make_compiler_context(
             syntax=version,
             module=modulename,
             package=package_name,
-            imports=set(),
+            imports=set(imports),
             services=[],
             options=list(options),
         )

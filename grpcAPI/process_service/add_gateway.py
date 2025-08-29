@@ -1,6 +1,7 @@
+from collections import defaultdict
 from typing import Any, Dict
 
-from grpcAPI.makeproto.interface import ILabeledMethod
+from grpcAPI.makeproto.interface import ILabeledMethod, IService
 from grpcAPI.process_service import ProcessService
 
 
@@ -13,36 +14,43 @@ def proto_http_option(mapping: Dict[str, Any]) -> str:
         elif isinstance(v, (int, float)):
             return str(v)
         elif isinstance(v, dict):
-            return (
-                "{ "
-                + " ".join(f"{k}: {format_value(val)}" for k, val in v.items())
-                + " }"
-            )
+            items = [f"{k}: {format_value(val)}" for k, val in v.items()]
+            return "{ " + " ".join(items) + " }"
         elif isinstance(v, (list, tuple)):
-            return "[ " + ", ".join(format_value(i) for i in v) + " ]"
+            items = [format_value(i) for i in v]
+            return "[ " + ", ".join(items) + " ]"
         else:
-            raise TypeError(f"Non Supported type for value '{v}': {type(v)}")
+            raise ValueError(f"Unsupported type for value '{v}': {type(v)}")
 
-    lines = [f"  {k}: {format_value(v)}" for k, v in mapping.items()]
-    return f"(google.api.http) = {{\n" + "\n".join(lines) + "\n}}"
+    lines = [f"    {k}: {format_value(v)}" for k, v in mapping.items()]
+    return f"(google.api.http) = {{\n" + "\n".join(lines) + "\n  }"
 
 
 class AddGateway(ProcessService):
 
     def __init__(self, **kwargs: Any) -> None:
         self.word = "gateway"
-        self.errors = []
+        self.errors = defaultdict(list)
+        self.current_service = None
+
+    def _process_service(self, service: IService) -> None:
+        self.current_service = service
 
     def _process_method(self, method: ILabeledMethod) -> None:
-
         if self.word in method.meta:
+            if self.current_service is None:
+                raise ValueError("Current service is not set.")
+            self.current_service.module_level_imports.append(
+                "google/api/annotations.proto"
+            )
+            self.current_service.module_level_imports.append("google/api/http.proto")
             try:
                 option_str = proto_http_option(method.meta[self.word])
                 method.options.append(option_str)
             except ValueError as e:
-                # add to errors
-                pass
+                self.errors[method.name].append(str(e))
 
-    def stop(self) -> None:
+    def close(self) -> None:
         if self.errors:
-            pass
+            error_msg = "Gateway option errors: " + str(dict(self.errors))
+            raise ValueError(error_msg)

@@ -147,6 +147,7 @@ class APIService(IService):
         tags: Optional[List[str]] = None,
         module_level_options: Optional[List[str]] = None,
         module_level_comments: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> None:
         self.title = title or name
         self.description = description
@@ -160,6 +161,7 @@ class APIService(IService):
         self.module_level_comments = module_level_comments or []
         self.__methods: List[ILabeledMethod] = []
         self.active = True
+        self.meta = kwargs
 
     @property
     def methods(self) -> List[ILabeledMethod]:
@@ -182,6 +184,7 @@ class APIService(IService):
         options: Optional[List[str]] = None,
         request_type_input: Optional[Type[Any]] = None,
         response_type_input: Optional[Type[Any]] = None,
+        **kwargs: Any,
     ) -> Callable[..., Any]:
         comment = comment or func.__doc__ or ""
         title = title or func.__name__
@@ -198,6 +201,7 @@ class APIService(IService):
             options=options,
             request_type_input=request_type_input,
             response_type_input=response_type_input,
+            meta=kwargs,
         )
 
         self.__methods.append(labeled_method)
@@ -214,6 +218,7 @@ class APIService(IService):
         options: Optional[List[str]] = None,
         request_type_input: Optional[Type[Any]] = None,
         response_type_input: Optional[Type[Any]] = None,
+        **kwargs: Any,
     ) -> Union[Callable[..., Any], Callable[[Callable[..., Any]], Callable[..., Any]]]:
         if func is not None and callable(func):
             # Called as @serviceapi
@@ -230,6 +235,7 @@ class APIService(IService):
                     options=options,
                     request_type_input=request_type_input,
                     response_type_input=response_type_input,
+                    **kwargs,
                 )
 
             return decorator
@@ -244,9 +250,13 @@ class App:
 
     def __init__(
         self,
+        name: str = "GrpcAPI",
+        version: str = "v1",
         lifespan: Optional[List[Lifespan]] = None,
         server: Optional[Any] = None,
     ) -> None:
+        self.name = name
+        self.version = version
         self._service_classes = []
         self._interceptor = []
         self.lifespan = lifespan or []
@@ -309,13 +319,6 @@ class App:
 
     def add_interceptor(self, interceptor: Interceptor) -> None:
         self._interceptor.append(interceptor)
-
-    def interceptor(self) -> Callable[[Interceptor], Interceptor]:
-        def decorator(cls: Interceptor) -> Interceptor:
-            self.add_interceptor(cls)
-            return cls
-
-        return decorator
 
     def add_exception_handler(
         self,

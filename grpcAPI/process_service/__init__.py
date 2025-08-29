@@ -1,11 +1,22 @@
 from fnmatch import fnmatch
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable, Iterable, Optional, Protocol, Union
 
 from grpcAPI.makeproto.interface import IFilter, ILabeledMethod, IService
 
 
+class AppNameVersion(Protocol):
+    name: str
+    version: str
+
+
 class ProcessService:
     def __init__(self, **kwargs: Any) -> None:
+        pass
+
+    def start(self, name: str, version: str) -> None:
+        pass
+
+    def close(self) -> None:
         pass
 
     def _process_service(self, service: IService) -> None:

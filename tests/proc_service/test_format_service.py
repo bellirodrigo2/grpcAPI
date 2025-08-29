@@ -84,7 +84,7 @@ def test_comment_formatting_styles(strategy: str, expected_start: str) -> None:
     )
 
     format_service = FormatService(
-        format={
+        format_proto={
             "max_char": 80,
             "title_case": "snake",
             "comment_style": strategy,
@@ -108,7 +108,7 @@ def test_title_case_conversion() -> None:
         ],
     )
     format_service = FormatService(
-        format={
+        format_proto={
             "max_char_per_line": 80,
             "title_case": "pascal",
             "comment_strategy": "singleline",
@@ -121,7 +121,7 @@ def test_title_case_conversion() -> None:
     assert service.methods[1].name == "DeleteUser"
 
     format_service = FormatService(
-        format={
+        format_proto={
             "max_char_per_line": 80,
             "title_case": "snake",
             "comment_style": "singleline",
@@ -146,13 +146,15 @@ def test_multiline_formatting_output() -> None:
 def test_factory_default_values() -> None:
     # no config provided
     settings: Mapping[str, Any] = {}
-    service = FormatService(format=settings)
+    service = FormatService(format_proto=settings)
     assert service.max_char == 80
     assert service.case == "none"
     assert service.open_char.startswith("/*")
 
     # partial config
-    settings = {"format": {"max_char_per_line": 100, "comment_style": "singleline"}}
+    settings = {
+        "format_proto": {"max_char_per_line": 100, "comment_style": "singleline"}
+    }
     service = FormatService(**settings)
     assert service.max_char == 100
     assert service.open_char == ""
@@ -173,7 +175,7 @@ def test_long_world() -> None:
 def test_functional_service_format(functional_service: FakeService) -> None:
     # Test that the functional service can be formatted correctly
     format_service = FormatService(
-        format={
+        format_proto={
             "max_char_per_line": 80,
             "title_case": "snake",
             "comment_style": "multiline",

@@ -5,6 +5,7 @@ from grpcAPI.process_service import ProcessService
 from grpcAPI.process_service.filter_service import DisableService
 from grpcAPI.process_service.format_service import FormatService
 from grpcAPI.process_service.inject_typing import InjectProtoTyping
+from grpcAPI.process_service.register_descriptor import RegisterDescriptors
 
 
 def run_process_service(
@@ -17,9 +18,12 @@ def run_process_service(
     process_service_cls.append(FormatService)
     process_service_cls.append(InjectProtoTyping)
     process_service_cls.append(DisableService)
+    process_service_cls.append(RegisterDescriptors)
     process_services = [
         proc_service(**settings) for proc_service in set(process_service_cls)
     ]
-    for service in app.service_list:
-        for proc in process_services:
+    for proc in process_services:
+        proc.start(app.name, app.version)
+        for service in app.service_list:
             proc.process(service)
+        proc.close()

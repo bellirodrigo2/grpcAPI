@@ -1,4 +1,3 @@
-import os
 from contextlib import AsyncExitStack
 
 from typing_extensions import Any, Optional
@@ -10,7 +9,6 @@ from grpcAPI.commands.command import GRPCAPICommand
 # from grpcAPI.commands.utils import get_host_port
 from grpcAPI.load_credential import get_server_certificate
 from grpcAPI.proto_build import make_protos
-from grpcAPI.register_descriptor import register_service_descriptors
 from grpcAPI.server import ServerWrapper, make_server
 from grpcAPI.server_plugins.loader import make_plugin
 
@@ -39,8 +37,6 @@ class RunCommand(GRPCAPICommand):
             server_settings = settings.get("server", {})
             server = make_server(app.interceptors, **server_settings)
 
-        if "reflection" in plugins_settings:
-            register_service_descriptors(app.service_list)
         plugins = [
             make_plugin(plugin_name, **kwargs)
             for plugin_name, kwargs in plugins_settings.items()
@@ -65,10 +61,6 @@ class RunCommand(GRPCAPICommand):
             server.add_secure_port(f"{host}:{port}", credential)
         else:
             server.add_insecure_port(f"{host}:{port}")
-
-        app_environ = settings.get("app_environ", {})
-        for key, value in app_environ.items():
-            os.environ[key] = value
 
         async with AsyncExitStack() as stack:
             for lifespan in app.lifespan:

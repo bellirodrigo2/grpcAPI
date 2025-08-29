@@ -1,4 +1,4 @@
-.PHONY: install install_dev test test_coverage lint lint_fix flake8 format build clean update_dependency
+.PHONY: install install_dev test test_coverage lint lint_fix flake8 format build clean upload_pypi
 
 install:
 	@echo "Instaling dependencies..."
@@ -33,15 +33,14 @@ format:
 	black grpcAPI
 	isort grpcAPI
 
-build:
-	@echo "Building package ..."
-	python -m build
-
 clean:
 	@echo "Cleaning cache and build/dist related files..."
 	@python -c "import shutil, glob, os; [shutil.rmtree(d, ignore_errors=True) for d in ['dist', 'build', '.mypy_cache', '.pytest_cache', '.ruff_cache'] + glob.glob('*.egg-info')]; [shutil.rmtree(os.path.join(r, d), ignore_errors=True) for r, ds, _ in os.walk('.') for d in ds if d == '__pycache__']"
 
-update_dependency:
-	@if not defined REPO (echo Erro: Forneça o nome do repositório. Exemplo: make update_dependency REPO=ctxinject && exit /b 1)
-	@echo "Updating github dependency $(REPO)..."
-	@pip install --upgrade --force-reinstall "git+https://github.com/bellirodrigo2/$(REPO).git@main"
+build: clean
+	@echo "Building package ..."
+	python -m build
+
+upload_pypi: build
+	@echo "Uploading package to pypi ..."
+	twine upload dist/*

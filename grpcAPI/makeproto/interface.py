@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 from typing_extensions import Any, Callable, Iterable, Optional, Protocol, Set, Type
 
@@ -16,6 +16,7 @@ class IFilter(Protocol):
     module: str
     tags: Iterable[str]
     active: bool
+    meta: Dict[str, Any]
 
 
 class ILabeledMethod(IFilter):

@@ -16,6 +16,13 @@
     "zipcompress": false,   // Generate individual files
     "outdir": "dist"
   },
+  // Comment formatting preferences
+  "format_proto": {
+    "max_char_per_line": 80,   // Line length limit
+    "title_case": "none",      // Case transformation: none, camel, pascal, snake
+    "comment_style": "multiline", // Comment style for generated code
+    "add_input_output_types": false // Include input/output types in comments
+  },
   
   /* Service filtering configuration
      Controls which services are included/excluded during compilation */
@@ -34,14 +41,6 @@
     },
     "rule_logic": "AND"
   },
-  
-  // Code formatting preferences
-  "format": {
-    "max_char_per_line": 80,   // Line length limit
-    "title_case": "none",      // Case transformation: none, camel, pascal, snake
-    "comment_style": "multiline" // Comment style for generated code
-  },
-  
   // gRPC server configuration
   "server": {
     "compression": "gzip",

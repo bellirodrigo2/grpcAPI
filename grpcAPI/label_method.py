@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from typing import Dict
 
 from typemapping import get_func_args, map_return_type
 from typing_extensions import (
@@ -37,6 +38,7 @@ class LabeledMethod(ILabeledMethod):
     description: str
     options: List[str]
     tags: List[str]
+    meta: Dict[str, Any]
 
     request_types: List[IMetaType]
     response_types: Optional[IMetaType]
@@ -101,6 +103,7 @@ def make_labeled_method(
     service: str,
     comment: str,
     description: str,
+    meta: Dict[str, Any],
     tags: Optional[List[str]] = None,
     options: Optional[List[str]] = None,
     request_type_input: Optional[Type[Any]] = None,
@@ -131,6 +134,7 @@ def make_labeled_method(
         response_types=response_type,
         options=options,
         tags=tags,
+        meta=meta,
     )
 
 

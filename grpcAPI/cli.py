@@ -142,13 +142,13 @@ def run(
             TextColumn("[progress.description]{task.description}"),
             console=console,
         ) as progress:
-            progress.add_task("=� Starting gRPC server...", total=None)
+            progress.add_task("=� Starting server...", total=None)
 
             app = get_app_instance(app_path)
             command = RunCommand(app, settings)
 
             console.print(
-                f"[bold green] Server starting on {host}:{port}[/bold green]"
+                f"[bold green]🚀 Starting {app.name} {app.version} server on {host}:{port}[/bold green]"
             )
             console.print(f"[dim]Settings: {settings or 'default'}[/dim]")
             console.print(f"[dim]Lint: {'disabled' if no_lint else 'enabled'}[/dim]\n")

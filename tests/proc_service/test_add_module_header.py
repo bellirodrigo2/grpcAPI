@@ -155,7 +155,7 @@ class TestMakeOptions:
         """Test that MakeOptions protocol works correctly"""
 
         def option_generator(
-            package: Optional[str] = None, module: Optional[str] = None
+            package: Optional[str] = None, module: Optional[str] = None, **kwargs: Any
         ) -> str:
             return f"option(package={package}, module={module})"
 
@@ -170,10 +170,10 @@ class TestCustomAddOptions:
     def test_init_with_options(self):
         """Test CustomAddOptions initialization with option generators"""
 
-        def option1(package: Optional[str] = None, module: Optional[str] = None) -> str:
+        def option1(package: Optional[str] = None, **kwargs: Any) -> str:
             return f'java_package = "{package}"'
 
-        def option2(package: Optional[str] = None, module: Optional[str] = None) -> str:
+        def option2(package: Optional[str] = None, **kwargs: Any) -> str:
             return f'java_outer_classname = "{module}Class"'
 
         add_options = CustomAddOptions([option1, option2])
@@ -182,13 +182,11 @@ class TestCustomAddOptions:
     def test_add_options_to_service(self):
         """Test adding options to service"""
 
-        def java_package_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
+        def java_package_option(package: Optional[str] = None, **kwargs: Any) -> str:
             return f'java_package = "{package}"'
 
         def java_class_option(
-            package: Optional[str] = None, module: Optional[str] = None
+            package: Optional[str] = None, module: Optional[str] = None, **kwargs: Any
         ) -> str:
             return f'java_outer_classname = "{module}Class"'
 
@@ -206,9 +204,7 @@ class TestCustomAddOptions:
     def test_add_options_appends_to_existing(self):
         """Test that options are appended to existing module_level_options"""
 
-        def new_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
+        def new_option(package: Optional[str] = None, **kwargs: Any) -> str:
             return "new_option = true"
 
         add_options = CustomAddOptions([new_option])
@@ -228,9 +224,7 @@ class TestCustomAddOptions:
     def test_does_not_add_duplicate_options(self):
         """Test that duplicate options are not added"""
 
-        def duplicate_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
+        def duplicate_option(package: Optional[str] = None, **kwargs: Any) -> str:
             return "duplicate_option = true"
 
         add_options = CustomAddOptions([duplicate_option])
@@ -250,9 +244,7 @@ class TestCustomAddOptions:
     def test_strips_whitespace_from_options(self):
         """Test that whitespace is stripped from generated options"""
 
-        def whitespace_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
+        def whitespace_option(package: Optional[str] = None, **kwargs: Any) -> str:
             return "  option_with_spaces = true  \n"
 
         add_options = CustomAddOptions([whitespace_option])
@@ -265,14 +257,10 @@ class TestCustomAddOptions:
     def test_skips_empty_options(self):
         """Test that empty options are skipped"""
 
-        def empty_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
+        def empty_option(package: Optional[str] = None, **kwargs: Any) -> str:
             return ""
 
-        def valid_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
+        def valid_option(package: Optional[str] = None, **kwargs: Any) -> str:
             return "valid_option = true"
 
         add_options = CustomAddOptions([empty_option, valid_option])
@@ -286,9 +274,7 @@ class TestCustomAddOptions:
     def test_process_with_filters(self):
         """Test processing with filtering enabled"""
 
-        def filtered_option(
-            package: Optional[str] = None, module: Optional[str] = None
-        ) -> str:
+        def filtered_option(package: Optional[str] = None, **kwargs: Any) -> str:
             return f'filtered_option = "{package}"'
 
         add_options = CustomAddOptions(
@@ -327,7 +313,9 @@ class TestMakeOption:
         assert len(option_list) == 2
 
         # Generate all options and check they contain expected values
-        results = [gen("com.myapp.users", "user_service") for gen in option_list]
+        results = [
+            gen(package="com.myapp.users", module="user_service") for gen in option_list
+        ]
 
         # Should contain both expected options (order may vary)
         assert 'java_package = "com.example.com.myapp.users"' in results
@@ -359,7 +347,9 @@ class TestMakeOption:
         option_generators = list(make_option(kv_map))
 
         # Test static options
-        results = [gen("any.package", "any_module") for gen in option_generators]
+        results = [
+            gen(package="any.package", module="any_module") for gen in option_generators
+        ]
 
         # Should contain both expected options (order may vary)
         assert 'java_multiple_files = "true"' in results
@@ -403,7 +393,9 @@ class TestMakeOption:
         option_generators = list(make_option(kv_map))
 
         # Test all generated options
-        results = [gen("com.example", "user") for gen in option_generators]
+        results = [
+            gen(package="com.example", module="user") for gen in option_generators
+        ]
 
         # Should contain both expected options (order may vary)
         assert (

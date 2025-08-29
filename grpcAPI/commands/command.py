@@ -1,4 +1,5 @@
 import asyncio
+import os
 from logging import Logger, getLogger
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -36,6 +37,10 @@ class BaseCommand:
         self.logger: Logger = default_logger
 
         self.settings = resolve_settings(settings_path)
+
+        app_environ = self.settings.get("app_environ", {})
+        for key, value in app_environ.items():
+            os.environ[key] = value
 
     async def run(self, **kwargs: Any) -> Any:
         raise NotImplementedError("Subclasses must implement run method.")

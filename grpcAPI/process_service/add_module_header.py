@@ -29,7 +29,11 @@ class AddComment(ProcessFilteredService):
 
 class MakeOptions(Protocol):
     def __call__(
-        self, package: Optional[str] = None, module: Optional[str] = None
+        self,
+        package: Optional[str] = None,
+        module: Optional[str] = None,
+        appname: Optional[str] = None,
+        version: Optional[str] = None,
     ) -> str: ...
 
 
@@ -42,6 +46,9 @@ class CustomAddOptions(ProcessFilteredService):
         tags: Optional[IncludeExclude] = None,
         rule_logic: str = "and",  # "and", "or" or "hierarchical"
     ) -> None:
+
+        self.name = None
+        self.version = None
         super().__init__(
             package=package,
             module=module,
@@ -51,11 +58,20 @@ class CustomAddOptions(ProcessFilteredService):
         )
         self.options = options
 
+    def start(self, name: str, version: str) -> None:
+        self.name = name
+        self.version = version
+
     def _add_options(self, service: IService) -> None:
         mod_level_options = service.module_level_options
 
         for makeoption in self.options:
-            option = makeoption(service.package, service.module).strip()
+            option = makeoption(
+                appname=self.name,
+                version=self.version,
+                package=service.package,
+                module=service.module,
+            ).strip()
             if option and option not in mod_level_options:
                 mod_level_options.append(option)
 
@@ -68,10 +84,16 @@ def make_option(kv_map: Dict[str, str]) -> Iterable[MakeOptions]:
         def _make_option(
             package: Optional[str] = None,
             module: Optional[str] = None,
+            appname: Optional[str] = None,
+            version: Optional[str] = None,
             _key: str = key,
             _value_pattern: str = value_pattern,
         ) -> str:
             value = _value_pattern
+            if appname is not None:
+                value = value.replace("{name}", appname)
+            if version is not None:
+                value = value.replace("{version}", version)
             if package is not None:
                 value = value.replace("{package}", package)
             if module is not None:

@@ -1,24 +1,18 @@
-from typing import Dict, Iterable, Tuple
+from typing import Any, Dict, Tuple
 
 from google.protobuf import descriptor_pb2, descriptor_pool
 
 from grpcAPI.makeproto.interface import IService
+from grpcAPI.process_service import ProcessService
 
 
-def register_service_descriptors(services: Iterable[IService]) -> None:
-    reg_desc = RegisterDescriptors()
-    for service in services:
-        reg_desc.add_service(service)
-    reg_desc.register()
+class RegisterDescriptors(ProcessService):
 
-
-class RegisterDescriptors:
-
-    def __init__(self) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         self.fds: Dict[Tuple[str, str], descriptor_pb2.FileDescriptorProto] = {}
         self.pool = descriptor_pool.Default()
 
-    def is_registered(self, filename: str) -> bool:
+    def _is_registered(self, filename: str) -> bool:
         try:
             self.pool.FindFileByName(filename)
             return True
@@ -34,15 +28,15 @@ class RegisterDescriptors:
             self.fds[label] = fd
         return fd
 
-    def add_service(self, service: IService) -> None:
+    def _process_service(self, service: IService) -> None:
 
         label = (f"_{service.module}_", service.package)
         fd = self._get_fd(label)
         register_service(fd, service)
 
-    def register(self) -> None:
+    def stop(self) -> None:
         for fd in self.fds.values():
-            if not self.is_registered(fd.name):
+            if not self._is_registered(fd.name):
                 self.pool.Add(fd)
         self.fds.clear()
 

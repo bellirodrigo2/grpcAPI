@@ -20,11 +20,12 @@ class FormatService(ProcessService):
 
     def __init__(self, **kwargs: Any) -> None:
 
-        format_settings: Dict[str, Any] = kwargs.get("format", {})
+        format_settings: Dict[str, Any] = kwargs.get("format_proto", {})
 
         max_char = int(format_settings.get("max_char_per_line", 80))
         case = format_settings.get("title_case", "none")
         strategy = format_settings.get("comment_style", "multiline").lower().strip()
+        self.addtypes = format_settings.get("add_input_output_types", True)
 
         self.max_char = max_char
         self.case = case
@@ -50,6 +51,7 @@ class FormatService(ProcessService):
             start_char=self.start_char,
             end_char=self.end_char,
             fill_char=self.fill_char,
+            add_types=self.addtypes,
         )
 
     def _process_method(self, method: ILabeledMethod) -> None:
@@ -89,6 +91,7 @@ def format_method_comment(
     start_char: str,
     end_char: str,
     fill_char: str,
+    add_types: bool = True,
 ) -> str:
     def format(text: str) -> str:
         return format_multiline(text, max_char, start_char, end_char) + "\n"
@@ -109,16 +112,18 @@ def format_method_comment(
         tags = format(" Tags: " + str(method.tags))
         content.extend([spaceline, tags])
 
-    request_types = getattr(method, "request_types", [])
-    if request_types:
-        request = format(f" Request: {str(request_types[0])}")
-        content.extend([spaceline, request])
+    if add_types:
 
-    response_types = getattr(method, "response_types", [])
+        request_types = getattr(method, "request_types", [])
+        if request_types:
+            request = format(f" Request: {str(request_types[0])}")
+            content.extend([spaceline, request])
 
-    if response_types:
-        response = format(f" Response: {str(response_types)}")
-        content.extend([response, spaceline])
+        response_types = getattr(method, "response_types", [])
+
+        if response_types:
+            response = format(f" Response: {str(response_types)}")
+            content.extend([response, spaceline])
 
     comment = format(method.comments)
     content.extend([comment, close_char])

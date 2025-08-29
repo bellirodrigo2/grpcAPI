@@ -1,15 +1,19 @@
-from typing import get_args
+from typing import List, get_args
 
 import pytest
 from google.protobuf import descriptor_pool
 
 from grpcAPI.app import APIService, App
-from grpcAPI.register_descriptor import (
-    RegisterDescriptors,
-    register_service_descriptors,
-)
+from grpcAPI.process_service.register_descriptor import RegisterDescriptors
 
 # Import real protobuf classes from tests - these imports ensure the descriptors are loaded
+
+
+def register_service_descriptors(services: List[APIService]) -> None:
+    reg_desc = RegisterDescriptors()
+    for service in services:
+        reg_desc._process_service(service)
+    reg_desc.stop()
 
 
 @pytest.fixture(autouse=True)
@@ -36,7 +40,7 @@ class TestRegisterDescriptors:
         register = RegisterDescriptors()
 
         # Should not be registered initially
-        assert not register.is_registered("test_file.proto")
+        assert not register._is_registered("test_file.proto")
 
     def test_get_fd_creates_new_descriptor(self):
         """Test _get_fd creates new FileDescriptorProto"""
@@ -63,7 +67,7 @@ class TestRegisterDescriptors:
         """Test adding a real APIService creates proper descriptor"""
         register = RegisterDescriptors()
 
-        register.add_service(functional_service)
+        register._process_service(functional_service)
 
         # Check that a file descriptor was created
         expected_label = (f"_{functional_service.module}_", functional_service.package)
@@ -110,8 +114,8 @@ class TestReflectionIntegration:
         register = RegisterDescriptors()
 
         # Register the real service
-        register.add_service(functional_service)
-        register.register()
+        register._process_service(functional_service)
+        register.stop()
 
         # Test that we can find the registered service
         filename = f"_{functional_service.module}_"
@@ -146,8 +150,8 @@ class TestReflectionIntegration:
         """Test that service names can be discovered through reflection"""
         register = RegisterDescriptors()
 
-        register.add_service(functional_service)
-        register.register()
+        register._process_service(functional_service)
+        register.stop()
 
         # Get all services from the pool
         discovered_services = []
@@ -169,8 +173,8 @@ class TestReflectionIntegration:
     def test_method_signatures_accessible(self, functional_service: APIService):
         """Test that method signatures are properly accessible"""
         register = RegisterDescriptors()
-        register.add_service(functional_service)
-        register.register()
+        register._process_service(functional_service)
+        register.stop()
 
         filename = f"_{functional_service.module}_"
         file_desc = register.pool.FindFileByName(filename)
@@ -204,16 +208,16 @@ class TestReflectionIntegration:
         register = RegisterDescriptors()
 
         # Register same service twice
-        register.add_service(functional_service)
-        register.register()
+        register._process_service(functional_service)
+        register.stop()
 
         # Try to register again - should not raise error
-        register.add_service(functional_service)
-        register.register()
+        register._process_service(functional_service)
+        register.stop()
 
         # Should still be registered
         filename = f"_{functional_service.module}_"
-        assert register.is_registered(filename)
+        assert register._is_registered(filename)
 
 
 class TestRealWorldScenario:
@@ -227,12 +231,12 @@ class TestRealWorldScenario:
         if app_fixture.service_list:
             real_service = app_fixture.service_list[0]
 
-            register.add_service(real_service)
-            register.register()
+            register._process_service(real_service)
+            register.stop()
 
             # Should be able to find it
             expected_filename = f"_{real_service.module}_"
-            assert register.is_registered(expected_filename)
+            assert register._is_registered(expected_filename)
 
             # Should be able to access service details
             file_desc = register.pool.FindFileByName(expected_filename)
@@ -264,7 +268,7 @@ class TestRealWorldScenario:
         # Verify all services were registered
         for service in app_fixture.service_list:
             expected_filename = f"_{service.module}_"
-            assert register.is_registered(expected_filename)
+            assert register._is_registered(expected_filename)
 
             # Verify we can access the service
             file_desc = register.pool.FindFileByName(expected_filename)
@@ -283,7 +287,7 @@ class TestRealWorldScenario:
 
             register = RegisterDescriptors()
             filename = f"_{app_fixture.service_list[0].module}_"
-            assert register.is_registered(filename)
+            assert register._is_registered(filename)
         else:
             # Test with multiple real services
             register_service_descriptors(app_fixture.service_list)
@@ -291,4 +295,4 @@ class TestRealWorldScenario:
             register = RegisterDescriptors()
             for service in app_fixture.service_list:
                 filename = f"_{service.module}_"
-                assert register.is_registered(filename)
+                assert register._is_registered(filename)

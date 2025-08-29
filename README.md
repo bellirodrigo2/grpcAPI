@@ -1,4 +1,8 @@
-# 🚀 **grpc**_API_
+<p align="center">
+  <img src="logo.png" alt="grpcAPI Logo" width="300" height="auto">
+</p>
+
+<h1 align="center">grpcAPI</h1>
 
 <p align="center">
     <b>🔥 grpcAPI framework, high performance, easy to learn, fast to code, ready for production 🔥</b>
@@ -45,7 +49,7 @@ Create a file `main.py`:
 from grpcAPI import GrpcAPI, APIPackage
 from grpcAPI.protobuf import StringValue
 
-app = GrpcAPI()
+app = GrpcAPI(name="myapp", version="v1") #name and version are optional (default: GrpcAPI and v1)
 service = APIService("greeter_service")
 
 @service
@@ -274,10 +278,10 @@ from grpcAPI.process_service.add_module_header import AddLanguageOptions
 
 # Add language-specific options with template variables
 language_options = AddLanguageOptions({
-    "java_package": "com.mycompany.{package}",
+    "java_package": "com.{name}.{version}.{package}",
     "java_outer_classname": "{module}Proto", 
     "java_multiple_files": "true",
-    "go_package": "github.com/mycompany/{package}/{module}pb",
+    "go_package": "github.com/{name}/{package}/{module}pb",
     "csharp_namespace": "MyCompany.{package}.{module}",
     "option cc_enable_arenas": "true"
 })
@@ -290,11 +294,11 @@ Generated `.proto` file will include:
 ```protobuf
 syntax = "proto3";
 
-option java_package = "com.mycompany.com.example.users";
+option java_package = "com.my_app.v1.users";
 option java_outer_classname = "user_serviceProto";
 option java_multiple_files = true;
-option go_package = "github.com/mycompany/com.example.users/user_servicepb";
-option csharp_namespace = "MyCompany.com.example.users.user_service";
+option go_package = "github.com/my_app.users/user_servicepb";
+option csharp_namespace = "MyCompany.users.user_service";
 option cc_enable_arenas = true;
 
 package com.example.users;
@@ -302,6 +306,8 @@ package com.example.users;
 ```
 
 **Template Variables:**
+- `{name}` - Replaced with the app name
+- `{version}` - Replaced with the app version
 - `{package}` - Replaced with the service package name
 - `{module}` - Replaced with the module name (proto filename)
 

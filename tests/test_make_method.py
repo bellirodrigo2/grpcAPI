@@ -20,6 +20,7 @@ def make_labeled_method(req: List[MetaType], resp: Optional[MetaType]) -> Labele
         tags=[],
         request_types=req,
         response_types=resp,
+        meta={},
     )
 
 

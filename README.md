@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="assets/logo.png" alt="grpcAPI Logo" width="300" height="auto">
+  <img src="assets/logo.jpg" alt="grpcAPI Logo" width="300" height="auto">
 </p>
 
 <p align="center">
-    <b>grpcAPI framework, easy to learn, fast to code</b>
+    <b>grpcAPI framework, + pythonic, + flexibility, - learning curve</b>
 </p>
 
-grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and the official gRPC library.
+grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and grpcio library.
 
 **Note**: grpcAPI requires protobuf classes (from `protoc` compilation) for request/response types. Use the built-in `grpcapi protoc` command to compile `.proto` files with mypy stub generation.
 

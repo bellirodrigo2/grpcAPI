@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    <b>grpcAPI framework, + pythonic, + flexibility, - learning curve</b>
+    <b> + pythonic, + flexibility, - learning curve</b>
 </p>
 
 grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and grpcio library.

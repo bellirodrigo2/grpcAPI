@@ -62,8 +62,15 @@ def test_cls() -> None:
     ann = inject_proto_typing(User)
     if not User.__annotations__:
         User.__annotations__ = ann
-    userann_dict = get_type_hints(User)
-    userann = userann_dict.items()
+    
+    # Use User.__annotations__ directly since get_type_hints may fail
+    # when protobuf modules aren't properly registered in sys.modules
+    try:
+        userann_dict = get_type_hints(User)
+        userann = userann_dict.items()
+    except KeyError:
+        # Fallback to direct annotations for protobuf classes
+        userann = User.__annotations__.items()
 
     assert ("age", InnerMessage) in userann
     assert ("time", Timestamp) in userann

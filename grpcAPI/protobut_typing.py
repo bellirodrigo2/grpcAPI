@@ -93,26 +93,42 @@ def is_optional_field(field: FieldDescriptor) -> bool:
 
 @lru_cache
 def get_message_type(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
-    cls_module = get_module(cls)
+    # Try to get the class directly from the descriptor's _concrete_class
+    try:
+        if hasattr(field, "_concrete_class") and field._concrete_class:
+            return field._concrete_class
+    except:
+        pass
 
-    original_file = cls.DESCRIPTOR.file.name
-    field_filename = field.file.name
+    # Alternative: try to get from the message_type descriptor
+    try:
+        if hasattr(field.message_type, "_concrete_class"):
+            return field.message_type._concrete_class
+    except:
+        pass
 
-    if field_filename == original_file:
-        tgt_module = cls_module
-    else:
-        imported_str = get_protobuf_name(field_filename)
-        # Try getattr first (works locally), fallback to importlib (works when installed)
-        try:
+    # Fallback to original logic with safer module resolution
+    try:
+        cls_module = get_module(cls)
+
+        original_file = cls.DESCRIPTOR.file.name
+        field_filename = field.file.name
+
+        if field_filename == original_file:
+            tgt_module = cls_module
+        else:
+            imported_str = get_protobuf_name(field_filename)
             tgt_module = getattr(cls_module, imported_str)
-        except AttributeError:
-            # Build module path for import
-            base_module = cls_module.__name__.split('.')[0] if '.' in cls_module.__name__ else cls_module.__name__
-            module_path = f"{base_module}.{imported_str}"
-            tgt_module = importlib.import_module(module_path)
 
-    # Recursive approach for nested types
-    return resolve_nested_type(field.full_name, tgt_module, cls)
+        # Recursive approach for nested types
+        return resolve_nested_type(field.full_name, tgt_module, cls)
+    except:
+        # If all else fails, return Any as a safe fallback
+        # from typing import Any
+        # return Any
+        raise ModuleNotFoundError(
+            f"Could not resolve message type for field: {field.full_name}"
+        )
 
 
 def resolve_nested_type(
@@ -219,4 +235,14 @@ def get_protobuf_name(name: str) -> str:
 
 def get_module(cls: Type[Any]) -> ModuleType:
     module_name = cls.__module__
-    return importlib.import_module(module_name)
+    try:
+        return importlib.import_module(module_name)
+    except ModuleNotFoundError:
+        # Simple fallback: add current directory to path and try again
+        import os
+        import sys
+
+        if os.getcwd() not in sys.path:
+            sys.path.insert(0, os.getcwd())
+
+        return importlib.import_module(module_name)

@@ -15,7 +15,13 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from grpcAPI.proto_ctxinject import DependsInject, ModelFieldInject, ProtobufEnum
+from grpcAPI.proto_ctxinject import (
+    CastType,
+    DependsInject,
+    ModelFieldInject,
+    ProtobufEnum,
+    Validation,
+)
 
 
 class Depends(DependsInject):
@@ -116,4 +122,12 @@ def get_function_metadata(
     return getattr(func, "__grpc_metadata__", None)
 
 
-__all__ = ["Depends", "FromContext", "FromRequest", "AsyncContext", "ProtobufEnum"]
+__all__ = [
+    "Depends",
+    "FromContext",
+    "FromRequest",
+    "AsyncContext",
+    "ProtobufEnum",
+    "CastType",
+    "Validation",
+]

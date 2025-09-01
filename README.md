@@ -8,17 +8,19 @@
 
 grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and grpcio library.
 
-**Note**: grpcAPI requires protobuf classes (from `protoc` compilation) for request/response types. Use the built-in `grpcapi protoc` command to compile `.proto` files with mypy stub generation.
-
 The key features are:
 
-* **Automatic Protocol Buffer Generation**: Generate `.proto` files automatically from Python service definitions
 * **Type-Safe Service Definitions**: Use Python type hints to define gRPC services with automatic validation
-* **Dependency Injection**: Built-in dependency injection system with `Depends`, `FromRequest`, and `FromContext`
+* **Advanced Function Signatures**: Powerful parameter extraction with `FromRequest`, `FromValue`, `FromContext` - extract specific fields from protobuf messages, apply custom validators, FastAPI like "Depends" dependency injection, and define complex input/output mappings all through function signatures
 * **Streaming Support**: Full support for client streaming, server streaming, and bidirectional streaming
+* **Automatic Protocol Buffer Generation**: Generate service `.proto` files automatically from Python functions signature, with lint tool
+* **Service Processing Pipeline**: Powerful post-processing system with service filtering, protocol buffer language options (`AddLanguageOptions`), HTTP gateway annotations (`AddGateway`), and custom module headers
+* **Dependency Injection**: Built-in dependency injection system with `Depends`, `FromRequest`, and `FromContext`
 * **Extensible Plugin System**: `grpc.aio.Server` wrapper with decoupled plugin architecture - includes built-in health check and reflection plugins, with support for custom user plugins
 * **CLI Tools**: Command-line interface for running servers, building protos, function signature lint and validation
 * **Test Client**: Built-in test client for testing services without network calls
+
+**Note**: grpcAPI requires protobuf classes (from `protoc` compilation) for request/response types. Use the built-in `grpcapi protoc` command to compile `.proto` files with mypy stub generation.
 
 ## Requirements
 
@@ -37,6 +39,7 @@ Optional dependency:
 
 ```bash
 pip install grpcapi
+pip install grpcapi[pydantic]
 ```
 
 ## Basic Example
@@ -44,15 +47,15 @@ pip install grpcapi
 Create a file `main.py`:
 
 ```python
-from grpcAPI import GrpcAPI, APIPackage
+from grpcAPI import GrpcAPI, APIService
 from grpcAPI.protobuf import StringValue
 
 app = GrpcAPI(name="myapp", version="v1") #name and version are optional (default: GrpcAPI and v1)
 service = APIService("greeter_service")
 
 @service
-async def say_hello(name: str) -> StringValue:
-    return StringValue(value=f"Hello {name}")
+async def say_hello(name: StringValue) -> StringValue:
+    return StringValue(value=f"Hello {name.value}")
 
 app.add_service(service)
 ```
@@ -65,39 +68,67 @@ grpcapi run main.py
 
 This starts a gRPC server using your service definitions. Additional features like protocol buffer file generation, reflection, and health checking are available through configuration.
 
-## Dependency Injection Example
+```bash
+grpcapi build main.py
+```
+This command analyzes your Python service definitions and generates a complete protocol buffer ecosystem: service `.proto` files derived from your Python function signatures, message and enum definitions for all referenced types, proper import relationships, and language-specific options - creating a production-ready gRPC API specification from your Python code.
+
+## Function Signature Alternatives
+*Powered by ctxinject library*
+
+grpcAPI offers multiple ways to define service methods, from simple to advanced:
 
 ```python
-from grpcAPI import GrpcAPI, APIPackage, Depends
-from grpcAPI.protobuf import StringValue
-from typing_extensions import Annotated
+from typing import Annotated, List
+from grpcAPI import APIService, Depends, FromRequest, FromContext, Validation
+from grpcAPI.protobuf import StringValue, BytesValue
+from lib.my_lib_pb2 import User  # Generated protobuf class
 
-app = GrpcAPI()
 service = APIService("user_service")
 
-def get_database():
-    return {"users": []}
+# Simple: Direct protobuf types
+@service
+async def create_user(user: User, ctx: AsyncContext) -> StringValue:
+    pass
 
+@service(request_type_input=User)
+async def create_user(
+    name: str = Validation(min_length=3, max_length=100),
+    tags: List[str] = Validation(lambda x: list(set(x)))  # Remove duplicates
+) -> StringValue:
+    pass
+
+# Advanced: Field extraction with constraints
 @service
 async def create_user(
-    name: str,
-    db: Annotated[dict, Depends(get_database)]
+    name: Annotated[str, FromRequest(User, min_length=3, max_length=100)],
+    tags: Annotated[List[str], FromRequest(User, min_length=1)],
+    peer: Annotated[str, FromContext()]  # Get client IP
 ) -> StringValue:
-    db["users"].append({"name": name})
-    return StringValue(value=f"User {name} created")
+    pass
 
-app.add_service(service)
-```
-
-## Streaming Example
-
-```python
-from typing import AsyncIterator
+# Dependency injection
+def get_database():
+    db = Database()
+    yield db
+    db.close()
 
 @service
-async def stream_messages(user_id: str) -> AsyncIterator[StringValue]:
-    for i in range(5):
-        yield StringValue(value=f"Message {i} for {user_id}")
+async def create_user_di(
+    name: StringValue,
+    db: Annotated[Database, Depends(get_database)]
+) -> StringValue:
+    pass
+
+# Pydantic integration (optional)
+from pydantic import BaseModel
+class UserModel(BaseModel):
+    name: str
+    email: str
+
+@service(request_type_input=BytesValue)
+async def pydantic_user(user: UserModel) -> Empty:  # Auto JSON conversion
+    pass
 ```
 
 ## CLI Commands

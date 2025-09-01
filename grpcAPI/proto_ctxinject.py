@@ -6,6 +6,8 @@ __all__ = [
     "ignore_enum",
     "get_mapped_ctx",
     "resolve_mapped_ctx",
+    "CastType",
+    "Validation",
 ]
 from collections.abc import Mapping, Sequence
 from datetime import datetime
@@ -18,6 +20,7 @@ from ctxinject import (
     get_mapped_ctx,
     resolve_mapped_ctx,
 )
+from ctxinject.model import CastType, Validation
 from ctxinject.validation import arg_proc, constrained_list
 from google.protobuf.internal.enum_type_wrapper import EnumTypeWrapper
 from google.protobuf.struct_pb2 import ListValue, Struct

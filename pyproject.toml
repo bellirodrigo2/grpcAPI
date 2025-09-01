@@ -12,6 +12,7 @@ dependencies = [
     "typemapping",
     "grpcio", 
     "grpcio-tools",
+    "mypy_protobuf",
     "grpcio-health-checking",
     "grpcio-reflection",
     "rich",
@@ -62,3 +63,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpcAPI._version.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["grpcAPI*"]

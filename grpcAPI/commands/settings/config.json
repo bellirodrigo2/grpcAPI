@@ -1,8 +1,8 @@
 {
   // Protocol buffer generation paths
-  "proto_path": "grpcAPI/proto",
-  "lib_path": "grpcAPI/lib",
-  
+  "proto_path": "grpcAPI/proto", //source path for message/enum proto files
+  "lib_path": "grpcAPI/lib", //destination for "protoc" command generated code
+
   // Development settings
   "lint": true, // Enable proto validation by default
   
@@ -14,7 +14,7 @@
     "clean_services": true, // Remove unused service files
     "overwrite": false,     // Preserve existing files
     "zipcompress": false,   // Generate individual files
-    "outdir": "dist"
+    "outdir": "dist" //destination for "build" command generated code
   },
   // Comment formatting preferences
   "format_proto": {

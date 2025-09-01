@@ -102,7 +102,14 @@ def get_message_type(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
         tgt_module = cls_module
     else:
         imported_str = get_protobuf_name(field_filename)
-        tgt_module = getattr(cls_module, imported_str)
+        # Try getattr first (works locally), fallback to importlib (works when installed)
+        try:
+            tgt_module = getattr(cls_module, imported_str)
+        except AttributeError:
+            # Build module path for import
+            base_module = cls_module.__name__.split('.')[0] if '.' in cls_module.__name__ else cls_module.__name__
+            module_path = f"{base_module}.{imported_str}"
+            tgt_module = importlib.import_module(module_path)
 
     # Recursive approach for nested types
     return resolve_nested_type(field.full_name, tgt_module, cls)

@@ -1,13 +1,13 @@
-__all__ = ["LOGGING_CONFIG", "logger_path"]
+__all__ = ["LOGGING_CONFIG"]
 import logging
 import logging.config
-from pathlib import Path
 
 import json5
 
-logger_path = Path("./grpcAPI/commands/settings/config.json")
+from grpcAPI.commands.settings import DEFAULT_CONFIG_PATH
+
 LOGGING_CONFIG = {}
-with logger_path.open("r", encoding="utf-8") as f:
+with DEFAULT_CONFIG_PATH.open("r", encoding="utf-8") as f:
     config = json5.load(f)
     LOGGING_CONFIG = config.get("logger")
     logging.config.dictConfig(LOGGING_CONFIG)

@@ -1,0 +1,2 @@
+include grpcAPI/commands/settings/config.json
+recursive-include grpcAPI/makeproto/templates *.j2

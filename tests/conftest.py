@@ -340,12 +340,14 @@ class MetaType:
         origin: Optional[Type[Any]],
         package: str,
         proto_path: str,
+        is_valid: bool,
     ) -> None:
         self.argtype = argtype
         self.basetype = basetype
         self.origin = origin
         self.package = package
         self.proto_path = proto_path
+        self.is_valid = is_valid
 
 
 def get_protofile_path(cls: Type[Any]) -> str:
@@ -373,6 +375,7 @@ def make_metatype_from_type(
         origin=origin,
         package=package,
         proto_path=proto_path,
+        is_valid=package == "",
     )
 
 

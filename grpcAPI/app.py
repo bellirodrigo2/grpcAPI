@@ -254,11 +254,13 @@ class App:
         self,
         name: str = "GrpcAPI",
         version: str = "v1",
+        description: str = "",
         lifespan: Optional[List[Lifespan]] = None,
         server: Optional[Any] = None,
     ) -> None:
         self.name = name
         self.version = version
+        self.description = description
         self._service_classes = []
         self._interceptor = []
         self.lifespan = lifespan or []
@@ -267,7 +269,7 @@ class App:
         self._services: DefaultDict[str, List[IService]] = defaultdict(list)
         self.dependency_overrides: DependencyRegistry = {}
         self._exception_handlers: ExceptionRegistry = {}
-        self._process_service: List[ProcessService] = []
+        self._service_processing: List[Type[ProcessService]] = []
         self._modules: List[APIModule] = []
         self._packages: List[APIPackage] = []
 
@@ -340,6 +342,9 @@ class App:
             return func
 
         return decorator
+
+    def add_service_processing(self, service_proc: Type[ProcessService]) -> None:
+        self._service_processing.append(service_proc)
 
 
 class GrpcAPI(App, metaclass=SingletonMeta):

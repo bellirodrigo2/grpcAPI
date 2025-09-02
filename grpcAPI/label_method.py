@@ -14,7 +14,7 @@ from typing_extensions import (
     get_origin,
 )
 
-from grpcAPI.datatypes import FromRequest, Message, set_function_metadata
+from grpcAPI.datatypes import AsyncContext, FromRequest, Message, set_function_metadata
 from grpcAPI.makeproto import ILabeledMethod, IMetaType
 
 
@@ -163,6 +163,7 @@ class MetaType(IMetaType):
     origin: Optional[Type[Any]]
     package: str
     proto_path: str
+    is_valid: bool
 
     def __str__(self) -> str:
         cls = self.basetype
@@ -180,8 +181,11 @@ def type_to_metatype(varinfo: Type[Any]) -> IMetaType:
     origin = get_origin(varinfo)
     basetype = varinfo if origin is None else get_args(varinfo)[0]
 
-    package = get_package(basetype)
-    proto_path = get_protofile_path(basetype)
+    try:
+        package = get_package(basetype)
+        proto_path = get_protofile_path(basetype)
+    except AttributeError:
+        package, proto_path = "", ""
 
     return MetaType(
         argtype=argtype,
@@ -189,6 +193,7 @@ def type_to_metatype(varinfo: Type[Any]) -> IMetaType:
         origin=origin,
         package=package,
         proto_path=proto_path,
+        is_valid=bool(get_message(basetype) or isinstance(basetype, AsyncContext)),
     )
 
 

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Type
 from grpcAPI.app import App
 from grpcAPI.commands.settings.utils import combine_settings, load_file_by_extension
 from grpcAPI.service_proc import ProcessService
+from grpcAPI.service_proc.add_module_header import AddLanguageOptions
 from grpcAPI.service_proc.filter_service import DisableService
 from grpcAPI.service_proc.format_service import FormatService
 from grpcAPI.service_proc.register_descriptor import RegisterDescriptors
@@ -77,6 +78,7 @@ class GRPCAPICommand(BaseCommand):
         if command_name == "build":
             additional_services.append(FormatService)
             additional_services.append(DisableService)
+            additional_services.append(AddLanguageOptions)
         elif command_name == "run":
             additional_services.append(RegisterDescriptors)
         run_process_service(app, self.settings, additional_services)

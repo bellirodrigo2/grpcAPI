@@ -173,7 +173,9 @@ class TestCustomAddOptions:
         def option1(package: Optional[str] = None, **kwargs: Any) -> str:
             return f'java_package = "{package}"'
 
-        def option2(package: Optional[str] = None, **kwargs: Any) -> str:
+        def option2(
+            package: Optional[str] = None, module: Optional[str] = None, **kwargs: Any
+        ) -> str:
             return f'java_outer_classname = "{module}Class"'
 
         add_options = CustomAddOptions([option1, option2])
@@ -414,7 +416,7 @@ class TestAddLanguageOptions:
             "go_package": "github.com/{module}",
         }
 
-        add_lang_options = AddLanguageOptions(kv_map)
+        add_lang_options = AddLanguageOptions(language_options={"kv_map": kv_map})
         assert isinstance(add_lang_options, AddLanguageOptions)
         assert isinstance(add_lang_options, CustomAddOptions)
 
@@ -423,11 +425,13 @@ class TestAddLanguageOptions:
         kv_map = {"java_package": "com.example.{package}"}
 
         add_lang_options = AddLanguageOptions(
-            kv_map,
-            package=IncludeExclude(include=["com.myapp.*"]),
-            module=IncludeExclude(exclude=["test*"]),
-            tags=IncludeExclude(include=["api"]),
-            rule_logic="and",
+            language_options={
+                "kv_map": kv_map,
+                "package": IncludeExclude(include=["com.myapp.*"]),
+                "module": IncludeExclude(exclude=["test*"]),
+                "tags": IncludeExclude(include=["api"]),
+                "rule_logic": "and",
+            }
         )
 
         assert isinstance(add_lang_options, AddLanguageOptions)
@@ -439,7 +443,7 @@ class TestAddLanguageOptions:
             "go_package": "github.com/myorg/{module}pb",
         }
 
-        add_lang_options = AddLanguageOptions(kv_map)
+        add_lang_options = AddLanguageOptions(language_options={"kv_map": kv_map})
         service = MockService(package="com.example.users", module="user_service")
 
         add_lang_options.process(service)
@@ -458,7 +462,11 @@ class TestAddLanguageOptions:
         kv_map = {"filtered_option": "value_{package}"}
 
         add_lang_options = AddLanguageOptions(
-            kv_map, package=IncludeExclude(include=["com.example.*"]), rule_logic="and"
+            language_options={
+                "kv_map": kv_map,
+                "package": IncludeExclude(include=["com.example.*"]),
+                "rule_logic": "and",
+            }
         )
 
         # Matching service - should get options
@@ -478,7 +486,7 @@ class TestAddLanguageOptions:
         """Test AddLanguageOptions with empty mapping"""
         kv_map = {}
 
-        add_lang_options = AddLanguageOptions(kv_map)
+        add_lang_options = AddLanguageOptions(language_options={"kv_map": kv_map})
         service = MockService()
 
         add_lang_options.process(service)
@@ -488,7 +496,7 @@ class TestAddLanguageOptions:
 
     def test_real_world_protobuf_language_options(self):
         """Test realistic multi-language protobuf options"""
-        language_options = {
+        kv_map = {
             "java_package": "com.mycompany.{package}",
             "java_outer_classname": "{module}Proto",
             "java_multiple_files": "true",
@@ -498,7 +506,7 @@ class TestAddLanguageOptions:
             "ruby_package": "MyCompany::{package}::{module}",
         }
 
-        add_lang_options = AddLanguageOptions(language_options)
+        add_lang_options = AddLanguageOptions(language_options={"kv_map": kv_map})
         service = MockService(package="com.example.users", module="user_service")
 
         add_lang_options.process(service)
@@ -523,7 +531,7 @@ class TestAddLanguageOptions:
         """Test that AddLanguageOptions properly inherits CustomAddOptions behavior"""
         kv_map = {"test_option": "test_value_{package}"}
 
-        add_lang_options = AddLanguageOptions(kv_map)
+        add_lang_options = AddLanguageOptions(language_options={"kv_map": kv_map})
         service = MockService(
             package="com.example", module_level_options=["existing_option = true"]
         )
@@ -539,7 +547,7 @@ class TestAddLanguageOptions:
         """Test that AddLanguageOptions prevents duplicate options"""
         kv_map = {"duplicate_option": "duplicate_value"}
 
-        add_lang_options = AddLanguageOptions(kv_map)
+        add_lang_options = AddLanguageOptions(language_options={"kv_map": kv_map})
         service = MockService(
             module_level_options=['duplicate_option = "duplicate_value"']
         )
@@ -560,7 +568,7 @@ class TestAddLanguageOptions:
         custom_add_options = CustomAddOptions(option_generators)
 
         # With AddLanguageOptions, it's more direct
-        add_lang_options = AddLanguageOptions(kv_map)
+        add_lang_options = AddLanguageOptions(language_options={"kv_map": kv_map})
 
         # Both should produce the same result
         service1 = MockService(package="com.test")

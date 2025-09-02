@@ -9,6 +9,7 @@ class IMetaType(Protocol):
     origin: Optional[Type[Any]]
     package: str
     proto_path: str
+    is_valid: bool
 
 
 class IFilter(Protocol):

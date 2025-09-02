@@ -192,77 +192,6 @@ grpcapi lint app.py
 grpcapi list app.py
 ```
 
-## Testing
-
-Built-in test client for unit testing services without network overhead:
-
-```python
-import pytest
-from grpcAPI.testclient import TestClient, ContextMock
-
-async def test_service_with_context_tracking():
-    client = TestClient(app, settings={})
-    context = ContextMock(peer="127.0.0.1:12345", deadline=30.0)
-    
-    response = await client.run(
-        func=create_user, #imported from source code
-        request=user_data, #input protobuf variable
-        context=context
-    )
-    
-    # Verify response
-    assert response.value.startswith("user_")
-    
-    # Verify context interactions (MagicMock-like tracking)
-    context.tracker.peer.assert_called_once()
-    context.tracker.time_remaining.assert_called()
-    assert context.tracker.set_code.call_count == 0
-    
-    # Reset for next test
-    context.tracker.reset_mock()
-```
-
-**TestClient Features:**
-- **Direct method calls**: `client.run(func, request, context)` or `client.run_by_label(package, service, method, request)`
-- **Dependency override**: Use `app.dependency_overrides` for mocking dependencies
-- **Context simulation**: Full `AsyncContext` mock with peer info, timeouts, metadata
-- **Call tracking**: `ContextMock.tracker` works like `MagicMock` with `assert_called_once()`, `call_count`, etc.
-- **Streaming support**: Test server/client/bidirectional streaming patterns
-- **pytest integration**: Works seamlessly with async fixtures
-
-## Configuration
-
-Configure grpcAPI using `grpcapi.config.json`:
-
-```json
-{
-  "host": "localhost",
-  "port": 50051,
-  "lint": true, // Enable proto validation
-  "service_filter": {
-    "tags": {"exclude": ["internal"]},
-    "package": {"include": ["api", "public"]},
-    "rule_logic": "AND"
-  },
-  "plugins": {
-    "health_check": {},
-    "reflection": {},
-    "server_logger": {}
-  },
-  "tls": {
-    "enabled": true,
-    "certificate": "path/to/cert.crt",
-    "key": "path/to/cert.key"
-  }
-}
-```
-
-**Available Settings:**
-- **Server**: Host, port, TLS configuration, compression, worker limits
-- **Service Filtering**: Include/exclude by package, module, or tags
-- **Plugins**: Health check, reflection, custom logging configuration
-- **Protocol Buffers**: Output paths, compilation options, file overwrite settings
-- **Environment**: Set environment variables for the application
 
 ## Service Organization
 
@@ -301,7 +230,82 @@ GrpcAPI
 │   │       └── @service decorated methods
 ```
 
-## Service Filtering with Tags
+## Configuration
+
+Configure grpcAPI using `grpcapi.config.json`:
+
+```json
+{
+  "host": "localhost",
+  "port": 50051,
+  "lint": true, // Enable proto validation
+  "service_filter": {
+    "tags": {"exclude": ["internal"]},
+    "package": {"include": ["api", "public"]},
+    "rule_logic": "AND"
+  },
+  "plugins": {
+    "health_check": {},
+    "reflection": {},
+    "server_logger": {}
+  },
+  "tls": {
+    "enabled": true,
+    "certificate": "path/to/cert.crt",
+    "key": "path/to/cert.key"
+  }
+}
+```
+
+**Available Settings:**
+- **Server**: Host, port, TLS configuration, compression, worker limits
+- **Service Filtering**: Include/exclude by package, module, or tags
+- **Plugins**: Health check, reflection, custom logging configuration
+- **Protocol Buffers**: Output paths, compilation options, file overwrite settings
+- **Environment**: Set environment variables for the application
+
+## Testing
+
+Built-in test client for unit testing services without network overhead:
+
+```python
+import pytest
+from grpcAPI.testclient import TestClient, ContextMock
+
+async def test_service_with_context_tracking():
+    client = TestClient(app, settings={})
+    context = ContextMock(peer="127.0.0.1:12345", deadline=30.0)
+    
+    response = await client.run(
+        func=create_user, #imported from source code
+        request=user_data, #input protobuf variable
+        context=context
+    )
+    
+    # Verify response
+    assert response.value.startswith("user_")
+    
+    # Verify context interactions (MagicMock-like tracking)
+    context.tracker.peer.assert_called_once()
+    context.tracker.time_remaining.assert_called()
+    assert context.tracker.set_code.call_count == 0
+    
+    # Reset for next test
+    context.tracker.reset_mock()
+```
+
+**TestClient Features:**
+- **Direct method calls**: `client.run(func, request, context)` or `client.run_by_label(package, service, method, request)`
+- **Dependency override**: Use `app.dependency_overrides` for mocking dependencies
+- **Context simulation**: Full `AsyncContext` mock with peer info, timeouts, metadata
+- **Call tracking**: `ContextMock.tracker` works like `MagicMock` with `assert_called_once()`, `call_count`, etc.
+- **Streaming support**: Test server/client/bidirectional streaming patterns
+- **pytest integration**: Works seamlessly with async fixtures
+
+
+## Built-in tools
+
+### Service Filtering with Tags
 
 Services and methods can be tagged for filtering during builds or deployments:
 
@@ -318,13 +322,13 @@ async def get_internal_data(user_id: str) -> UserData:
     pass
 ```
 
-Filter services using configuration:
+Filter services using configuration, with `fnmatch` syntax:
 
 ```json
 {
   "service_filter": {
     "tags": {
-      "exclude": ["internal"]
+      "exclude": ["internal", "write*"]
     },
     "package": {
       "include": ["account", "ride"]
@@ -340,25 +344,23 @@ This enables:
 - **API versioning**: Filter by version tags
 - **Permission-based filtering**: Include only authorized service methods
 
-## Protocol Buffer Options
+### Protocol Buffer File Level Options Inclusion
 
-Add language-specific options to generated `.proto` files using the module header system:
+#### Language options
 
-```python
-from grpcAPI.process_service.add_module_header import AddLanguageOptions
+Add language-specific options to generated `.proto` files using configuration:
 
-# Add language-specific options with template variables
-language_options = AddLanguageOptions({
-    "java_package": "com.{name}.{version}.{package}",
-    "java_outer_classname": "{module}Proto", 
-    "java_multiple_files": "true",
-    "go_package": "github.com/{name}/{package}/{module}pb",
-    "csharp_namespace": "MyCompany.{package}.{module}",
-    "option cc_enable_arenas": "true"
-})
-
-# Apply to all services, or filter by package/module/tags
-app.add_process_service(language_options)
+```json
+"language_options":{
+    "kv_map":{
+        "java_package": "com.{name}.{version}.{package}",
+        "java_outer_classname": "{module}Proto",
+        "java_multiple_files": true,
+        "go_package": "github.com/{name}/{package}/{module}pb",
+        "csharp_namespace": "MyCompany.{package}.{module}",
+        "cc_enable_arenas": true
+        }
+  },
 ```
 
 Generated `.proto` file will include:
@@ -382,21 +384,25 @@ package com.example.users;
 - `{package}` - Replaced with the service package name
 - `{module}` - Replaced with the module name (proto filename)
 
-**Filtering Support:**
+
+#### Gateway Syntax - `grpc-gateway`
+
 ```python
-# Apply options only to specific packages/modules
-AddLanguageOptions(
-    {"java_package": "com.api.{package}"},
-    package=IncludeExclude(include=["com.example.*"]),
-    module=IncludeExclude(exclude=["internal*"]),
-    tags=IncludeExclude(include=["public"]),
-    rule_logic="AND"
-)
+@service(gateway={"get": "/api/users/{user_id}"})
+async def get_user(user_id: StringValue) -> UserInfo:
+    pass
+
+@service(gateway={"post": "/api/users", "body": "*"})
+async def create_user(user: UserInfo) -> StringValue:
+    pass
 ```
 
 ## Plugin System
 
-grpcAPI wraps `grpc.aio.Server` with a decoupled plugin system. Built-in plugins include:
+grpcAPI wraps `grpc.aio.Server` with a decoupled plugin system.
+**Note**: You can pass your own server instance: `GrpcAPI(server=my_server)`.
+
+Built-in plugins include:
 
 - **Health Check Plugin**: Automatic health checking endpoints with graceful shutdown
 - **Reflection Plugin**: gRPC reflection for service discovery  
@@ -410,12 +416,13 @@ Create custom plugins by implementing the `ServerPlugin` protocol with lifecycle
 
 ## Example Application
 
-See the complete [Guber ride-sharing example](./example/guber/) for:
+See the complete [Guber ride-sharing example](https://github.com/bellirodrigo2/guber) for:
 - Domain-driven design patterns
 - SQLAlchemy integration
 - Streaming operations  
 - Comprehensive tests
 - Production configuration
+- Monolith to microservice deployment by configs and dependency_override
 
 ## License
 

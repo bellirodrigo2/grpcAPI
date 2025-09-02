@@ -41,6 +41,16 @@
     },
     "rule_logic": "AND"
   },
+  "language_options":{
+    "kv_map":{ //below is and example of kv_map usage
+        // "java_package": "com.{name}.{version}.{package}",
+        // "java_outer_classname": "{module}Proto",
+        // "java_multiple_files": true,
+        // "go_package": "github.com/{name}/{package}/{module}pb",
+        // "csharp_namespace": "MyCompany.{package}.{module}",
+        // "cc_enable_arenas": true
+        }
+  },
   // gRPC server configuration
   "server": {
     "compression": "gzip",

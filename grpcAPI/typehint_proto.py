@@ -101,11 +101,8 @@ def get_message_type(field: FieldDescriptor, cls: Type[Any]) -> Type[Any]:
         pass
 
     # Alternative: try to get from the message_type descriptor
-    try:
-        if hasattr(field.message_type, "_concrete_class"):
-            return field.message_type._concrete_class
-    except:
-        pass
+    if hasattr(field.message_type, "_concrete_class"):
+        return field.message_type._concrete_class
 
     # Fallback to original logic with safer module resolution
     try:

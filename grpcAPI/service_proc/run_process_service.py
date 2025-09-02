@@ -19,11 +19,14 @@ def run_process_service(
 ) -> None:
 
     process_service_cls = process_service_cls or []
+
     # process_service_cls.append(FormatService)  # build
     process_service_cls.append(InjectProtoTyping)  # all
     process_service_cls.append(DisableService)  # all
     # process_service_cls.append(RegisterDescriptors)  # run
     # process_service_cls.append(AddGateway)  # build
+
+    process_service_cls.extend(app._service_processing)
     process_services = [
         proc_service(**settings) for proc_service in set(process_service_cls)
     ]

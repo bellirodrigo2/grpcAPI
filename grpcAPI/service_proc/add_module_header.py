@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Optional, Protocol
+from typing import Any, Dict, Iterable, List, Optional, Protocol
 
 from grpcAPI.makeproto.interface import IService
 from grpcAPI.service_proc import IncludeExclude, ProcessFilteredService
@@ -90,29 +90,33 @@ def make_option(kv_map: Dict[str, str]) -> Iterable[MakeOptions]:
             _value_pattern: str = value_pattern,
         ) -> str:
             value = _value_pattern
-            if appname is not None:
-                value = value.replace("{name}", appname)
-            if version is not None:
-                value = value.replace("{version}", version)
-            if package is not None:
-                value = value.replace("{package}", package)
-            if module is not None:
-                value = value.replace("{module}", module)
-            return f'{_key} = "{value}"'
+            if isinstance(value, str):
+                if appname is not None:
+                    value = value.replace("{name}", appname)
+                if version is not None:
+                    value = value.replace("{version}", version)
+                if package is not None:
+                    value = value.replace("{package}", package)
+                if module is not None:
+                    value = value.replace("{module}", module)
+                value = f'"{value}"'
+            elif isinstance(value, bool):
+                value = "true" if value else "false"
+            return f"{_key} = {value}"
 
         make_options.append(_make_option)
     return make_options
 
 
 class AddLanguageOptions(CustomAddOptions):
-    def __init__(
-        self,
-        kv_map: Dict[str, str],
-        package: Optional[IncludeExclude] = None,
-        module: Optional[IncludeExclude] = None,
-        tags: Optional[IncludeExclude] = None,
-        rule_logic: str = "and",  # "and", "or" or "hierarchical"
-    ) -> None:
+    def __init__(self, **kwargs: Any) -> None:
+        langopt = kwargs.get("language_options", {})
+
+        kv_map = langopt.get("kv_map", {})
+        package = langopt.get("package", None)
+        module = langopt.get("module", None)
+        tags = langopt.get("tags", None)
+        rule_logic = langopt.get("rule_logic", "and")
         super().__init__(
             options=list(make_option(kv_map)),
             package=package,

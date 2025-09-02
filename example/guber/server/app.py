@@ -22,7 +22,7 @@ from example.guber.server.application.usecase.ride import ride_package
 from example.guber.server.loginterceptor import LoggingInterceptor
 from grpcAPI import GrpcAPI
 
-app = GrpcAPI()
+app = GrpcAPI(name="guber", version="v1")
 
 app.add_service(account_package)
 app.add_service(ride_package)
@@ -43,5 +43,6 @@ def mock_payment_gateway() -> PaymentGateway:
 
 
 app.dependency_overrides[get_payment_gateway] = mock_payment_gateway
+
 
 app.lifespan.append(init_db)

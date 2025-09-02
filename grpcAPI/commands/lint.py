@@ -2,9 +2,9 @@ from logging import Logger
 from typing import Any, Iterable, Optional
 
 from grpcAPI.app import App
+from grpcAPI.build_proto import make_protos
 from grpcAPI.commands.command import GRPCAPICommand
 from grpcAPI.makeproto.interface import IProtoPackage
-from grpcAPI.proto_build import make_protos
 
 
 def run_lint(app: App, logger: Logger) -> Iterable[IProtoPackage]:

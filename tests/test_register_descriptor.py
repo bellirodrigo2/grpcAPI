@@ -4,7 +4,7 @@ import pytest
 from google.protobuf import descriptor_pool
 
 from grpcAPI.app import APIService, App
-from grpcAPI.process_service.register_descriptor import RegisterDescriptors
+from grpcAPI.service_proc.register_descriptor import RegisterDescriptors
 
 # Import real protobuf classes from tests - these imports ensure the descriptors are loaded
 

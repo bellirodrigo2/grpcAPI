@@ -4,11 +4,11 @@ from typing_extensions import Any, Optional
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import App
+from grpcAPI.build_proto import make_protos
 from grpcAPI.commands.command import GRPCAPICommand
 
 # from grpcAPI.commands.utils import get_host_port
 from grpcAPI.load_credential import get_server_certificate
-from grpcAPI.proto_build import make_protos
 from grpcAPI.server import ServerWrapper, make_server
 from grpcAPI.server_plugins.loader import make_plugin
 

@@ -19,7 +19,7 @@ PROTOBUF_RESERVED_WORDS = {
     "package",
     "message",
     "enum",
-    "service",
+    # "service",
     "rpc",
     "returns",
     "reserved",

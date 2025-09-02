@@ -2,10 +2,10 @@ import inspect
 from typing import Any, Callable, Dict, Optional, Tuple
 
 from grpcAPI.app import App
-from grpcAPI.data_types import AsyncContext
+from grpcAPI.build_proto import make_protos
+from grpcAPI.datatypes import AsyncContext
 from grpcAPI.make_method import make_method_async
-from grpcAPI.process_service.run_process_service import run_process_service
-from grpcAPI.proto_build import make_protos
+from grpcAPI.service_proc.run_process_service import run_process_service
 from grpcAPI.testclient.contextmock import ContextMock
 
 default_test_settings = {

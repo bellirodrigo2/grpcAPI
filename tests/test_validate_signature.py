@@ -5,11 +5,11 @@ import pytest
 from typemapping import get_func_args
 from typing_extensions import Annotated
 
-from grpcAPI.data_types import AsyncContext, Depends, FromContext, FromRequest, Message
+from grpcAPI.build_proto import validate_signature_pass
+from grpcAPI.ctxinject_proto import convert_timestamp
+from grpcAPI.datatypes import AsyncContext, Depends, FromContext, FromRequest, Message
 from grpcAPI.label_method import extract_request, extract_response
-from grpcAPI.proto_build import validate_signature_pass
-from grpcAPI.proto_ctxinject import convert_timestamp
-from grpcAPI.protobut_typing import inject_proto_typing
+from grpcAPI.typehint_proto import inject_proto_typing
 from tests.conftest import ClassMsg, InnerMessage, Other, Timestamp, User, UserCode
 
 

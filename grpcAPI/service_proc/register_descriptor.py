@@ -3,7 +3,7 @@ from typing import Any, Dict, Tuple
 from google.protobuf import descriptor_pb2, descriptor_pool
 
 from grpcAPI.makeproto.interface import IService
-from grpcAPI.process_service import ProcessService
+from grpcAPI.service_proc import ProcessService
 
 
 class RegisterDescriptors(ProcessService):

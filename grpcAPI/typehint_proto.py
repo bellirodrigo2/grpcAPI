@@ -8,7 +8,7 @@ from google.protobuf.descriptor_pb2 import FieldDescriptorProto
 from typemapping import get_args, get_origin
 from typing_extensions import Any, Dict, List, Optional, Set, Type
 
-from grpcAPI.data_types import Message, ProtobufEnum
+from grpcAPI.datatypes import Message, ProtobufEnum
 
 FD = FieldDescriptor
 FDP = FieldDescriptorProto

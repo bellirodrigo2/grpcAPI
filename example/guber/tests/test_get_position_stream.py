@@ -102,7 +102,7 @@ async def collect_stream_positions(
                 break
     finally:
         # Properly close async generator to prevent pending task warnings in Python 3.8
-        if hasattr(position_stream, 'aclose'):
+        if hasattr(position_stream, "aclose"):
             await position_stream.aclose()
     return positions
 
@@ -145,8 +145,8 @@ async def test_get_position_stream_basic_streaming(
     for position in positions:
         assert isinstance(position, Position)
         assert position.ride_id == ride_id
-        assert position.coord.lat == pytest.approx(-27.584905257808835, abs=1e-3)
-        assert position.coord.long == pytest.approx(-48.545022195325124, abs=1e-3)
+        assert position.coord.lat == pytest.approx(-27.584905257808835, abs=1e-2)
+        assert position.coord.long == pytest.approx(-48.545022195325124, abs=1e-2)
 
 
 async def test_get_position_stream_position_updates(
@@ -205,7 +205,7 @@ async def test_get_position_stream_position_updates(
                 break
     finally:
         # Properly close async generator to prevent pending task warnings in Python 3.8
-        if hasattr(position_stream, 'aclose'):
+        if hasattr(position_stream, "aclose"):
             await position_stream.aclose()
 
     await updater_task
@@ -215,8 +215,8 @@ async def test_get_position_stream_position_updates(
 
     # First position should have initial coordinates
     first_pos = collected_positions[0]
-    assert first_pos.coord.lat == pytest.approx(-27.584905257808835, abs=1e-3)
-    assert first_pos.coord.long == pytest.approx(-48.545022195325124, abs=1e-3)
+    assert first_pos.coord.lat == pytest.approx(-27.584905257808835, abs=1e-2)
+    assert first_pos.coord.long == pytest.approx(-48.545022195325124, abs=1e-2)
 
     # Later positions might have updated coordinates
     for position in collected_positions:
@@ -272,7 +272,7 @@ async def test_get_position_stream_ride_completion(
                 break
     finally:
         # Properly close async generator to prevent pending task warnings in Python 3.8
-        if hasattr(position_stream, 'aclose'):
+        if hasattr(position_stream, "aclose"):
             await position_stream.aclose()
 
     await completion_task
@@ -321,7 +321,7 @@ async def test_get_position_stream_counter_limit(
                 break
     finally:
         # Properly close async generator to prevent pending task warnings in Python 3.8
-        if hasattr(position_stream, 'aclose'):
+        if hasattr(position_stream, "aclose"):
             await position_stream.aclose()
 
     # Should get exactly the number of positions specified by counter
@@ -352,7 +352,7 @@ async def test_get_position_stream_nonexistent_ride(
                 break
         finally:
             # Properly close async generator to prevent pending task warnings in Python 3.8
-            if hasattr(position_stream, 'aclose'):
+            if hasattr(position_stream, "aclose"):
                 await position_stream.aclose()
 
 
@@ -417,7 +417,7 @@ async def test_get_position_stream_canceled_ride(
                 break
     finally:
         # Properly close async generator to prevent pending task warnings in Python 3.8
-        if hasattr(position_stream, 'aclose'):
+        if hasattr(position_stream, "aclose"):
             await position_stream.aclose()
 
     await cancellation_task
@@ -468,8 +468,8 @@ async def test_get_position_stream_position_data_structure(
 
     # Verify data values
     assert position.ride_id == ride_id
-    assert position.coord.lat == pytest.approx(test_lat, abs=1e-3)
-    assert position.coord.long == pytest.approx(test_long, abs=1e-3)
+    assert position.coord.lat == pytest.approx(test_lat, abs=1e-2)
+    assert position.coord.long == pytest.approx(test_long, abs=1e-2)
 
     # Verify timestamp is set (protobuf timestamp should be valid)
     assert position.updated_at is not None

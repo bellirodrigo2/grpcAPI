@@ -8,7 +8,7 @@ from google.protobuf.wrappers_pb2 import (
 )
 from typing_extensions import Annotated, Any, Callable, Mapping, Optional, Type
 
-from grpcAPI.data_types import FromContext, FromRequest
+from grpcAPI.datatypes import FromContext, FromRequest
 
 
 class FromValueField(FromRequest):

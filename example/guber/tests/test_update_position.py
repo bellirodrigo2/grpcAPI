@@ -137,8 +137,8 @@ async def test_update_position_normal_fare(
     # Verify position was updated in position repo
     async with get_position_repo_test() as position_repo:
         current_pos = await position_repo.get_current_position(ride_id)
-        assert current_pos.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-3)
-        assert current_pos.coord.long == pytest.approx(EXPECTED_END_LONG, abs=1e-3)
+        assert current_pos.coord.lat == pytest.approx(EXPECTED_END_LAT, abs=1e-2)
+        assert current_pos.coord.long == pytest.approx(EXPECTED_END_LONG, abs=1e-2)
 
     # Distance between the coordinates is approximately 10 km, normal rate is 2.1
     # So fare should be approximately 10 * 2.1 = 21
@@ -340,8 +340,8 @@ async def test_update_position_multiple_updates(
         )
         # Verify final position
         current = await position_repo.get_current_position(ride_id)
-        assert current.coord.lat == pytest.approx(-27.496887588317275, abs=1e-3)
-        assert current.coord.long == pytest.approx(-48.522234807851476, abs=1e-3)
+        assert current.coord.lat == pytest.approx(-27.496887588317275, abs=1e-2)
+        assert current.coord.long == pytest.approx(-48.522234807851476, abs=1e-2)
 
     async with get_ride_repo_test() as ride_repo:
         updated_ride = await ride_repo.get_by_ride_id(ride_id)

@@ -6,7 +6,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 from google.protobuf.wrappers_pb2 import Int32Value, Int64Value
 from typing_extensions import Dict, List, get_type_hints
 
-from grpcAPI.protobut_typing import get_type, inject_proto_typing
+from grpcAPI.typehint_proto import get_type, inject_proto_typing
 
 # from tests.conftest import ClassMsg, InnerMessage, Other, User
 
@@ -62,7 +62,7 @@ def test_cls() -> None:
     ann = inject_proto_typing(User)
     if not User.__annotations__:
         User.__annotations__ = ann
-    
+
     # Use User.__annotations__ directly since get_type_hints may fail
     # when protobuf modules aren't properly registered in sys.modules
     try:

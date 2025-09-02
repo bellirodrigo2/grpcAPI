@@ -1,7 +1,7 @@
 from typing import Dict, Iterable, List, Optional, Protocol
 
 from grpcAPI.makeproto.interface import IService
-from grpcAPI.process_service import IncludeExclude, ProcessFilteredService
+from grpcAPI.service_proc import IncludeExclude, ProcessFilteredService
 
 
 class AddComment(ProcessFilteredService):

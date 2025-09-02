@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
-from grpcAPI.process_service import IncludeExclude
-from grpcAPI.process_service.add_module_header import (
+from grpcAPI.service_proc import IncludeExclude
+from grpcAPI.service_proc.add_module_header import (
     AddComment,
     AddLanguageOptions,
     CustomAddOptions,

@@ -2,10 +2,10 @@ import pytest
 from typing_extensions import Annotated, AsyncIterator, List, Set
 
 from grpcAPI.app import APIService
-from grpcAPI.data_types import Depends, FromContext, FromRequest
+from grpcAPI.build_proto import make_protos
+from grpcAPI.datatypes import Depends, FromContext, FromRequest
 from grpcAPI.makeproto.write_proto import write_protos
-from grpcAPI.process_service.inject_typing import InjectProtoTyping
-from grpcAPI.proto_build import make_protos
+from grpcAPI.service_proc.inject_typing import InjectProtoTyping
 from tests.conftest import (
     DescriptorProto,
     InnerMessage,

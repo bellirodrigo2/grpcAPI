@@ -1,8 +1,8 @@
 from typing_extensions import Sequence
 
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType
-from grpcAPI.process_service import ProcessService
-from grpcAPI.protobut_typing import inject_proto_typing
+from grpcAPI.service_proc import ProcessService
+from grpcAPI.typehint_proto import inject_proto_typing
 
 
 class InjectProtoTyping(ProcessService):

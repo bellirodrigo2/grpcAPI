@@ -3,7 +3,7 @@ from typing import Any, List, Mapping, Optional, Type
 import pytest
 
 from grpcAPI.makeproto import ILabeledMethod
-from grpcAPI.process_service.format_service import FormatService, format_multiline
+from grpcAPI.service_proc.format_service import FormatService, format_multiline
 
 
 class FakeBase:

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Set
 
 import pytest
 
-from grpcAPI.process_service.add_gateway import AddGateway, proto_http_option
+from grpcAPI.service_proc.add_gateway import AddGateway, proto_http_option
 
 
 @dataclass

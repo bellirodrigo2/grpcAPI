@@ -2,11 +2,15 @@ import asyncio
 import os
 from logging import Logger, getLogger
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from grpcAPI.app import App
 from grpcAPI.commands.settings.utils import combine_settings, load_file_by_extension
-from grpcAPI.process_service.run_process_service import run_process_service
+from grpcAPI.service_proc import ProcessService
+from grpcAPI.service_proc.filter_service import DisableService
+from grpcAPI.service_proc.format_service import FormatService
+from grpcAPI.service_proc.register_descriptor import RegisterDescriptors
+from grpcAPI.service_proc.run_process_service import run_process_service
 
 default_logger = getLogger(__name__)
 
@@ -69,4 +73,10 @@ class GRPCAPICommand(BaseCommand):
     ) -> None:
         super().__init__(command_name, settings_path, is_sync)
         self.app = app
-        run_process_service(app, self.settings)
+        additional_services: List[Type[ProcessService]] = []
+        if command_name == "build":
+            additional_services.append(FormatService)
+            additional_services.append(DisableService)
+        elif command_name == "run":
+            additional_services.append(RegisterDescriptors)
+        run_process_service(app, self.settings, additional_services)

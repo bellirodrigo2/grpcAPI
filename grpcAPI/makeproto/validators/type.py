@@ -23,6 +23,7 @@ class TypeValidator(CompilerPass):
         self, name: str, report: CompileReport, requests: List[IMetaType]
     ) -> None:
         msg = None
+        # checar se há algum non injectable...
         invalid_req = CompileErrorCode.METHOD_INVALID_REQUEST_TYPE
         if len(requests) == 0:
             msg = "Method must define a request message."

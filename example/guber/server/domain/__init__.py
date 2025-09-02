@@ -3,7 +3,7 @@ from pathlib import Path
 
 from typing_extensions import Annotated, Any, Callable, Optional
 
-from grpcAPI.data_types import FromRequest
+from grpcAPI.datatypes import FromRequest
 
 lib_path = Path(".") / "example/guber/lib"
 print(lib_path)

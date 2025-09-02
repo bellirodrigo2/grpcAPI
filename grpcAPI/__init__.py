@@ -1,6 +1,6 @@
 from grpcAPI._version import __version__
 from grpcAPI.app import APIModule, APIPackage, APIService, GrpcAPI
-from grpcAPI.data_types import (
+from grpcAPI.datatypes import (
     AsyncContext,
     Depends,
     ExceptionRegistry,

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterable
 
-from grpcAPI.process_service import IncludeExclude, ProcessFilteredService
+from grpcAPI.service_proc import IncludeExclude, ProcessFilteredService
 
 
 class DisableService(ProcessFilteredService):

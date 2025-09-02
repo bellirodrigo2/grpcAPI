@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generator, Iterable, Mapping, Set
+from typing import Generator, Iterable, Mapping, Set, Union
 
 from typing_extensions import Any, Callable, Dict, List, Optional, Tuple
 
@@ -46,7 +46,7 @@ def compile_service_internal(
     services: Dict[str, List[IService]],
     compilerpasses: List[List[CompilerPass]],
     version: int = 3,
-) -> Optional[Generator[IProtoPackage, None, None]]:
+) -> Union[CompilerContext, Generator[IProtoPackage, None, None]]:
 
     all_templates, compiler_execution = prepare_modules(services, version)
     try:
@@ -56,7 +56,7 @@ def compile_service_internal(
         for ctx in e.contexts:
             if ctx.has_errors():
                 ctx.show()
-        return None
+        return ctx
 
     def generate_protos() -> Generator[IProtoPackage, None, None]:
         for template in all_templates:

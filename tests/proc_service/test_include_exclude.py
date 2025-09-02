@@ -1,4 +1,4 @@
-from grpcAPI.process_service import IncludeExclude
+from grpcAPI.service_proc import IncludeExclude
 
 
 class TestIncludeExclude:

@@ -9,7 +9,7 @@ from example.guber.server.application.repo.position_repo import (
     get_position_repo,
 )
 from example.guber.server.application.repo.ride_repo import RideRepo, get_ride_repo
-from grpcAPI.data_types import Depends
+from grpcAPI.datatypes import Depends
 
 AccountRepository = Annotated[AccountRepo, Depends(get_account_repo)]
 RideRepository = Annotated[RideRepo, Depends(get_ride_repo)]

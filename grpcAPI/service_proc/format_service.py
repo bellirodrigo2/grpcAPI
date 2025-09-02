@@ -6,7 +6,7 @@ from typing_extensions import Any, List, Literal, Protocol
 
 from grpcAPI.makeproto import IService
 from grpcAPI.makeproto.interface import ILabeledMethod
-from grpcAPI.process_service import ProcessService
+from grpcAPI.service_proc import ProcessService
 
 
 class Labeled(Protocol):

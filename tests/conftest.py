@@ -34,10 +34,10 @@ from typing_extensions import (
 from grpcAPI.app import APIService, App
 from grpcAPI.commands.protoc import ProtocCommand
 from grpcAPI.commands.settings.utils import combine_settings
-from grpcAPI.data_types import AsyncContext, Depends, FromRequest
+from grpcAPI.datatypes import AsyncContext, Depends, FromRequest
 from grpcAPI.makeproto.interface import ILabeledMethod, IMetaType, IService
-from grpcAPI.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.protoc.compile import compile_protoc
+from grpcAPI.service_proc.inject_typing import InjectProtoTyping
 from grpcAPI.testclient import TestClient
 
 protoc = ProtocCommand()
@@ -55,7 +55,7 @@ from tests.lib.user_pb2 import User  # noqa: F401
 from tests.lib.user_pb2 import UserCode as UserCode_  # noqa: F401
 
 if sys.version_info < (3, 9):
-    from grpcAPI.data_types import ProtobufEnum
+    from grpcAPI.datatypes import ProtobufEnum
 
     UserCode = ProtobufEnum
 else:

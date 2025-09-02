@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Any, Dict
 
 from grpcAPI.makeproto.interface import ILabeledMethod, IService
-from grpcAPI.process_service import ProcessService
+from grpcAPI.service_proc import ProcessService
 
 
 def proto_http_option(mapping: Dict[str, Any]) -> str:

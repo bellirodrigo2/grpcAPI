@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 import pytest
 
-from grpcAPI.process_service.filter_service import DisableService
+from grpcAPI.service_proc.filter_service import DisableService
 
 
 @dataclass

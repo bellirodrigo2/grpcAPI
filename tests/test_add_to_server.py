@@ -5,8 +5,8 @@ from typing_extensions import Any, Dict
 
 from grpcAPI.add_to_server import add_to_server
 from grpcAPI.app import APIService
-from grpcAPI.process_service.inject_typing import InjectProtoTyping
 from grpcAPI.server import ServerWrapper
+from grpcAPI.service_proc.inject_typing import InjectProtoTyping
 from grpcAPI.testclient.contextmock import ContextMock
 from tests.conftest import Timestamp
 from tests.lib.account_pb2 import AccountInput
@@ -27,7 +27,13 @@ async def test_add_simple(
     inject_proto_processing.process(functional_service)
     methods = add_to_server(functional_service, mock_server, {}, {})
     assert set(methods.keys()) == set(
-        ["create_account", "get_accounts", "get_by_ids", "get_emails", "log_accountinput"]
+        [
+            "create_account",
+            "get_accounts",
+            "get_by_ids",
+            "get_emails",
+            "log_accountinput",
+        ]
     )
     request = account_input["request"]
     context = ContextMock()

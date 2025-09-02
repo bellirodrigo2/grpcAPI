@@ -1,5 +1,5 @@
 [project]
-name = "grpcAPI"
+name = "grpcapi"
 dynamic = ["version"]
 description = ""
 authors = [

@@ -15,7 +15,7 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from grpcAPI.proto_ctxinject import (
+from grpcAPI.ctxinject_proto import (
     CastType,
     DependsInject,
     ModelFieldInject,

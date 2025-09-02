@@ -1,6 +1,6 @@
 import pytest
 
-from grpcAPI.process_service import ChainedFilter, IncludeExclude
+from grpcAPI.service_proc import ChainedFilter, IncludeExclude
 
 
 class TestChainedFilter:

@@ -4,9 +4,9 @@ from contextlib import AsyncExitStack
 from typing_extensions import Any, Callable, Dict, Type
 
 from grpcAPI import ExceptionRegistry
-from grpcAPI.data_types import AsyncContext, get_function_metadata
+from grpcAPI.ctxinject_proto import get_mapped_ctx, resolve_mapped_ctx
+from grpcAPI.datatypes import AsyncContext, get_function_metadata
 from grpcAPI.makeproto import ILabeledMethod
-from grpcAPI.proto_ctxinject import get_mapped_ctx, resolve_mapped_ctx
 
 
 async def safe_run(

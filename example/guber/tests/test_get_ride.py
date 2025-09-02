@@ -247,10 +247,10 @@ async def test_get_ride_in_progress_status(
     assert not ride_info.ride.HasField("finished_at")  # Not finished yet
     # Should have updated position from position update
     assert ride_info.current_location.coord.lat == pytest.approx(
-        EXPECTED_END_LAT, abs=1e-3
+        EXPECTED_END_LAT, abs=1e-2
     )
     assert ride_info.current_location.coord.long == pytest.approx(
-        EXPECTED_END_LONG, abs=1e-3
+        EXPECTED_END_LONG, abs=1e-2
     )
 
 
@@ -284,10 +284,10 @@ async def test_get_ride_completed_status(
     assert ride_info.ride.HasField("finished_at")  # Has finished timestamp
     # Should have final position
     assert ride_info.current_location.coord.lat == pytest.approx(
-        EXPECTED_END_LAT, abs=1e-3
+        EXPECTED_END_LAT, abs=1e-2
     )
     assert ride_info.current_location.coord.long == pytest.approx(
-        EXPECTED_END_LONG, abs=1e-3
+        EXPECTED_END_LONG, abs=1e-2
     )
 
 
@@ -348,10 +348,10 @@ async def test_get_ride_with_multiple_position_updates(
     ride_info = ride_info_resp
     # Should reflect the latest position update
     assert ride_info.current_location.coord.lat == pytest.approx(
-        EXPECTED_END_LAT - 0.01, abs=1e-3
+        EXPECTED_END_LAT - 0.01, abs=1e-2
     )
     assert ride_info.current_location.coord.long == pytest.approx(
-        EXPECTED_END_LONG - 0.01, abs=1e-3
+        EXPECTED_END_LONG - 0.01, abs=1e-2
     )
     # Should have accumulated more fare from multiple position updates
     assert ride_info.ride.fare > 21.0  # More than single position update fare

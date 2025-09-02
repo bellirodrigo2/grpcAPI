@@ -14,7 +14,7 @@ from typing_extensions import (
     get_origin,
 )
 
-from grpcAPI.data_types import FromRequest, Message, set_function_metadata
+from grpcAPI.datatypes import FromRequest, Message, set_function_metadata
 from grpcAPI.makeproto import ILabeledMethod, IMetaType
 
 
@@ -110,12 +110,10 @@ def make_labeled_method(
     response_type_input: Optional[Type[Any]] = None,
 ) -> ILabeledMethod:
     if request_type_input is not None and is_message(request_type_input):
-
         requests = [type_to_metatype(request_type_input)]
         set_function_metadata(func, request_type_input)
     else:
         requests = extract_request_type(func)
-
     response_type = extract_response_type(func, response_type_input)
 
     method_name = func.__name__

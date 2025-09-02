@@ -17,10 +17,10 @@ from typing_extensions import (
     Union,
 )
 
-from grpcAPI.data_types import AsyncContext, ExceptionRegistry
+from grpcAPI.datatypes import AsyncContext, ExceptionRegistry
 from grpcAPI.label_method import make_labeled_method
 from grpcAPI.makeproto import ILabeledMethod, IService
-from grpcAPI.process_service import ProcessService
+from grpcAPI.service_proc import ProcessService
 from grpcAPI.singleton import SingletonMeta
 
 Interceptor = aio.ServerInterceptor

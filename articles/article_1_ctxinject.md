@@ -1,10 +1,10 @@
-# ctxinject: Bringing Flexibility and Joy to gRPC Development
+# Building a FastAPI-Like Framework for gRPC: Part 1 - The ctxinject Foundation
 
-Coming from FastAPI's elegant patterns to gRPC felt like trading poetry for prose. Don't get me wrong—gRPC is incredibly powerful. The performance, type safety, and ecosystem are phenomenal. But after experiencing the pure joy of FastAPI's declarative function signatures, gRPC's rigid class-based approach felt... constraining.
+FastAPI showed what Python APIs could be—declarative functions, self-documenting signatures, elegant dependency injection. Python's gRPC libraries were robust and reliable, but somehow missed that same sense of pythonic joy and simplicity.
 
-I found myself missing that "signature tells the whole story" magic. In FastAPI, just by looking at a function signature, you immediately understand what it needs, where those dependencies come from, and what it returns. Everything is explicit, testable, and beautifully functional.
+I found myself constantly missing FastAPI's developer experience: the way function signatures told the complete story, how testing was effortless, how dependencies were explicit and beautiful. gRPC gave me performance and type safety, but at the cost of that elegant, functional flow that made Python feel... well, pythonic.
 
-This is the story of how I brought FastAPI's magic to gRPC—while keeping everything that makes gRPC powerful. It started with building ctxinject, a dependency injection framework that became the foundation for grpcAPI.
+This is the story of how I brought FastAPI's developer experience to gRPC—building on top of the solid foundation rather than replacing it. It started with ctxinject, a dependency injection framework that became the foundation for grpcAPI.
 
 ## HTTP vs gRPC: Framework Implications
 
@@ -20,7 +20,7 @@ HTTP offers lots of flexibility: methods (GET/POST), headers, body formats, path
 
 ### The Developer Experience Gap
 
-Here's what we love about FastAPI:
+The contrast becomes clear when you see them side by side. Here's FastAPI's approach:
 
 ```python
 # Self-documenting, declarative, functional
@@ -33,10 +33,10 @@ async def create_user(
     return await db.create(user)  # Pure business logic
 ```
 
-And here's what gRPC feels like coming from FastAPI:
+And here's the traditional Python gRPC approach:
 
 ```python
-# Functional, but more ceremonial
+# Powerful, but more ceremonial
 class UserServicer(user_pb2_grpc.UserServiceServicer):
     def __init__(self, db_pool, auth_service):  # Constructor injection
         self.db_pool = db_pool
@@ -48,11 +48,11 @@ class UserServicer(user_pb2_grpc.UserServiceServicer):
         # Business logic mixed with gRPC plumbing
 ```
 
-**The Opportunity:** gRPC's built-in type safety means we don't need to solve validation/serialization like FastAPI does with Pydantic. Instead, we can focus on what's missing: making function signatures flexible and self-documenting.
+**The Opportunity:** Since gRPC already provides type safety through Protocol Buffers, we don't need to solve validation/serialization like FastAPI does. Instead, we can focus purely on developer experience: bringing FastAPI's declarative patterns and elegant dependency injection to gRPC's solid foundation.
 
 ## The Vision: What We Want to Achieve
 
-I wanted to bring FastAPI-style flexibility to gRPC:
+The goal was to combine the best of both worlds:
 
 ```python
 # grpcAPI - FastAPI-style flexibility for gRPC

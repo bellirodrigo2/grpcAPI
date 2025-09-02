@@ -11,7 +11,7 @@ grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on s
 The key features are:
 
 * **Type-Safe Service Definitions**: Use Python type hints to define gRPC services with automatic validation
-* **Advanced Function Signatures**: Powerful parameter extraction with `FromRequest`, `FromValue`, `FromContext` - extract specific fields from protobuf messages, apply custom validators, FastAPI like "Depends" dependency injection, and define complex input/output mappings all through function signatures
+* **Advanced Function Signatures**: Powerful parameter extraction with `FromRequest`, `FromValue`, `FromContext` - extract specific fields from protobuf messages, apply custom validators, FastAPI `Depends` like dependency injection, and define complex input/output mappings all through function signatures
 * **Streaming Support**: Full support for client streaming, server streaming, and bidirectional streaming
 * **Automatic Protocol Buffer Generation**: Generate service `.proto` files automatically from Python functions signature, with lint tool
 * **Service Processing Pipeline**: Powerful post-processing system with service filtering, protocol buffer language options (`AddLanguageOptions`), HTTP gateway annotations (`AddGateway`), and custom module headers
@@ -102,7 +102,7 @@ async def create_user(
 @service
 async def create_user(
     name: Annotated[str, FromRequest(User, min_length=3, max_length=100)],
-    tags: Annotated[List[str], FromRequest(User, min_length=1)],
+    tags: Annotated[List[str], FromRequest(User, validator=lambda x: list(set(x)))],
     peer: Annotated[str, FromContext()]  # Get client IP
 ) -> StringValue:
     pass
@@ -127,14 +127,48 @@ class UserModel(BaseModel):
     email: str
 
 @service(request_type_input=BytesValue)
-async def pydantic_user(user: UserModel) -> Empty:  # Auto JSON conversion
+async def pydantic_user(user: UserModel) -> Empty:  # Auto JSON conversion from str or bytes fiels
+    pass
+
+# Streaming example
+@service
+async def stream_users(
+    request: AsyncIterator[User],  # Client streaming has less flexibility
+    metadata: Metadata  # Mapping[str,str] from context.invocation_metadata()
+) -> Empty:
     pass
 ```
+
+## Lint Tool
+
+The `grpcapi lint` command validates all service function signatures and reports errors comprehensively rather than stopping at the first issue found.
+
+```python
+from grpcAPI import GrpcAPI, APIService
+from grpcAPI.protobuf import StringValue, BytesValue
+
+app = GrpcAPI()
+
+service = APIService('service1')
+
+@service
+async def my_service(
+    strvalue:StringValue,
+    bytesvalue:BytesValue #two diferent request protobuf objects
+): #no return type annotation
+    pass
+
+app.add_service(service)
+
+```
+![Lint Error Report](assets/lint_error.png)
+
+Validates types, names, imports, signatures, and custom rules across all services with structured error reporting.
 
 ## CLI Commands
 
 ```bash
-# Initialize new project
+# Initialize new project, creating a config file
 grpcapi init
 
 # Run development server

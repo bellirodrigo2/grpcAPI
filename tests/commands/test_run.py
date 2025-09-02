@@ -6,6 +6,7 @@ import pytest
 
 from grpcAPI.app import App
 from grpcAPI.commands.run import RunCommand
+from grpcAPI.service_proc.register_descriptor import RegisterDescriptors
 
 
 class TestRunCommand:
@@ -22,7 +23,9 @@ class TestRunCommand:
             assert isinstance(cmd.app, App)
 
             # Verify run_process_service was called
-            mock_run_process.assert_called_once_with(app_fixture, cmd.settings)
+            mock_run_process.assert_called_once_with(
+                app_fixture, cmd.settings, [RegisterDescriptors]
+            )
 
     def test_run_command_with_settings(self, app_fixture: App):
         """Test RunCommand with settings file"""

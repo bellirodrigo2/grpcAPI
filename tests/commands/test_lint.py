@@ -102,7 +102,7 @@ class TestLintCommand:
             assert isinstance(cmd.app, App)
 
             # Verify run_process_service was called
-            mock_run_process.assert_called_once_with(app, cmd.settings)
+            mock_run_process.assert_called_once_with(app, cmd.settings, [])
 
     def test_lint_command_with_settings(self, app_fixture: App):
         """Test LintCommand with settings file"""

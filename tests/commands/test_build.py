@@ -2,10 +2,11 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-
 from grpcAPI.app import App
 from grpcAPI.commands.build import BuildCommand, build_protos
 from grpcAPI.makeproto.interface import IProtoPackage
+from grpcAPI.service_proc.filter_service import DisableService
+from grpcAPI.service_proc.format_service import FormatService
 
 
 class TestBuildProtos:
@@ -116,9 +117,10 @@ class TestBuildCommand:
             assert cmd.command_name == "build"
             assert cmd.app is app
             assert isinstance(cmd.app, App)
-
             # Verify run_process_service was called
-            mock_run_process.assert_called_once_with(app, cmd.settings)
+            mock_run_process.assert_called_once_with(
+                app, cmd.settings, [FormatService, DisableService]
+            )
 
     async def test_build_command_run(self, app_fixture: App):
         """Test BuildCommand.run() method"""

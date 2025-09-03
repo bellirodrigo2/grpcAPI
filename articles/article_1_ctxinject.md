@@ -4,7 +4,7 @@ FastAPI showed what Python APIs could be—declarative functions, self-documenti
 
 I found myself constantly missing FastAPI's developer experience: the way function signatures told the complete story, how testing was effortless, how dependencies were explicit and beautiful. gRPC gave me performance and type safety, but at the cost of that elegant, functional flow that made Python feel... well, pythonic.
 
-This is the story of how I brought FastAPI's developer experience to gRPC—building on top of the solid foundation rather than replacing it. It started with ctxinject, a dependency injection framework that became the foundation for grpcAPI.
+This is the story of how I brought FastAPI's developer experience to gRPC—building on top of the solid foundation (grpcio) rather than reintenving the wheel. It started with ctxinject, a dependency injection framework that became the foundation for grpcAPI.
 
 ## HTTP vs gRPC: Framework Implications
 
@@ -12,7 +12,7 @@ The architectural differences between HTTP and gRPC create different opportuniti
 
 ### Type Safety Differences
 
-HTTP isn't type-safe by nature—any string can be a request. This is why FastAPI leverages Pydantic for data validation and serialization; it's essential to fill that gap. But gRPC uses Protocol Buffers, which are type-safe and efficient by design. Validation and serialization become less critical in gRPC (though we can still add JSON support for existing data).
+HTTP isn't type-safe by nature—any string can be a request´s body. This is why FastAPI leverages Pydantic for data validation and serialization; it's essential to fill that gap. But gRPC uses Protocol Buffers, which are type-safe and efficient by design. Validation and serialization become less critical in gRPC (though we can still add JSON support for existing data).
 
 ### Flexibility Trade-offs
 
@@ -28,7 +28,6 @@ The contrast becomes clear when you see them side by side. Here's FastAPI's appr
 async def create_user(
     user: User,  # Clear contract
     db: Database = Depends(get_db),  # Explicit dependencies
-    current_user: User = Depends(get_current_user)  # Readable requirements
 ):
     return await db.create(user)  # Pure business logic
 ```
@@ -40,7 +39,6 @@ And here's the traditional Python gRPC approach:
 class UserServicer(user_pb2_grpc.UserServiceServicer):
     def __init__(self, db_pool, auth_service):  # Constructor injection
         self.db_pool = db_pool
-        self.auth_service = auth_service
         
     def CreateUser(self, request, context):
         # Always the same signature - no flexibility
@@ -60,7 +58,6 @@ The goal was to combine the best of both worlds:
 async def create_user(
     user: User,  # User from protobuf - type safe!
     db: Database = Depends(get_db),  # Explicit dependencies
-    current_user: User = Depends(get_current_user)
 ) -> StringValue:  # Return type mapped to protobuf
     # Clean, testable, flexible business logic
     return StringValue(value=await db.create(user))
@@ -82,7 +79,7 @@ How do you make gRPC handler signatures as flexible as FastAPI? It comes down to
 
 - **Function signature analysis and transformation at runtime** - Parse any function signature and understand what each parameter needs
 - **Type-safe dependency resolution with Python's type system** - Use type hints to match dependencies without losing static analysis benefits
-- **Async/sync compatibility for modern Python patterns** - Handle both sync and async functions seamlessly
+- **Async/sync compatibility for modern Python patterns** - Handle both sync and async functions seamlessly, including contextmanager
 - **Performance** - Do signature mapping at bootstrap time, enable parallel async dependency processing
 
 ### Design Principles
@@ -128,9 +125,8 @@ result = await injected_func()  # Dependencies resolved automatically!
 
 What makes this powerful:
 
-- **ArgsInjectable**: Standard parameter injection with defaults and validation
-- **DependsInject**: Function dependencies with recursive resolution
-- **ModelFieldInject**: Extract values from model instances in context
+- **ModelFieldInject**: Extract values from model instances' field in context
+- **DependsInject**: Function dependencies with recursive resolution and contextmanager handling
 - **Async optimization**: Concurrent dependency resolution when possible
 - **Validation integration**: Clean, validated values guaranteed
 - **Override system**: Perfect for testing and environment-specific behavior
@@ -156,6 +152,44 @@ async def handle_request(
     # AuthContext instance in context provides both values
     pass
 ```
+
+**Function signature static analysis**
+`func_signature_check` validates function signatures for injection compatibility. It checks the integrity of the entire signature and returns a list of all errors rather than failing on the first issue, enabling comprehensive validation feedback.
+This feature sets the basis for grpcAPI's lint command
+
+**Supertype vs Subtype handling**
+
+- **Compatibility is one-way: subtype → supertype**
+- **List[Derived] fits Iterable[Base], not the reverse**
+- **Prevents unsafe narrowing**
+
+```python
+class BaseClass:
+    pass
+class DerivedClass(BaseClass):
+    pass
+
+class MyClass:
+    def __init__(self, list1: List[str]):
+        self.list1 = list1
+
+def get_class() -> DerivedClass:
+    return DerivedClass()
+
+def func(
+    list1: Iterable[str] = ModelFieldInject(MyClass),
+    db: BaseClass = DependsInject(get_class),
+):
+    pass
+
+myclass = MyClass(list1=["a", "b", "c"])
+ctx = {MyClass: myclass}
+```
+
+This example works due to supertype vs subtype compatibility
+
+**In build and customized validation and casting**
+
 
 **Override system** makes testing elegant:
 ```python

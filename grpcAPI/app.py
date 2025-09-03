@@ -176,7 +176,7 @@ class APIService(IService):
             service_name = f"{self.package}.{self.name}"
         return service_name
 
-    def _register_method(
+    def register_method(
         self,
         func: Callable[..., Any],
         title: Optional[str] = None,
@@ -224,11 +224,11 @@ class APIService(IService):
     ) -> Union[Callable[..., Any], Callable[[Callable[..., Any]], Callable[..., Any]]]:
         if func is not None and callable(func):
             # Called as @serviceapi
-            return self._register_method(func)
+            return self.register_method(func)
         else:
             # Called as @serviceapi(...)
             def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
-                return self._register_method(
+                return self.register_method(
                     func=f,
                     title=title,
                     description=description,
@@ -320,6 +320,19 @@ class App:
     def _add_package(self, package: "APIPackage") -> None:
         for module in package.modules:
             self._add_module(module)
+
+    def service(self, name: str) -> Callable[..., Callable[..., Any] | Any]:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any] | Any:
+            for service in self._services[""]:
+                if service.name == name:
+                    break
+            else:
+                service = APIService(name=name)
+                self.add_service(service)
+                
+            return service.register_method(func)
+
+        return decorator
 
     def add_interceptor(self, interceptor: Interceptor) -> None:
         self._interceptor.append(interceptor)

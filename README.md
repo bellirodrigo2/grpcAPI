@@ -3,10 +3,12 @@
 </p>
 
 <p align="center">
-    <b> + pythonic, + flexibility, - learning curve</b>
+    <b> Enhancing grpcio with modern Python patterns</b>
 </p>
 
-grpcAPI is a modern gRPC framework for building APIs with Python 3.8+ based on standard Python type hints and grpcio library.
+grpcAPI enhances the grpcio ecosystem with FastAPI-inspired developer experience, bringing modern Python patterns to gRPC development.
+
+Built on top of the proven grpcio foundation, grpcAPI is a modern framework for building APIs with Python 3.8+ using standard Python type hints.
 
 The key features are:
 

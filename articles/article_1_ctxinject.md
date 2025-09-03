@@ -93,6 +93,10 @@ Building ctxinject, I followed these core principles:
 
 ### Key Features Showcase
 
+```bash
+pip install grpcapi
+```
+
 Here's ctxinject in action:
 
 ```python
@@ -146,10 +150,9 @@ def get_service_b(a: ServiceA = Depends(get_service_a)): ...
 ```python
 @service
 async def handle_request(
-    user_id: str = ModelFieldInject(AuthContext, "current_user_id"),
-    is_admin: bool = ModelFieldInject(AuthContext, "has_admin_role")
+    user_id: str = ModelFieldInject(AuthContext), #if field name fits arg name, no need to declare
+    is_admin: bool = ModelFieldInject(AuthContext, "has_admin_role") #declare field name if not
 ):
-    # AuthContext instance in context provides both values
     pass
 ```
 
@@ -199,10 +202,61 @@ async def get_real_database() -> Database: ...
 # Testing  
 async def get_mock_database() -> Database: ...
 
+async def handler(db:Database = DependsInject(get_real_database)):...
+
 # Simple override
 overrides = {get_real_database: get_mock_database}
 injected = await inject_args(handler, context, overrides=overrides)
 ```
+
+**Validation system**
+
+In built and customized validation and casting. Optional pydantic casting.
+
+```python
+from ctxinject import DependsInject, ModelFieldInject, Validation
+
+def custom_validator(word: str) -> str:
+    if not word.isalpha():
+        raise ValueError("Invalid input: only alphabetic characters are allowed.")
+    return word.upper()
+
+def func(
+    name: str = Validation(min_length=2, pattern=r"^[a-zA-Z]+$"),
+    lastname: str = Validation(validator=custom_validator),
+    array: Iterable[str] = ModelFieldInject(MyClass, min_length=2, max_length=100),
+    db_str: str = DependsInject(get_db, max_length=256),
+):
+    pass
+
+```
+
+**Pydantic Example**
+
+Optional pydantic casting from str and bytes (`model_validate_json`)
+
+```bash
+pip install grpcapi[pydantic]
+```
+
+```python
+class MyModel(BaseModel):
+    name: str
+    age: int
+
+class BaseClass:
+    def __init__(self, model: str):
+        self.model = model
+
+def handler(
+    mymodel: MyModel = CastType(str), model: MyModel = ModelFieldInject(BaseClass)
+): ...
+
+mymodel = '{"name": "John", "age": 42}'
+ctx = {mymodel: mymodel, BaseClass: BaseClass(mymodel)}
+```
+
+This can enable  json_string -> Pydantic convertion from protobuf str and bytes field
 
 ## Real-World Impact: Before and After
 

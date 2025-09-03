@@ -1,31 +1,35 @@
-from typing import Iterable, List
-
-from ctxinject import DependsInject, ModelFieldInject
+from ctxinject import DependsInject, ModelFieldInject, Validation
 
 
-class BaseClass:
-    pass
-
-
-class DerivedClass(BaseClass):
-    pass
-
-
-class MyClass:
-    def __init__(self, list1: List[str]):
-        self.list1 = list1
-
-
-def get_class() -> DerivedClass:
-    return DerivedClass()
+def custom_validator(word: str) -> str:
+    if not word.isalpha():
+        raise ValueError("Invalid input: only alphabetic characters are allowed.")
+    return word.upper()
 
 
 def func(
-    list1: Iterable[str] = ModelFieldInject(MyClass),
-    db: BaseClass = DependsInject(get_class),
+    name: str = Validation(min_length=2, pattern=r"^[a-zA-Z]+$"),
+    lastname: str = Validation(validator=custom_validator),
+    array: Iterable[str] = ModelFieldInject(MyClass, min_length=2, max_length=100),
+    db_str: str = DependsInject(get_db, max_length=256),
 ):
     pass
 
 
-myclass = MyClass(list1=["a", "b", "c"])
-ctx = {MyClass: myclass}
+class MyModel(BaseModel):
+    name: str
+    age: int
+
+
+class BaseClass:
+    def __init__(self, model: MyModel):
+        self.model = model
+
+
+def handler(
+    mymodel: MyModel = CastType(str), model: MyModel = ModelFieldInject(BaseClass)
+): ...
+
+
+mymodel = MyModel(name="John", age=30)
+ctx = {mymodel: mymodel, BaseClass: BaseClass(mymodel)}

@@ -94,7 +94,7 @@ Building ctxinject, I followed these core principles:
 ### Key Features Showcase
 
 ```bash
-pip install grpcapi
+pip install ctxinject
 ```
 
 Here's ctxinject in action:
@@ -139,25 +139,19 @@ What makes this powerful:
 
 ctxinject includes several advanced features that became crucial for production use:
 
-**Circular dependency detection** prevents infinite loops during resolution:
-```python
-# This would be caught at injection time, not runtime
-def service_a(b: ServiceB = Depends(get_service_b)): ...
-def get_service_b(a: ServiceA = Depends(get_service_a)): ...
-```
-
 **Model field injection** extracts from domain objects:
 ```python
 @service
 async def handle_request(
     user_id: str = ModelFieldInject(AuthContext), #if field name fits arg name, no need to declare
     is_admin: bool = ModelFieldInject(AuthContext, "has_admin_role") #declare field name if not
+    recursive: str = ModelFieldInject(OtherClass, "field1.field2.field3") #nested class fields
 ):
     pass
 ```
 
 **Function signature static analysis**
-`func_signature_check` validates function signatures for injection compatibility. It checks the integrity of the entire signature and returns a list of all errors rather than failing on the first issue, enabling comprehensive validation feedback.
+`func_signature_check` validates function signatures for injection compatibility. It checks the integrity of the entire signature (including circular dependency) and returns a list of all errors rather than failing on the first issue, enabling comprehensive validation feedback.
 This feature sets the basis for grpcAPI's lint command
 
 **Supertype vs Subtype handling**
@@ -180,16 +174,13 @@ def get_class() -> DerivedClass:
     return DerivedClass()
 
 def func(
-    list1: Iterable[str] = ModelFieldInject(MyClass),
-    db: BaseClass = DependsInject(get_class),
+    list1: Iterable[str] = ModelFieldInject(MyClass), #Iterable[str] <- List[str] = "OK"
+    db: BaseClass = DependsInject(get_class), # BaseClass <- DerivedClass = "OK"
 ):
     pass
-
-myclass = MyClass(list1=["a", "b", "c"])
-ctx = {MyClass: myclass}
 ```
 
-This example works due to supertype vs subtype compatibility
+This example pass `func_signature_check` due to supertype vs subtype compatibility
 
 **In build and customized validation and casting**
 
@@ -198,7 +189,6 @@ This example works due to supertype vs subtype compatibility
 ```python
 # Production
 async def get_real_database() -> Database: ...
-
 # Testing  
 async def get_mock_database() -> Database: ...
 
@@ -222,9 +212,9 @@ def custom_validator(word: str) -> str:
     return word.upper()
 
 def func(
-    name: str = Validation(min_length=2, pattern=r"^[a-zA-Z]+$"),
-    lastname: str = Validation(validator=custom_validator),
-    array: Iterable[str] = ModelFieldInject(MyClass, min_length=2, max_length=100),
+    name: str = Validation(min_length=2, pattern=r"^[a-zA-Z]+$"), #inject by name
+    lastname: str = Validation(validator=custom_validator), #inject by name
+    array: Iterable[str] = ModelFieldInject(MyClass, min_length=2, max_length=100), #inject by type
     db_str: str = DependsInject(get_db, max_length=256),
 ):
     pass
@@ -236,7 +226,7 @@ def func(
 Optional pydantic casting from str and bytes (`model_validate_json`)
 
 ```bash
-pip install grpcapi[pydantic]
+pip install ctxinject[pydantic]
 ```
 
 ```python
@@ -249,7 +239,8 @@ class BaseClass:
         self.model = model
 
 def handler(
-    mymodel: MyModel = CastType(str), model: MyModel = ModelFieldInject(BaseClass)
+    mymodel: MyModel = CastType(str), #injected by name
+    model: MyModel = ModelFieldInject(BaseClass) #injected by type
 ): ...
 
 mymodel = '{"name": "John", "age": 42}'
@@ -318,21 +309,68 @@ One concern with dependency injection is performance overhead. ctxinject address
 
 - **Signature analysis happens once** at startup, not per request
 - **Dependency resolution is pre-computed** into an execution plan
+- **Context Manager handling** sync and async
 - **Async dependencies run concurrently** when order allows
 - **Type lookups use efficient hash maps** rather than iteration
 - **Validation occurs only when configured**, not by default
 
 In practice, the injection overhead is negligible compared to typical gRPC business logic, and the async concurrency can actually improve performance for I/O-bound dependencies.
 
+## Ctxinject usage in grpcAPI
+
+In grpcAPI, the ctxinject types are derived for the following classes
+- **Depends** just a rename for DependsInject
+- **FromRequest** ModelFieldInject from your request protobuf type
+- **FromContext** ModelFieldInject from grpcio context object
+
+See examples:
+
+```python
+@user_services(tags=["write:ride", "read:account"])
+async def request_ride(
+    request: RideRequest,
+    passenger_id: Annotated[str, FromRequest(RideRequest,validator=passenger_id_validator)],
+    id: Annotated[str, Depends(make_ride_id)],
+) -> StringValue:
+```
+
+In the above case, `RideRequest` is a protobuf class. `request` if the instance itself, and passenger_id is taken from `RideRequest` in order to add a validation only
+
+```python
+@serviceapi(request_type_input=AccountInput, response_type_input=Empty)
+    async def log_accountinput(
+        name: str,
+        email: EmailStr, #need pydantic installed
+        payload: Struct,
+        itens: ListValue,
+        db: str = Depends(get_db),
+    ):...
+```
+
+In the above case, `AccountInput` is the protobuf class request. Empty is a google well known type
+
+```protobuf
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+message AccountInput {
+    string name=1;
+    string email=2;
+    google.protobuf.Struct payload = 3;
+    google.protobuf.ListValue itens = 4;
+}
+```
+As it is declared in the decorator, you can declare an arg with the same name as the message field.
+
 ## Coming Next: Building the Complete Framework
 
 ctxinject solved the core dependency injection challenge, but building a complete FastAPI-like experience for gRPC required tackling much bigger problems:
 
-**Part 2: "Taming protoc"** - How do you automatically generate gRPC servicers and descriptors from decorated Python functions? Turns out, working with protoc programmatically is... an adventure.
+**Part 2: "Taming protoc"** - How do you automatically generate gRPC servicers and descriptors from decorated Python functions? Auto-generating .proto files from Python function signatures with proper error reporting and linting.
 
-**Part 3: "makeproto Magic"** - Auto-generating .proto files from Python function signatures sounds simple until you hit the edge cases. Plus building a compilation pipeline with proper error reporting and linting.
-
-**Part 4: "Production Tooling"** - Server plugins, service filtering, process_service utilities, and a testing client that makes gRPC feel as approachable as HTTP.
+**Part 3: "Production Tooling"** - Server plugins, service filtering, language options to .proto files addition, grpc-gateway config inclusion, custom service processing utilities, and a testing client that makes gRPC feel as approachable as HTTP.
 
 **Part 5: "Guber Case Study"** - A real ride-sharing application that demonstrates transforming from monolith to microservices using just configuration and dependency overrides.
 
